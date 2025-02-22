@@ -1,13 +1,13 @@
-import { isNode } from "../shared/env";
+import { isNode } from './shared'
 
-let createPixelsFromImage: any;
+let createPixelsArray: any
 
 if (isNode) {
-  const { default: nodeImpl } = await import("./node/image");
-  createPixelsFromImage = nodeImpl;
+  const { default: nodeImpl } = await import('./node/create-pixels-array')
+  createPixelsArray = nodeImpl
 } else {
-  const { default: browserImpl } = await import("./browser/image");
-  createPixelsFromImage = browserImpl;
+  const { default: browserImpl } = await import('./browser/create-pixels-array')
+  createPixelsArray = browserImpl
 }
 
-export { createPixelsFromImage };
+export { createPixelsArray }

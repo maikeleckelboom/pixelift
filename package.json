@@ -10,15 +10,17 @@
     }
   },
   "peerDependencies": {
-    "sharp": "^0.33.5",
     "typescript": "^5"
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/omggif": "^1.0.5",
+    "@types/pngjs": "^6.0.5",
     "@vitest/browser": "^3.0.6",
     "happy-dom": "^17.1.2",
     "playwright": "^1.50.1",
     "prettier": "^3.5.1",
+    "rollup-plugin-visualizer": "^5.14.0",
     "vite": "^6.1.1",
     "vitest": "^3.0.6"
   },
@@ -31,5 +33,11 @@
     "dev:browser": "vitest dev --project browser",
     "build": "vite build",
     "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@jsquash/webp": "^1.4.0",
+    "jpeg-js": "^0.4.4",
+    "omggif": "^1.0.10",
+    "pngjs": "^7.0.0"
   }
 }

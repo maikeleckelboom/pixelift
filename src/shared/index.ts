@@ -1,1 +1,1 @@
-export { isNode } from "./env";
+export { isNode } from './env'
