@@ -29,6 +29,8 @@
     "@jsquash/webp": "^1.4.0"
   },
   "devDependencies": {
+    "@types/omggif": "^1.0.5",
+    "@types/pngjs": "^6.0.5",
     "@vitest/browser": "^3.0.6",
     "happy-dom": "^17.1.2",
     "vite": "^6.1.1",
