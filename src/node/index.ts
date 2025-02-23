@@ -1,12 +1,14 @@
 import fs from 'node:fs/promises'
 import { PNG } from 'pngjs'
-import jpeg, { type BufferLike } from 'jpeg-js'
-import { type GifBinary, GifReader } from 'omggif'
-import type { ImageFormat, NodeInput, PixelData } from '../types'
+import { type BufferLike, decode } from 'jpeg-js'
 
-export async function pixelift(input: NodeInput, type?: ImageFormat): Promise<PixelData> {
+import { type GifBinary, GifReader } from 'omggif'
+import type { ImageFormat, NodeInput, PixelData, PixeliftOptions } from '../types'
+
+
+export async function pixelift(input: NodeInput, options?: PixeliftOptions): Promise<PixelData> {
   const buffer = await getBuffer(input)
-  const format = type || detectFormat(buffer)
+  const format = options?.format || detectFormat(buffer)
   let pixelsData: PixelData
   switch (format.toLowerCase()) {
     case 'png':
@@ -28,6 +30,10 @@ export async function pixelift(input: NodeInput, type?: ImageFormat): Promise<Pi
   return pixelsData
 }
 
+function isBufferLike(input: unknown): input is Buffer {
+  return Buffer.isBuffer(input)
+}
+
 async function getBuffer(input: NodeInput): Promise<Buffer> {
   if (typeof input === 'string') {
     if (/^https?:\/\//.test(input)) {
@@ -37,13 +43,17 @@ async function getBuffer(input: NodeInput): Promise<Buffer> {
     } else {
       return await fs.readFile(input)
     }
-  } else {
-    return input as Buffer
+  } else if (isBufferLike(input)) {
+    return input
   }
+
+  throw new TypeError('Input must be string, Buffer, or URL')
 }
 
 function detectFormat(buffer: Buffer): ImageFormat {
-  if (buffer.length < 12) throw new Error("Invalid buffer");
+  if (buffer.length < 12) {
+    throw new Error(`Invalid buffer (${buffer.length} bytes), needs at least 12 bytes for header`)
+  }
   const header = buffer.subarray(0, 12)
   const hexHeader = header.toString('hex')
   const asciiHeader = header.toString('ascii')
@@ -51,7 +61,7 @@ function detectFormat(buffer: Buffer): ImageFormat {
   if (hexHeader.startsWith('ffd8')) return 'jpeg'
   if (asciiHeader.startsWith('GIF8')) return 'gif'
   if (header.subarray(8, 12).toString() === 'WEBP') return 'webp'
-  throw new Error('Unsupported format')
+  throw new Error(`Unsupported format. Header: ${hexHeader.slice(0, 8)}...`)
 }
 
 function decodePNG(buffer: Buffer): PixelData {
@@ -59,12 +69,13 @@ function decodePNG(buffer: Buffer): PixelData {
   return {
     data: new Uint8ClampedArray(png.data),
     width: png.width,
-    height: png.height
+    height: png.height,
+    channels: png.alpha ? 4 : 3
   }
 }
 
 function decodeJPEG(buffer: BufferLike): PixelData {
-  const { data, width, height } = jpeg.decode(buffer, {
+  const { data, width, height } = decode(buffer, {
     useTArray: true,
     formatAsRGBA: true
   })
@@ -72,12 +83,16 @@ function decodeJPEG(buffer: BufferLike): PixelData {
   return {
     data: new Uint8ClampedArray(data),
     width,
-    height
+    height,
+    channels: 4 // Always 4 (RGBA) due to formatAsRGBA option
   }
 }
 
 function decodeGIF(buffer: GifBinary, frame: number = 0): PixelData {
   const reader = new GifReader(buffer)
+  if (frame >= reader.numFrames()) {
+    throw new Error(`Frame ${frame} out of bounds (total ${reader.numFrames()} frames)`)
+  }
   const data = new Uint8ClampedArray(reader.width * reader.height * 4)
   reader.decodeAndBlitFrameBGRA(frame, data)
   for (let i = 0; i < data.length; i += 4) {
@@ -88,13 +103,12 @@ function decodeGIF(buffer: GifBinary, frame: number = 0): PixelData {
   return {
     data,
     width: reader.width,
-    height: reader.height
+    height: reader.height,
+    channels: 4 // Always 4 (RGBA) after conversion
   }
 }
 
-function decodeWebP(_buffer: Buffer): PixelData {
-  // WebP support is not available in the Node environment
-  // To add WebP support, you can use the 'sharp' package
-  // https://sharp.pixelplumbing.com/api-output#webp
+function decodeWebP(buffer: Buffer): PixelData {
   throw new Error('WebP format is not supported in the Node environment')
+  // throw new Error('WebP support requires sharp package: npm install sharp')
 }

@@ -27,7 +27,7 @@ const pixels = await pixelift('image.png')
 ### Node
 ```ts
 import { pixelift } from 'pixelift'
-const pixels = await pixelift(fs.readFileSync('image.jpg'), 'jpeg')
+const pixels = await pixelift('public/image.png')
 ```
 
 ---

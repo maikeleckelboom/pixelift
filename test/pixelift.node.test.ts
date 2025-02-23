@@ -1,4 +1,4 @@
-import { pixelift } from '../src/node/pixelift'
+import { pixelift } from '../src/node'
 import { describe, expect, it } from 'vitest'
 import fs from 'node:fs'
 
