@@ -1,4 +1,4 @@
-import { PNG } from 'pngjs'
+import type { PNG } from 'pngjs'
 import type { GifBinary } from 'omggif'
 import type { BufferLike } from 'jpeg-js'
 
