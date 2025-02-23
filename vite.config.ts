@@ -1,11 +1,37 @@
 import { defineConfig } from 'vitest/config'
-import visualizer from 'rollup-plugin-visualizer'
+import dts from 'vite-plugin-dts'
 
 export default defineConfig({
+  build: {
+    target: 'esnext',
+    ssr: false,
+    lib: {
+      entry: './src/index.ts',
+      formats: ['es'],
+      fileName: 'pixelift'
+    },
+    rollupOptions: {
+      external: [
+        'node:fs/promises',
+        'util',
+        'stream',
+        'zlib',
+        'assert',
+        'buffer',
+        /^@jsquash\/.*/,
+        /\.test\.ts$/
+      ],
+      output: {
+        chunkFileNames: '[name].[hash].js',
+        inlineDynamicImports: false
+      }
+    },
+  },
   plugins: [
-    visualizer({
-      gzipSize: true,
-      brotliSize: true
-    })
+    dts({
+      insertTypesEntry: true,
+      include: 'src',
+      exclude: 'test'
+    }),
   ]
 })

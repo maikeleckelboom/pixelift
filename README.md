@@ -17,7 +17,7 @@ This project was created using `bun init` in bun v1.2.3. [Bun](https://bun.sh) i
 ---
 
 ```
-pixelite/
+pixelift/
 ├── src/
 │   ├── browser/       # Browser-specific implementations
 │   ├── node/          # Node-specific implementations (with Sharp)
