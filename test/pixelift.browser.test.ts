@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { pixelift } from '../src'
+import { pixelift } from '../src/browser'
 
 describe('Browser Environment', () => {
   it('should run in a browser environment', () => {

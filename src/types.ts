@@ -1,35 +1,23 @@
-export type ImageFormat = 'png' | 'jpeg' | 'jpg' | 'gif' | 'webp'
+import type { GifBinary } from 'omggif'
+import type { BufferLike } from 'jpeg-js'
 
 export interface PixelData {
   width: number
   height: number
   data: Uint8ClampedArray
+  channels: 3 | 4
 }
 
-export type NodeInput =
-  | string
-  | Buffer
-  | ArrayBuffer
-  | Uint8Array
-  | Uint8ClampedArray
-  | Int8Array
-  | Uint16Array
-  | Int16Array
-  | Uint32Array
-  | Int32Array
-  | Float32Array
-  | Float64Array
+export type ImageFormat = 'png' | 'jpeg' | 'jpg' | 'gif' | 'webp'
+
+export type NodeInput = string | Buffer | BufferLike | GifBinary
 
 export type BrowserInput = string
-
-type FutureBrowserInput =
-  | ImageData
-  | HTMLImageElement
-  | ImageBitmap
-  | OffscreenCanvas
-  | Blob
-  | File
 
 type PixeliftImpl<T> = (input: T) => Promise<PixelData>
 
 export type Pixelift = PixeliftImpl<NodeInput> | PixeliftImpl<BrowserInput>
+
+export interface PixeliftOptions {
+  format?: ImageFormat
+}

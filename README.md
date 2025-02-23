@@ -16,6 +16,22 @@ This project was created using `bun init` in bun v1.2.3. [Bun](https://bun.sh) i
 
 ---
 
+
+## Usage
+### Browser
+```ts
+import { pixelift } from 'pixelift'
+const pixels = await pixelift('image.png')
+```
+
+### Node
+```ts
+import { pixelift } from 'pixelift'
+const pixels = await pixelift('public/image.png')
+```
+
+---
+
 ```
 pixelift/
 ├── src/

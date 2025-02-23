@@ -4,7 +4,7 @@ import dts from 'vite-plugin-dts'
 export default defineConfig({
   build: {
     target: 'esnext',
-    ssr: false,
+    minify: true,
     lib: {
       entry: './src/index.ts',
       formats: ['es'],
@@ -23,16 +23,21 @@ export default defineConfig({
         /\.test\.ts$/
       ],
       output: {
-        chunkFileNames: '[name].[hash].js',
-        inlineDynamicImports: false
+        // Single file output without hashes
+        inlineDynamicImports: true,
+        // Clean directory structure
+        preserveModules: false,
+        // No chunk splitting
+        manualChunks: undefined
       }
     }
   },
   plugins: [
     dts({
       insertTypesEntry: true,
-      include: 'src',
-      exclude: 'test'
+      rollupTypes: true,  // Bundle all types
+      outDir: './dist',
+      exclude: ['test']
     })
   ]
 })
