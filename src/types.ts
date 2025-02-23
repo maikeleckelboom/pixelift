@@ -1,4 +1,6 @@
-export type ImageFormat = 'png' | 'jpeg' | 'jpg' | 'gif' | 'webp'
+import { PNG } from 'pngjs'
+import type { GifBinary } from 'omggif'
+import type { BufferLike } from 'jpeg-js'
 
 export interface PixelData {
   width: number
@@ -6,29 +8,14 @@ export interface PixelData {
   data: Uint8ClampedArray
 }
 
-export type NodeInput =
-  | string
-  | Buffer
-  | ArrayBuffer
-  | Uint8Array
-  | Uint8ClampedArray
-  | Int8Array
-  | Uint16Array
-  | Int16Array
-  | Uint32Array
-  | Int32Array
-  | Float32Array
-  | Float64Array
+export type ImageFormat = 'png' | 'jpeg' | 'jpg' | 'gif' | 'webp'
+
+type FirstInArray<T> = T extends [infer U, ...unknown[]] ? U : never
+type PngBinary = FirstInArray<Parameters<typeof PNG.sync.read>>
+
+export type NodeInput = string | BufferLike | GifBinary | PngBinary
 
 export type BrowserInput = string
-
-type FutureBrowserInput =
-  | ImageData
-  | HTMLImageElement
-  | ImageBitmap
-  | OffscreenCanvas
-  | Blob
-  | File
 
 type PixeliftImpl<T> = (input: T) => Promise<PixelData>
 

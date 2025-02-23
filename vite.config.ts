@@ -4,7 +4,6 @@ import dts from 'vite-plugin-dts'
 export default defineConfig({
   build: {
     target: 'esnext',
-    ssr: false,
     lib: {
       entry: './src/index.ts',
       formats: ['es'],

@@ -1,10 +1,15 @@
 import type { BrowserInput, PixelData } from '../types.ts'
 
 export async function pixelift(input: BrowserInput): Promise<PixelData> {
-  return await loadAndGetImageData(input)
+  const imageData = await loadAndGetImageData(input)
+  return {
+    data: new Uint8ClampedArray(imageData.data),
+    width: imageData.width,
+    height: imageData.height
+  }
 }
 
-async function loadAndGetImageData(url: string): Promise<PixelData> {
+async function loadAndGetImageData(url: string): Promise<ImageData> {
   const image = new Image()
   image.crossOrigin = 'anonymous'
   image.decoding = 'async'
@@ -23,11 +28,5 @@ async function loadAndGetImageData(url: string): Promise<PixelData> {
 
   context.drawImage(image, 0, 0)
 
-  const imageData = context.getImageData(0, 0, image.width, image.height)
-
-  return {
-    data: new Uint8ClampedArray(imageData.data),
-    width: imageData.width,
-    height: imageData.height
-  }
+  return context.getImageData(0, 0, image.width, image.height)
 }

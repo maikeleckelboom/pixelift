@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises'
-import jpeg from 'jpeg-js'
+import jpeg, { type BufferLike } from 'jpeg-js'
 import { PNG } from 'pngjs'
-import { GifReader } from 'omggif'
-import type { PixelData, NodeInput, ImageFormat } from '../types'
+import { type GifBinary, GifReader } from 'omggif'
+import type { ImageFormat, NodeInput, PixelData } from '../types'
 
 export async function pixelift(input: NodeInput, type?: ImageFormat): Promise<PixelData> {
   const buffer = await getBuffer(input)
@@ -28,11 +28,11 @@ export async function pixelift(input: NodeInput, type?: ImageFormat): Promise<Pi
   return pixelsData
 }
 
-async function getBuffer(input: NodeInput): Promise<Buffer<ArrayBufferLike>> {
+async function getBuffer(input: NodeInput): Promise<Buffer> {
   if (typeof input === 'string') {
     if (/^https?:\/\//.test(input)) {
       const response = await fetch(input)
-      if (!response.ok) throw new Error(`Failed to fetch image: ${response.statusText}`)
+      if (!response.ok) throw new Error(`Failed to fetch: ${response.statusText}`)
       return Buffer.from(await response.arrayBuffer())
     } else {
       return await fs.readFile(input)
@@ -50,7 +50,7 @@ function detectFormat(buffer: Buffer): ImageFormat {
   if (hexHeader.startsWith('ffd8')) return 'jpeg'
   if (asciiHeader.startsWith('GIF8')) return 'gif'
   if (header.subarray(8, 12).toString() === 'WEBP') return 'webp'
-  throw new Error('Unknown image format')
+  throw new Error('Unsupported format')
 }
 
 function decodePNG(buffer: Buffer): PixelData {
@@ -62,7 +62,7 @@ function decodePNG(buffer: Buffer): PixelData {
   }
 }
 
-function decodeJPEG(buffer: Buffer): PixelData {
+function decodeJPEG(buffer: BufferLike): PixelData {
   const { data, width, height } = jpeg.decode(buffer, {
     useTArray: true,
     formatAsRGBA: true
@@ -75,7 +75,7 @@ function decodeJPEG(buffer: Buffer): PixelData {
   }
 }
 
-function decodeGIF(buffer: Buffer, frame: number = 0): PixelData {
+function decodeGIF(buffer: GifBinary, frame: number = 0): PixelData {
   const reader = new GifReader(buffer)
   const data = new Uint8ClampedArray(reader.width * reader.height * 4)
   reader.decodeAndBlitFrameBGRA(frame, data)

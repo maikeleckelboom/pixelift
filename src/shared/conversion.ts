@@ -30,21 +30,11 @@ export function convertToArgbIntArray(
   return result;
 }
 
-export function rgbaBufferToArgbIntArray(
-  byteArray: Uint8Array | Uint8ClampedArray
-): number[] {
-  const result: number[] = []
-  for (let i = 0; i < byteArray.length; i += 4) {
-    result.push(
-      (byteArray[i + 3] << 24) |
-        (byteArray[i] << 16) |
-        (byteArray[i + 1] << 8) |
-        byteArray[i + 2]
-    )
-  }
-  return result
-}
-
+/**
+ * Converts an array of 32-bit ARGB integers to a Uint8ClampedArray.
+ * @returns Uint8ClampedArray of RGBA bytes
+ * @param array Array of 32-bit ARGB integers
+ */
 export function convertToUint8ClampedArray(
   array: number[]
 ): Uint8ClampedArray {
