@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises'
-import jpeg, { type BufferLike } from 'jpeg-js'
 import { PNG } from 'pngjs'
+import jpeg, { type BufferLike } from 'jpeg-js'
 import { type GifBinary, GifReader } from 'omggif'
 import type { ImageFormat, NodeInput, PixelData } from '../types'
 
@@ -43,6 +43,7 @@ async function getBuffer(input: NodeInput): Promise<Buffer> {
 }
 
 function detectFormat(buffer: Buffer): ImageFormat {
+  if (buffer.length < 12) throw new Error("Invalid buffer");
   const header = buffer.subarray(0, 12)
   const hexHeader = header.toString('hex')
   const asciiHeader = header.toString('ascii')

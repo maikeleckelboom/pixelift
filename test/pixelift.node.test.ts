@@ -8,24 +8,24 @@ describe('Node Environment', () => {
   })
 
   it('decodes PNG correctly', async () => {
-    const buffer = fs.readFileSync('./assets/test.png')
+    const buffer = fs.readFileSync('./test/assets/test.png')
     const pixels = await pixelift(buffer)
     expect(pixels.data.filter(Boolean).length).toBeGreaterThan(0)
   })
 
   it('handles 3-channel JPEG', async () => {
-    const pixels = await pixelift('./assets/test.jpg')
+    const pixels = await pixelift('./test/assets/test.jpg')
     expect(pixels.data.filter(Boolean).length).toBeGreaterThan(0)
   })
 
   it('decodes GIF correctly', async () => {
-    const buffer = fs.readFileSync('./assets/test.gif')
+    const buffer = fs.readFileSync('./test/assets/test.gif')
     const pixels = await pixelift(buffer)
     expect(pixels.data.filter(Boolean).length).toBeGreaterThan(1000)
   })
 
   it('throws error for unsupported format', async () => {
-    const buffer = fs.readFileSync('./assets/test.webp')
+    const buffer = fs.readFileSync('./test/assets/test.webp')
     await expect(pixelift(buffer)).rejects.toThrowError(
       'WebP format is not supported in the Node environment'
     )

@@ -5,14 +5,18 @@
  * @param buffer
  */
 export function convertToArgbIntArray(
-  buffer: Uint8Array | Uint8ClampedArray
+  buffer: Uint8Array | Uint8ClampedArray | ArrayBuffer | number[]
 ): number[] {
-  const length = buffer.length;
-  const isRGBA = length % 4 === 0;
-  const pixelSize = isRGBA ? 4 : 3;
+  const byteArray = buffer instanceof ArrayBuffer
+    ? new Uint8Array(buffer)
+    : buffer;
+
+
+  const length = byteArray.length;
+  const pixelSize = length % 4 === 0 ? 4 : 3;
 
   if (length % pixelSize !== 0) {
-    throw new Error("Buffer length must be multiple of 3 (RGB) or 4 (RGBA)");
+    throw new Error(`Invalid buffer length ${length}: must be multiple of 3 (RGB) or 4 (RGBA)`);
   }
 
   const pixelCount = length / pixelSize;
@@ -20,10 +24,10 @@ export function convertToArgbIntArray(
 
   for (let src = 0, dst = 0; src < length; src += pixelSize, dst++) {
     result[dst] = (
-      (pixelSize === 4 ? buffer[src + 3] : 0xff) << 24 |
-      buffer[src] << 16 |
-      buffer[src + 1] << 8 |
-      buffer[src + 2]
+      (pixelSize === 4 ? byteArray[src + 3] : 0xff) << 24 |
+      byteArray[src] << 16 |
+      byteArray[src + 1] << 8 |
+      byteArray[src + 2]
     );
   }
 

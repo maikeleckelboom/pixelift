@@ -11,5 +11,5 @@ export async function pixelift(...args: Parameters<Pixelift>): Promise<PixelData
   }
 }
 
-export { convertToArgbIntArray } from './shared/conversion'
+export { convertToArgbIntArray, convertToUint8ClampedArray } from './shared/conversion'
 export * from './types'
