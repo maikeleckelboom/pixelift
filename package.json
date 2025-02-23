@@ -3,12 +3,12 @@
   "version": "0.0.0",
   "type": "module",
   "types": "./dist/index.d.ts",
-  "main": "./dist/pixelift.js",
-  "module": "./dist/pixelift.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/pixelift.js"
+      "import": "./dist/index.js"
     }
   },
   "files": [
@@ -29,6 +29,8 @@
     "@jsquash/webp": "^1.4.0"
   },
   "devDependencies": {
+    "@types/omggif": "^1.0.5",
+    "@types/pngjs": "^6.0.5",
     "@vitest/browser": "^3.0.6",
     "happy-dom": "^17.1.2",
     "vite": "^6.1.1",

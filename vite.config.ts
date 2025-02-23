@@ -8,7 +8,8 @@ export default defineConfig({
     lib: {
       entry: './src/index.ts',
       formats: ['es'],
-      fileName: 'pixelift'
+      fileName: 'index',
+      name: 'pixelift',
     },
     rollupOptions: {
       external: [
