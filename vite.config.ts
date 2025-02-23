@@ -25,13 +25,13 @@ export default defineConfig({
         chunkFileNames: '[name].[hash].js',
         inlineDynamicImports: false
       }
-    },
+    }
   },
   plugins: [
     dts({
       insertTypesEntry: true,
       include: 'src',
       exclude: 'test'
-    }),
+    })
   ]
 })

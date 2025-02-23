@@ -10,18 +10,18 @@ describe('Node Environment', () => {
   it('decodes PNG correctly', async () => {
     const buffer = fs.readFileSync('./assets/test.png')
     const pixels = await pixelift(buffer)
-    expect(pixels.filter(Boolean).length).toBeGreaterThan(0)
+    expect(pixels.data.filter(Boolean).length).toBeGreaterThan(0)
   })
 
   it('handles 3-channel JPEG', async () => {
     const pixels = await pixelift('./assets/test.jpg')
-    expect(pixels.filter(Boolean).length).toBeGreaterThan(0)
+    expect(pixels.data.filter(Boolean).length).toBeGreaterThan(0)
   })
 
   it('decodes GIF correctly', async () => {
     const buffer = fs.readFileSync('./assets/test.gif')
     const pixels = await pixelift(buffer)
-    expect(pixels.filter(Boolean).length).toBeGreaterThan(1000)
+    expect(pixels.data.filter(Boolean).length).toBeGreaterThan(1000)
   })
 
   it('throws error for unsupported format', async () => {

@@ -1,2 +1,1 @@
-export { isNode } from './env'
-export { rgbaBytesToARGBIntArray } from './conversion'
+export { rgbaBufferToArgbIntArray } from './conversion'

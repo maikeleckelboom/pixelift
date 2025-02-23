@@ -1,94 +1,99 @@
 import fs from 'node:fs/promises'
 import jpeg from 'jpeg-js'
-import {PNG} from 'pngjs'
-import {GifReader} from 'omggif'
-import {rgbaBytesToARGBIntArray} from "../shared";
-import type {PixeliftNodeParams} from "../index.ts";
+import { PNG } from 'pngjs'
+import { GifReader } from 'omggif'
+import type { PixelData, NodeInput, ImageFormat } from '../types'
 
-export type PixeliftImageFormat = 'png' | 'jpeg' | 'jpg' | 'gif' | 'webp'
-
-export async function pixelift(
-    input: PixeliftNodeParams,
-    type?: PixeliftImageFormat
-): Promise<number[]> {
-    const buffer = await getBuffer(input)
-    const format = type || detectFormat(buffer)
-
-    let pixels: Uint8Array
-
-    switch (format.toLowerCase() as PixeliftImageFormat) {
-        case 'png':
-            pixels = decodePNG(buffer)
-            break
-        case 'jpg':
-        case 'jpeg':
-            pixels = decodeJPEG(buffer)
-            break
-        case 'gif':
-            pixels = decodeGIF(buffer)
-            break
-        case 'webp':
-            pixels = decodeWebP(buffer)
-            break
-        default:
-            throw new Error(`Unsupported format: ${format}`);
-    }
-
-    return rgbaBytesToARGBIntArray(pixels)
+export async function pixelift(input: NodeInput, type?: ImageFormat): Promise<PixelData> {
+  const buffer = await getBuffer(input)
+  const format = type || detectFormat(buffer)
+  let pixelsData: PixelData
+  switch (format.toLowerCase()) {
+    case 'png':
+      pixelsData = decodePNG(buffer)
+      break
+    case 'jpg':
+    case 'jpeg':
+      pixelsData = decodeJPEG(buffer)
+      break
+    case 'gif':
+      pixelsData = decodeGIF(buffer)
+      break
+    case 'webp':
+      pixelsData = decodeWebP(buffer)
+      break
+    default:
+      throw new Error(`Unsupported format: ${format}`)
+  }
+  return pixelsData
 }
 
-async function getBuffer(input: PixeliftNodeParams): Promise<Buffer<ArrayBufferLike>> {
-    if (typeof input === 'string') {
-        if (/^https?:\/\//.test(input)) {
-            const response = await fetch(input);
-            if (!response.ok) throw new Error(`Failed to fetch image: ${response.statusText}`);
-            return Buffer.from(await response.arrayBuffer());
-        } else {
-            return await fs.readFile(input);
-        }
+async function getBuffer(input: NodeInput): Promise<Buffer<ArrayBufferLike>> {
+  if (typeof input === 'string') {
+    if (/^https?:\/\//.test(input)) {
+      const response = await fetch(input)
+      if (!response.ok) throw new Error(`Failed to fetch image: ${response.statusText}`)
+      return Buffer.from(await response.arrayBuffer())
     } else {
-        return input as Buffer;
+      return await fs.readFile(input)
     }
+  } else {
+    return input as Buffer
+  }
 }
 
-function detectFormat(buffer: Buffer): PixeliftImageFormat {
-    const header = buffer.subarray(0, 12)
-    const hexHeader = header.toString('hex')
-    const asciiHeader = header.toString('ascii')
-
-    if (hexHeader.startsWith('89504e47')) return 'png'
-    if (hexHeader.startsWith('ffd8')) return 'jpeg'
-    if (asciiHeader.startsWith('GIF8')) return 'gif'
-    if (header.subarray(8, 12).toString() === 'WEBP') return 'webp'
-    throw new Error('Unknown image format')
+function detectFormat(buffer: Buffer): ImageFormat {
+  const header = buffer.subarray(0, 12)
+  const hexHeader = header.toString('hex')
+  const asciiHeader = header.toString('ascii')
+  if (hexHeader.startsWith('89504e47')) return 'png'
+  if (hexHeader.startsWith('ffd8')) return 'jpeg'
+  if (asciiHeader.startsWith('GIF8')) return 'gif'
+  if (header.subarray(8, 12).toString() === 'WEBP') return 'webp'
+  throw new Error('Unknown image format')
 }
 
-function decodePNG(buffer: Buffer): Uint8Array {
-    const png = PNG.sync.read(buffer);
-    return new Uint8Array(png.data);
+function decodePNG(buffer: Buffer): PixelData {
+  const png = PNG.sync.read(buffer)
+  return {
+    data: new Uint8ClampedArray(png.data),
+    width: png.width,
+    height: png.height
+  }
 }
 
-function decodeJPEG(buffer: Buffer): Uint8Array {
-    const {data, width, height} = jpeg.decode(buffer, {
-        useTArray: true,
-        formatAsRGBA: true
-    });
+function decodeJPEG(buffer: Buffer): PixelData {
+  const { data, width, height } = jpeg.decode(buffer, {
+    useTArray: true,
+    formatAsRGBA: true
+  })
 
-    return new Uint8Array(data);
+  return {
+    data: new Uint8ClampedArray(data),
+    width,
+    height
+  }
 }
 
-function decodeGIF(buffer: Buffer, frame: number = 0): Uint8Array {
-    const reader = new GifReader(buffer);
-    const data = new Uint8Array(reader.width * reader.height * 4);
-    reader.decodeAndBlitFrameBGRA(frame, data);
-    for (let i = 0; i < data.length; i += 4) {
-        const temp = data[i];
-        data[i] = data[i + 2]; // Red channel (originally at i+2) moves to i (Blue's position)
-        data[i + 2] = temp;    // Blue channel (from i) moves to i+2 (Red's position)
-    }
-    return data;
+function decodeGIF(buffer: Buffer, frame: number = 0): PixelData {
+  const reader = new GifReader(buffer)
+  const data = new Uint8ClampedArray(reader.width * reader.height * 4)
+  reader.decodeAndBlitFrameBGRA(frame, data)
+  for (let i = 0; i < data.length; i += 4) {
+    const temp = data[i]
+    data[i] = data[i + 2]
+    data[i + 2] = temp
+  }
+  return {
+    data,
+    width: reader.width,
+    height: reader.height
+  }
 }
 
-function decodeWebP(buffer: Buffer): Uint8Array {
-    throw new Error('WebP format is not supported in the Node environment')
+function decodeWebP(_buffer: Buffer): PixelData {
+  // WebP support is not available in the Node environment
+  // To add WebP support, you can use the 'sharp' package
+  // https://sharp.pixelplumbing.com/api-output#webp
+  throw new Error('WebP format is not supported in the Node environment')
 }
