@@ -5,7 +5,6 @@ import { type BufferLike, decode } from 'jpeg-js'
 import { type GifBinary, GifReader } from 'omggif'
 import type { ImageFormat, NodeInput, PixelData, PixeliftOptions } from '../types'
 
-
 export async function pixelift(input: NodeInput, options?: PixeliftOptions): Promise<PixelData> {
   const buffer = await getBuffer(input)
   const format = options?.format || detectFormat(buffer)
