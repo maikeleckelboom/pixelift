@@ -11,7 +11,6 @@ Directory Structure:
         │   │   ├── conversion.ts
         │   │   ├── env.ts
         │   │   └── index.ts
-        │   ├── exclude-types.ts
         │   ├── index.ts
         │   └── types.ts
         ├── test
