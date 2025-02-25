@@ -10,7 +10,7 @@ export interface PixelData {
 
 export type NodeImageFormat = 'png' | 'jpeg' | 'jpg' | 'gif';
 export type BrowserImageFormat = 'png' | 'jpeg' | 'jpg' | 'gif' | 'webp';
-export type SupportedFormat =
+export type ImageFormat =
   | Extract<NodeImageFormat, BrowserImageFormat>
   | Exclude<BrowserImageFormat, NodeImageFormat>;
 
@@ -34,4 +34,4 @@ export interface FormatHandlers {
   webp: FormatHandler<{}>
 }
 
-export type PixeliftOptions<F extends SupportedFormat> = { format: F } & FormatHandlers[F]['options']
+export type PixeliftOptions<F extends ImageFormat> = { format: F } & FormatHandlers[F]['options']

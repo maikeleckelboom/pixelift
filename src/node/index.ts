@@ -2,7 +2,7 @@ import fs from 'node:fs/promises'
 import decodePNG from './decoders/png'
 import decodeJPEG from './decoders/jpeg'
 import decodeGIF from './decoders/gif'
-import type { BrowserInput, FormatHandlers, NodeInput, PixelData, PixeliftOptions, SupportedFormat } from '../types'
+import type { BrowserInput, FormatHandlers, NodeInput, PixelData, PixeliftOptions, ImageFormat } from '../types'
 import { isNode } from '../shared/env.ts'
 
 const nodeHandlers: FormatHandlers = {
@@ -36,8 +36,7 @@ const nodeHandlers: FormatHandlers = {
   }
 }
 
-
-export async function pixelift<F extends SupportedFormat>(
+export async function pixelift<F extends ImageFormat>(
   input: NodeInput | BrowserInput,
   options?: PixeliftOptions<F>
 ): Promise<PixelData> {
@@ -66,7 +65,7 @@ async function getBuffer(input: NodeInput): Promise<Buffer> {
   throw new TypeError('Invalid input type')
 }
 
-function detectFormat(buffer: Buffer): SupportedFormat {
+function detectFormat(buffer: Buffer): ImageFormat {
   if (buffer.length < 12) throw new Error('Buffer is too short to detect format')
   const header = buffer.subarray(0, 12)
   const hexHeader = header.toString('hex')
