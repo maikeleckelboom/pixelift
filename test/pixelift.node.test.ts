@@ -26,8 +26,6 @@ describe('Node Environment', () => {
 
   it('throws error for unsupported format', async () => {
     const buffer = fs.readFileSync('./test/assets/test.webp')
-    await expect(pixelift(buffer)).rejects.toThrowError(
-      'WebP format is not supported in the Node environment'
-    )
+    await expect(pixelift(buffer)).rejects.toThrowError(/WebP format is not supported/)
   })
 })

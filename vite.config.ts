@@ -14,13 +14,12 @@ export default defineConfig({
     rollupOptions: {
       external: [
         'node:fs/promises',
+        // PNG dependencies
         'util',
         'stream',
         'zlib',
-        'assert',
         'buffer',
-        /^@jsquash\/.*/,
-        /\.test\.ts$/
+        'assert'
       ],
       output: {
         chunkFileNames: '[name].[hash].js',

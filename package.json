@@ -11,9 +11,7 @@
       "require": "./dist/index.js"
     }
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "test": "vitest dev",
     "test:node": "vitest run --project node",
@@ -24,8 +22,7 @@
     "format": "prettier --write ."
   },
   "peerDependencies": {
-    "typescript": "^5",
-    "@jsquash/webp": "^1.4.0"
+    "typescript": "^5"
   },
   "devDependencies": {
     "@types/omggif": "^1.0.5",
@@ -39,6 +36,7 @@
   "dependencies": {
     "jpeg-js": "^0.4.4",
     "omggif": "^1.0.10",
-    "pngjs": "^7.0.0"
+    "pngjs": "^7.0.0",
+    "@jsquash/webp": "^1.4.0"
   }
 }

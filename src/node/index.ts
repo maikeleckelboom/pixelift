@@ -1,9 +1,10 @@
 import fs from 'node:fs/promises'
-import { PNG } from 'pngjs'
+import { type ParserOptions, PNG } from 'pngjs'
 import { type BufferLike, decode } from 'jpeg-js'
 
 import { type GifBinary, GifReader } from 'omggif'
 import type { ImageFormat, NodeInput, PixelData, PixeliftOptions } from '../types'
+
 
 export async function pixelift(input: NodeInput, options?: PixeliftOptions): Promise<PixelData> {
   const buffer = await getBuffer(input)
@@ -63,8 +64,8 @@ function detectFormat(buffer: Buffer): ImageFormat {
   throw new Error(`Unsupported format. Header: ${hexHeader.slice(0, 8)}...`)
 }
 
-function decodePNG(buffer: Buffer): PixelData {
-  const png = PNG.sync.read(buffer)
+function decodePNG(buffer: Buffer, options?: ParserOptions): PixelData {
+  const png = PNG.sync.read(buffer, options)
   return {
     data: new Uint8ClampedArray(png.data),
     width: png.width,
@@ -73,17 +74,19 @@ function decodePNG(buffer: Buffer): PixelData {
   }
 }
 
-function decodeJPEG(buffer: BufferLike): PixelData {
+function decodeJPEG(buffer: BufferLike, options?: { formatAsRGBA: true }): PixelData {
+  const { formatAsRGBA = true } = options ?? {}
+
   const { data, width, height } = decode(buffer, {
     useTArray: true,
-    formatAsRGBA: true
+    formatAsRGBA
   })
 
   return {
     data: new Uint8ClampedArray(data),
     width,
     height,
-    channels: 4 // Always 4 (RGBA) due to formatAsRGBA option
+    channels: formatAsRGBA ? 4 : 3
   }
 }
 
@@ -108,6 +111,6 @@ function decodeGIF(buffer: GifBinary, frame: number = 0): PixelData {
 }
 
 function decodeWebP(buffer: Buffer): PixelData {
-  throw new Error('WebP format is not supported in the Node environment')
+  throw new Error('WebP format is not supported in Node environments')
   // throw new Error('WebP support requires sharp package: npm install sharp')
 }

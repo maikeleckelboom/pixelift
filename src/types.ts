@@ -18,6 +18,9 @@ type PixeliftImpl<T> = (input: T) => Promise<PixelData>
 
 export type Pixelift = PixeliftImpl<NodeInput> | PixeliftImpl<BrowserInput>
 
-export interface PixeliftOptions {
-  format?: ImageFormat
-}
+export type PixeliftOptions =
+  | { format: 'png', checkCRC?: boolean; skipRescale?: boolean }
+  | { format: 'jpeg' | 'jpg'; formatAsRGBA?: boolean }
+  | { format: 'gif'; frame?: number }
+  | { format: 'webp' }
+  | { format?: undefined };
