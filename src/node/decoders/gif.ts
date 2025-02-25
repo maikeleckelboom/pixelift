@@ -8,10 +8,10 @@ export default function decode(buffer: GifBinary, frame: number = 0): PixelData 
   }
   const data = new Uint8ClampedArray(reader.width * reader.height * 4)
   reader.decodeAndBlitFrameBGRA(frame, data)
+  const view = new DataView(data.buffer);
   for (let i = 0; i < data.length; i += 4) {
-    const temp = data[i]
-    data[i] = data[i + 2]
-    data[i + 2] = temp
+    const temp = view.getUint32(i, true);
+    view.setUint32(i, (temp & 0xff00ff00) | ((temp & 0xff) << 16) | ((temp >> 16) & 0xff), true);
   }
   return {
     data,

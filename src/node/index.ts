@@ -2,30 +2,26 @@ import fs from 'node:fs/promises'
 import decodePNG from './decoders/png'
 import decodeJPEG from './decoders/jpeg'
 import decodeGIF from './decoders/gif'
-import type { ImageFormat, NodeInput, PixelData, PixeliftOptions } from '../types'
+import type { NodeInput, PixelData, PixeliftOptions, SupportedFormat } from '../types'
 
+const decoders: Record<SupportedFormat | string & {}, (buffer: Buffer) => PixelData | never> = {
+  'png': decodePNG,
+  'jpg': decodeJPEG,
+  'jpeg': decodeJPEG,
+  'gif': decodeGIF,
+  'webp': () => {
+    throw new Error('WebP format is not supported in Node environments')
+  }
+}
 
 export async function pixelift(input: NodeInput, options?: PixeliftOptions): Promise<PixelData> {
   const buffer = await getBuffer(input)
   const format = options?.format || detectFormat(buffer)
-  let pixelsData: PixelData
-  switch (format.toLowerCase()) {
-    case 'png':
-      pixelsData = decodePNG(buffer)
-      break
-    case 'jpg':
-    case 'jpeg':
-      pixelsData = decodeJPEG(buffer)
-      break
-    case 'gif':
-      pixelsData = decodeGIF(buffer)
-      break
-    case 'webp':
-      throw new Error('WebP format is not supported in Node environments')
-    default:
-      throw new Error(`Unsupported format: ${format}`)
+  const decoder = decoders[format]
+  if (!decoder) {
+    throw new Error(`Unsupported format: ${format}`)
   }
-  return pixelsData
+  return decoder(buffer)
 }
 
 async function getBuffer(input: NodeInput): Promise<Buffer> {
@@ -38,18 +34,12 @@ async function getBuffer(input: NodeInput): Promise<Buffer> {
       return await fs.readFile(input)
     }
   }
-
-  if (Buffer.isBuffer(input)) {
-    return input
-  }
-
+  if (Buffer.isBuffer(input)) return input
   throw new TypeError('Invalid input type')
 }
 
-function detectFormat(buffer: Buffer): ImageFormat {
-  if (buffer.length < 12) {
-    throw new Error('Buffer is too short to detect format')
-  }
+function detectFormat(buffer: Buffer): SupportedFormat {
+  if (buffer.length < 12) throw new Error('Buffer is too short to detect format')
   const header = buffer.subarray(0, 12)
   const hexHeader = header.toString('hex')
   const asciiHeader = header.toString('ascii')

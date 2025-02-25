@@ -8,14 +8,16 @@ export interface PixelData {
   channels: 3 | 4
 }
 
-export type ImageFormat = 'png' | 'jpeg' | 'jpg' | 'gif' | 'webp'
+export type NodeImageFormat = 'png' | 'jpeg' | 'jpg' | 'gif';
+export type BrowserImageFormat = 'png' | 'jpeg' | 'jpg' | 'gif' | 'webp';
+export type SupportedFormat =
+  | Extract<NodeImageFormat, BrowserImageFormat>
+  | Exclude<BrowserImageFormat, NodeImageFormat>;
 
-export type NodeInput = string | Buffer | BufferLike | GifBinary
-
-export type BrowserInput = string | URL
+export type NodeInput = string | BufferLike | GifBinary
+export type BrowserInput = string | URL | File | ImageBitmapSource
 
 type PixeliftImpl<T> = (input: T) => Promise<PixelData>
-
 export type Pixelift = PixeliftImpl<NodeInput> | PixeliftImpl<BrowserInput>
 
 export type PixeliftOptions =
