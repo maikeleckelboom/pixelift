@@ -1,5 +1,14 @@
 {
   "name": "pixelift",
+  "description": "Modern cross-platform image pixel data extraction with SSR support",
+  "keywords": [
+    "image processing",
+    "pixels",
+    "get-pixels",
+    "SSR",
+    "browser",
+    "node"
+  ],
   "version": "0.0.0",
   "type": "module",
   "types": "./dist/index.d.ts",
