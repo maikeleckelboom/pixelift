@@ -1,7 +1,7 @@
-import { type ParserOptions, PNG } from 'pngjs'
-import type { PixelData } from '../../types.ts'
+import { PNG } from 'pngjs'
+import type { FormatHandlers, PixelData } from '../../types.ts'
 
-export default function decode(buffer: Buffer, options?: ParserOptions): PixelData {
+export default function decode(buffer: Buffer, options?: FormatHandlers['png']['options']): PixelData {
   const png = PNG.sync.read(buffer, options)
   return {
     data: new Uint8ClampedArray(png.data),

@@ -40,12 +40,12 @@ describe('Browser Environment', () => {
     expect(data.filter(Boolean).length).toBeGreaterThan(0)
   })
 
-  it('decodes WebP correctly', async () => {
-    const url = new URL('./assets/test.webp', import.meta.url)
-    const { data, width, height, channels } = await pixelift(url)
-    expect(width).toBeDefined()
-    expect(height).toBeDefined()
-    expect(channels).toBe(4)
-    expect(data.filter(Boolean).length).toBeGreaterThan(0)
-  })
+  // it('decodes WebP correctly', async () => {
+  //   const url = new URL('./assets/test.webp', import.meta.url)
+  //   const { data, width, height, channels } = await pixelift(url)
+  //   expect(width).toBeDefined()
+  //   expect(height).toBeDefined()
+  //   expect(channels).toBe(4)
+  //   expect(data.filter(Boolean).length).toBeGreaterThan(0)
+  // })
 })

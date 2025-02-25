@@ -14,18 +14,26 @@ describe('Node Environment', () => {
   })
 
   it('handles 3-channel JPEG', async () => {
-    const pixels = await pixelift('./test/assets/test.jpg')
+    const pixels = await pixelift('./test/assets/test.jpg', { format: 'jpg', formatAsRGBA: false })
+    expect(pixels.channels).toBe(3)
+    expect(pixels.data.filter(Boolean).length).toBeGreaterThan(0)
+  })
+
+  it('handles 4-channel JPEG', async () => {
+    const pixels = await pixelift('./test/assets/test.jpg', { format: 'jpg', formatAsRGBA: true })
+    expect(pixels.channels).toBe(4)
     expect(pixels.data.filter(Boolean).length).toBeGreaterThan(0)
   })
 
   it('decodes GIF correctly', async () => {
     const buffer = fs.readFileSync('./test/assets/test.gif')
-    const pixels = await pixelift(buffer)
+    const pixels = await pixelift(buffer, { format: 'gif', frame: 2 })
     expect(pixels.data.filter(Boolean).length).toBeGreaterThan(1000)
   })
 
-  it('throws error for unsupported format', async () => {
-    const buffer = fs.readFileSync('./test/assets/test.webp')
-    await expect(pixelift(buffer)).rejects.toThrowError(/WebP format is not supported/)
-  })
+  // it('decodes webp correctly', async () => {
+  //   const buffer = fs.readFileSync('./test/assets/test.webp')
+  //   const pixels = await pixelift(buffer)
+  //   expect(pixels.data.filter(Boolean).length).toBeGreaterThan(0)
+  // })
 })

@@ -1,8 +1,9 @@
 import { type BufferLike, decode as decodeJPEG } from 'jpeg-js'
-import type { PixelData } from '../../types.ts'
+import type { FormatHandlers, PixelData } from '../../types.ts'
 
-export default function decode(buffer: BufferLike, options?: { formatAsRGBA: true }): PixelData {
-  const { formatAsRGBA = true } = options ?? {}
+export default function decode(buffer: BufferLike, options?: FormatHandlers['jpg']['options']): PixelData {
+
+const { formatAsRGBA = true } = options ?? {}
 
   const { data, width, height } = decodeJPEG(buffer, {
     useTArray: true,

@@ -20,9 +20,18 @@ export type BrowserInput = string | URL | File | ImageBitmapSource
 type PixeliftImpl<T> = (input: T) => Promise<PixelData>
 export type Pixelift = PixeliftImpl<NodeInput> | PixeliftImpl<BrowserInput>
 
-export type PixeliftOptions =
-  | { format: 'png', checkCRC?: boolean; skipRescale?: boolean }
-  | { format: 'jpeg' | 'jpg'; formatAsRGBA?: boolean }
-  | { format: 'gif'; frame?: number }
-  | { format: 'webp' }
-  | { format?: undefined };
+
+export type FormatHandler<Options = never> = {
+  options: Options
+  decoder: (buffer: Buffer, options?: Options) => PixelData | never
+}
+
+export interface FormatHandlers {
+  png: FormatHandler<{ checkCRC?: boolean; skipRescale?: boolean }>
+  jpg: FormatHandler<{ formatAsRGBA?: boolean }>
+  jpeg: FormatHandler<{ formatAsRGBA?: boolean }>
+  gif: FormatHandler<{ frame?: number }>
+  webp: FormatHandler<{}>
+}
+
+export type PixeliftOptions<F extends SupportedFormat> = { format: F } & FormatHandlers[F]['options']

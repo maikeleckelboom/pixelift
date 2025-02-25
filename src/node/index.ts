@@ -2,32 +2,60 @@ import fs from 'node:fs/promises'
 import decodePNG from './decoders/png'
 import decodeJPEG from './decoders/jpeg'
 import decodeGIF from './decoders/gif'
-import type { NodeInput, PixelData, PixeliftOptions, SupportedFormat } from '../types'
+import type { BrowserInput, FormatHandlers, NodeInput, PixelData, PixeliftOptions, SupportedFormat } from '../types'
+import { isNode } from '../shared/env.ts'
 
-const decoders: Record<SupportedFormat | string & {}, (buffer: Buffer) => PixelData | never> = {
-  'png': decodePNG,
-  'jpg': decodeJPEG,
-  'jpeg': decodeJPEG,
-  'gif': decodeGIF,
-  'webp': () => {
-    throw new Error('WebP format is not supported in Node environments')
+const nodeHandlers: FormatHandlers = {
+  png: {
+    options: {},
+    decoder: (buffer, options) => decodePNG(buffer, options)
+  },
+  jpg: {
+    options: {
+      formatAsRGBA: true
+    },
+    decoder: (buffer, options) => decodeJPEG(buffer, options)
+  },
+  jpeg: {
+    options: {
+      formatAsRGBA: true
+    },
+    decoder: (buffer, options) => decodeJPEG(buffer, options)
+  },
+  gif: {
+    options: {
+      frame: 0
+    },
+    decoder: (buffer, options) => decodeGIF(buffer, options)
+  },
+  webp: {
+    options: {},
+    decoder: () => {
+      throw new Error('WebP format is not supported in Node environments')
+    }
   }
 }
 
-export async function pixelift(input: NodeInput, options?: PixeliftOptions): Promise<PixelData> {
-  const buffer = await getBuffer(input)
-  const format = options?.format || detectFormat(buffer)
-  const decoder = decoders[format]
-  if (!decoder) {
-    throw new Error(`Unsupported format: ${format}`)
+
+export async function pixelift<F extends SupportedFormat>(
+  input: NodeInput | BrowserInput,
+  options?: PixeliftOptions<F>
+): Promise<PixelData> {
+  if (isNode()) {
+    const buffer = await getBuffer(input as NodeInput)
+    const format = options?.format || detectFormat(buffer)
+    const handler = nodeHandlers[format]
+    if (!handler) throw new Error(`Unsupported format: ${format}`)
+    return handler.decoder(buffer, options || handler.options)
+  } else {
+    return pixelift(input as BrowserInput)
   }
-  return decoder(buffer)
 }
 
 async function getBuffer(input: NodeInput): Promise<Buffer> {
   if (typeof input === 'string') {
     if (/^https?:\/\//.test(input)) {
-      const response = await fetch(input)
+      const response = await fetch(input, { method: 'GET' })
       if (!response.ok) throw new Error(`Failed to fetch: ${response.statusText}`)
       return Buffer.from(await response.arrayBuffer())
     } else {

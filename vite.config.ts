@@ -9,7 +9,7 @@ export default defineConfig({
       entry: './src/index.ts',
       formats: ['es'],
       fileName: 'index',
-      name: 'pixelift',
+      name: 'pixelift'
     },
     rollupOptions: {
       external: [
@@ -19,7 +19,10 @@ export default defineConfig({
         'stream',
         'zlib',
         'buffer',
-        'assert'
+        'assert',
+        // WEBP dependencies
+        'fs',
+        'path'
       ],
       output: {
         chunkFileNames: '[name].[hash].js',
