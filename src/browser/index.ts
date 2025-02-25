@@ -9,7 +9,7 @@ export async function pixelift(input: BrowserInput, options?: unknown): Promise<
     channels: 4
   }
 }
-async function loadAndGetImageData(url: string): Promise<ImageData> {
+async function loadAndGetImageData(url: string | URL): Promise<ImageData> {
   const response = await fetch(url, { mode: 'cors' });
   const blob = await response.blob();
   const bitmap = await createImageBitmap(blob);

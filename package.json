@@ -36,7 +36,6 @@
   "dependencies": {
     "jpeg-js": "^0.4.4",
     "omggif": "^1.0.10",
-    "pngjs": "^7.0.0",
-    "@jsquash/webp": "^1.4.0"
+    "pngjs": "^7.0.0"
   }
 }

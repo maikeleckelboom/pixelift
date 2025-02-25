@@ -12,7 +12,7 @@ export type ImageFormat = 'png' | 'jpeg' | 'jpg' | 'gif' | 'webp'
 
 export type NodeInput = string | Buffer | BufferLike | GifBinary
 
-export type BrowserInput = string
+export type BrowserInput = string | URL
 
 type PixeliftImpl<T> = (input: T) => Promise<PixelData>
 
