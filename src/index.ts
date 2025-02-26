@@ -11,5 +11,6 @@ export async function pixelift(...args: Parameters<Pixelift>): Promise<PixelData
   }
 }
 
+export type { PixelData, Pixelift }
+export { PixeliftError, FormatError, NetworkError } from './shared/error'
 export { convertToArgbIntArray, convertToUint8ClampedArray } from './shared/conversion'
-export * from './types'
