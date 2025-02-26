@@ -39,4 +39,7 @@ export interface BrowserOptions {
   colorSpaceConversion?: 'none' | 'default';
 }
 
-export type PixeliftOptions<F extends ImageFormat> = { format: F } & NodeFormatHandlers[F]['options']
+export type PixeliftOptions<E extends 'node' | 'browser', F extends ImageFormat = ImageFormat> =
+  E extends 'node'
+    ? { format: F } & NodeFormatHandlers[F & NodeImageFormat]['options']
+    : BrowserOptions;

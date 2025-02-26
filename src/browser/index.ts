@@ -1,7 +1,7 @@
-import type { BrowserInput, BrowserOptions, PixelData } from '../types'
-import { PixeliftError, NetworkError } from '../shared'
+import type { BrowserInput, BrowserOptions, PixelData, PixeliftOptions } from '../types'
+import { NetworkError, PixeliftError } from '../shared'
 
-export async function pixelift(input: BrowserInput, options?: BrowserOptions): Promise<PixelData> {
+export async function pixelift(input: BrowserInput, options?: PixeliftOptions<'browser'>): Promise<PixelData> {
   const imageData = await loadAndGetImageData(input, options)
   return {
     data: new Uint8ClampedArray(imageData.data),

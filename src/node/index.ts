@@ -7,28 +7,10 @@ import type { BrowserInput, ImageFormat, NodeFormatHandlers, NodeInput, PixelDat
 import { FormatError, NetworkError, PixeliftError } from '../shared'
 
 const nodeHandlers: NodeFormatHandlers = {
-  png: {
-    options: {},
-    decoder: (buffer, options) => decodePNG(buffer, options)
-  },
-  jpg: {
-    options: {
-      formatAsRGBA: true
-    },
-    decoder: (buffer, options) => decodeJPEG(buffer, options)
-  },
-  jpeg: {
-    options: {
-      formatAsRGBA: true
-    },
-    decoder: (buffer, options) => decodeJPEG(buffer, options)
-  },
-  gif: {
-    options: {
-      frame: 0
-    },
-    decoder: (buffer, options) => decodeGIF(buffer, options)
-  },
+  png: { options: {}, decoder: decodePNG },
+  jpg: { options: { formatAsRGBA: true }, decoder: decodeJPEG },
+  jpeg: { options: { formatAsRGBA: true }, decoder: decodeJPEG },
+  gif: { options: { frame: 0 }, decoder: decodeGIF },
   webp: {
     options: {},
     decoder: () => {
@@ -39,7 +21,7 @@ const nodeHandlers: NodeFormatHandlers = {
 
 export async function pixelift<F extends ImageFormat>(
   input: NodeInput | BrowserInput,
-  options?: PixeliftOptions<F>
+  options?: PixeliftOptions<'node', F>
 ): Promise<PixelData> {
   if (isNode()) {
     const buffer = await getBuffer(input as NodeInput)
