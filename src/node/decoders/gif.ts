@@ -1,7 +1,7 @@
 import { type GifBinary, GifReader } from 'omggif'
-import type { FormatHandlers, PixelData } from '../../types.ts'
+import type { NodeFormatHandlers, PixelData } from '../../types.ts'
 
-export default function decode(buffer: GifBinary, options?: FormatHandlers['gif']['options']): PixelData {
+export default function decode(buffer: GifBinary, options?: NodeFormatHandlers['gif']['options']): PixelData {
   const reader = new GifReader(buffer)
   const { frame = 0 } = options ?? {}
   if (frame >= reader.numFrames()) {
