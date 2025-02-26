@@ -18,14 +18,7 @@ export type NodeInput = string | BufferLike | GifBinary
 export type BrowserInput = string | URL | File | ImageBitmapSource
 
 type PixeliftImpl<T> = (input: T) => Promise<PixelData>
-
 export type Pixelift = PixeliftImpl<NodeInput> | PixeliftImpl<BrowserInput>
-
-export type BrowserOptions = {
-  colorSpace?: PredefinedColorSpace;
-  premultiplyAlpha?: PremultiplyAlpha;
-  colorSpaceConversion?: 'none' | 'default';
-}
 
 export type NodeFormatHandler<Options = never> = {
   options: Options
@@ -38,6 +31,12 @@ export interface NodeFormatHandlers {
   jpeg: NodeFormatHandler<{ formatAsRGBA?: boolean }>
   gif: NodeFormatHandler<{ frame?: number }>
   webp: NodeFormatHandler<{}>
+}
+
+export interface BrowserOptions {
+  colorSpace?: PredefinedColorSpace;
+  premultiplyAlpha?: PremultiplyAlpha;
+  colorSpaceConversion?: 'none' | 'default';
 }
 
 export type PixeliftOptions<F extends ImageFormat> = { format: F } & NodeFormatHandlers[F]['options']
