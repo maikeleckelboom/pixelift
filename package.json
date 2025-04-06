@@ -1,0 +1,11 @@
+{
+  "name": "pixelift3",
+  "module": "src/index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "^1.2.8"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
