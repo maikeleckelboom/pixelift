@@ -1,8 +1,8 @@
 import {readFileSync} from "fs";
 import {detect} from "./node/detect.ts";
-import {DecoderRegistry} from "./decoders/registry.ts";
-import {JPEGFactory} from "./decoders/factories/jpeg.ts";
-import {SharpFactory} from "./decoders/factories/sharp.ts";
+import {DecoderRegistry} from "./node/decoders/registry.ts";
+import {JPEGFactory} from "./node/decoders/factories/jpeg.ts";
+import {SharpFactory} from "./node/decoders/factories/sharp.ts";
 
 DecoderRegistry.registerFactory(JPEGFactory);
 DecoderRegistry.registerFactory(SharpFactory);

@@ -3,9 +3,50 @@
   "module": "src/index.ts",
   "type": "module",
   "devDependencies": {
-    "@types/bun": "^1.2.8"
+    "vite": "^6.2.5",
+    "vite-plugin-dts": "^4.5.0",
+    "vitest": "^3.1.1",
+    "@types/bun": "^1.2.8",
+    "@playwright/test": "^1.51.1",
+    "@types/jpeg-js": "^0.3.7",
+    "@types/omggif": "^1.0.5",
+    "@types/pngjs": "^6.0.5",
+    "@types/sharp": "^0.32.0",
+    "@vitest/browser": "^3.1.1",
+    "jpeg-js": "^0.4.4",
+    "omggif": "^1.0.10",
+    "playwright": "^1.51.1",
+    "pngjs": "^7.0.0",
+    "prettier": "^3.5.3",
+    "sharp": ">=0.32.0",
+    "typescript": "^5"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "sharp": ">=0.32.0",
+    "jpeg-js": "^0.4.4",
+    "pngjs": "",
+    "omggif": "^1.0.10"
+  },
+  "peerDependenciesMeta": {
+    "sharp": {
+      "optional": true,
+      "description": "Recommended for optimal performance (50x faster processing)"
+    },
+    "jpeg-js": {
+      "optional": true,
+      "description": "Fallback JPEG decoder when sharp is not installed"
+    },
+    "pngjs": {
+      "optional": true,
+      "description": "Fallback PNG decoder when sharp is not installed"
+    },
+    "omggif": {
+      "optional": true,
+      "description": "Fallback GIF decoder when sharp is not installed"
+    }
+  },
+  "scripts": {
+    "dev": "vitest --watch",
+    "test": "vitest run"
   }
 }

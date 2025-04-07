@@ -6,17 +6,14 @@ export class DecoderRegistry {
 
     static registerFactory(factory: DecoderFactory) {
         this.factories.push(factory);
-        // Sort by priority descending
         this.factories.sort((a, b) => b.priority - a.priority);
     }
 
     static async getDecoder(format: string): Promise<Decoder> {
-        // Check cache first
         if (this.decoderCache.has(format)) {
             return this.decoderCache.get(format)!;
         }
 
-        // Find all candidates for format
         const candidates = this.factories.filter(f => f.formats.includes(format));
 
         for (const factory of candidates) {
