@@ -33,8 +33,8 @@ export class DecoderRegistry {
     }
 
     private static async tryCreateDecoder(factory: DecoderFactory): Promise<Decoder> {
-        if (factory.requires) {
-            for (const dep of factory.requires) {
+        if (factory.dependencies) {
+            for (const dep of factory.dependencies) {
                 if (!(await this.isInstalled(dep))) {
                     throw new Error(`Missing dependency: ${dep}`);
                 }

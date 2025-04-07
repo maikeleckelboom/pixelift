@@ -2,7 +2,7 @@
 import type {DecoderFactory} from '../types';
 import { JpegDecoder } from '../implementations/jpeg';
 
-export const jpegFactory: DecoderFactory = {
+export const JPEGFactory: DecoderFactory = {
     name: 'jpeg-decoder',
     formats: ['jpg', 'jpeg'],
     priority: 1,

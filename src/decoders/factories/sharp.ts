@@ -4,10 +4,10 @@ import type {DecoderFactory} from "../types.ts";
 export const SharpFactory: DecoderFactory = {
     name: 'sharp',
     formats: ['jpg', 'jpeg', 'png', 'webp', 'tiff', 'avif'],
-    priority: 1000, // High priority for sharp
-    requires: ['sharp'],
+    priority: 1000, // High priority
+    dependencies: ['sharp'],
     async create() {
-        // @ts-expect-error `sharp` might not be installed
+        // @ts-ignore `sharp` might not be installed
         const sharp = await import('sharp');
         return {
             async decode(buffer) {
@@ -17,7 +17,7 @@ export const SharpFactory: DecoderFactory = {
                     .toBuffer({resolveWithObject: true});
 
                 return {
-                    data: new Uint8Array(data.buffer),
+                    data:data.buffer,
                     width: info.width,
                     height: info.height,
                     channels: info.channels as 3 | 4

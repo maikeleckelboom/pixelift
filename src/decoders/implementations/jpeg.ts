@@ -2,9 +2,8 @@
 import type {Decoder, PixelData} from "../types.ts";
 
 export class JpegDecoder implements Decoder {
-    async decode(buffer: Uint8Array): Promise<PixelData> {
-        // Check if jpeg-js is available
-        // @ts-ignore
+    async decode(buffer: Buffer): Promise<PixelData> {
+        // @ts-ignore `jpeg-js` might not be installed
         const jpeg = await import('jpeg-js');
         return jpeg.decode(buffer);
     }

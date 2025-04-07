@@ -1,17 +1,17 @@
 export interface PixelData {
-    data: Uint8Array;
+    data: Uint8ClampedArray;
     width: number;
     height: number;
 }
 
 export interface Decoder {
-    decode(buffer: Uint8Array): Promise<PixelData>;
+    decode(buffer: Uint8Array | Buffer, options?: Record<string, unknown>): Promise<PixelData>;
 }
 
 export interface DecoderFactory {
     readonly name: string;
     readonly formats: string[];
     readonly priority: number; // Higher = better
-    readonly requires?: string[]; // Package dependencies
+    readonly dependencies?: string[]; // Package dependencies
     create(): Promise<Decoder>;
 }

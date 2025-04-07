@@ -1,9 +1,11 @@
-import {DecoderRegistry} from "./decoders/registry.ts";
-import {jpegFactory} from "./decoders/factories/jpeg.ts";
-import {detect} from "./node/detect.ts";
 import {readFileSync} from "fs";
+import {detect} from "./node/detect.ts";
+import {DecoderRegistry} from "./decoders/registry.ts";
+import {JPEGFactory} from "./decoders/factories/jpeg.ts";
+import {SharpFactory} from "./decoders/factories/sharp.ts";
 
-DecoderRegistry.registerFactory(jpegFactory);
+DecoderRegistry.registerFactory(JPEGFactory);
+DecoderRegistry.registerFactory(SharpFactory);
 
 export async function decode(buffer: Buffer, format?: string) {
     format ??= detect(buffer);
