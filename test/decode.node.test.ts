@@ -12,12 +12,7 @@ describe('decode (Node)', () => {
 
   it('should decode a 3-channel JPG image from a file path', async () => {
     const image = readFileSync('./test/assets/test.jpg');
-    const result = await pixelift(image, {
-      decoder: 'sharp',
-      options: {
-        formatAsRGBA: false,
-      },
-    });
+    const result = await pixelift(image);
     expect(result.data.filter(Boolean).length).toBeGreaterThan(0);
   });
 

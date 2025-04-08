@@ -7,12 +7,12 @@ export default defineConfig({
       entry: {
         main: 'src/index.ts',
         node: 'src/node/index.ts',
-        browser: 'src/browser.ts'
+        browser: 'src/browser/index.ts'
       },
       formats: ['es']
     },
     rollupOptions: {
-      external: ['sharp', 'jpeg-js', 'pngjs', 'omggif']
+      external: ['sharp', 'jpeg-js', 'pngjs', 'omggif', "node:fs", "node:path", "node:stream", "node:buffer"],
     }
   },
   plugins: [dts({ entryRoot: 'src' })]

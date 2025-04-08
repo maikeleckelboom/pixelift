@@ -48,7 +48,6 @@ export function createOffscreenCanvasContext(
   const context = canvas.getContext('2d', {
     alpha: options?.alpha,
     colorSpace: options?.colorSpace,
-    willReadFrequently: options?.willReadFrequently,
   });
   if (!context) {
     throw new PixeliftError('Failed to get 2D context');

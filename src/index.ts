@@ -12,7 +12,7 @@ let pixeliftImpl: Pixelift | undefined;
 export async function pixelift(...args: Parameters<Pixelift>): Promise<PixelData> {
   if (isNode()) {
     const { pixelift: pixeliftNode } = await import('./node');
-    pixeliftImpl = pixeliftNode as Pixelift;
+    pixeliftImpl = pixeliftNode as Pixelift
   } else {
     const { pixelift: pixeliftBrowser } = await import('./browser');
     pixeliftImpl = pixeliftBrowser as Pixelift;

@@ -24,20 +24,10 @@ export interface BrowserOptions {
    */
   colorSpace?: PredefinedColorSpace;
   /**
-   * Premultiply alpha channel
-   * Default: false
-   */
-  premultiplyAlpha?: PremultiplyAlpha;
-  /**
    * Color space conversion
    * Default: 'default'
    */
   colorSpaceConversion?: 'none' | 'default';
-  /**
-   * Indicates frequent reads
-   * Default: false
-   */
-  willReadFrequently?: boolean;
   /**
    * Indicates alpha channel presence
    * Default: false
