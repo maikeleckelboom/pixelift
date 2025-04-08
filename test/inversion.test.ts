@@ -1,6 +1,5 @@
-import { describe, expect, it ,afterEach} from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { packPixels, unpackPixels } from '../src/core';
-
 
 describe('Inverting Colors', () => {
 
@@ -23,7 +22,7 @@ describe('Inverting Colors', () => {
 
       return (
         (a << 24) | ((255 - r) << 16) | ((255 - g) << 8) | (255 - b)
-      )
+      );
     });
 
     // Convert the inverted color back to a buffer.

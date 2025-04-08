@@ -1,7 +1,7 @@
 import { promises as fs } from 'node:fs';
 import { Buffer } from 'node:buffer';
-import { isNode } from '../core/env';
-import { NetworkError, PixeliftError } from '../core';
+import { isNode } from '../../core/env.ts';
+import { NetworkError, PixeliftError } from '../../core';
 import type { SharpInput } from 'sharp';
 
 /**

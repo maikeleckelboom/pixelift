@@ -1,17 +1,13 @@
-export interface PixelData {
-    data: Uint8ClampedArray;
-    width: number;
-    height: number;
-}
+import type { PixelData } from '../../types.ts';
 
 export interface Decoder {
-    decode(buffer: Uint8Array | Buffer, options?: Record<string, unknown>): Promise<PixelData>;
+  decode(buffer: Uint8Array | Uint8ClampedArray | Buffer, options?: Record<string, unknown>): Promise<PixelData>;
 }
 
 export interface DecoderFactory {
-    readonly name: string;
-    readonly formats: string[];
-    readonly priority: number; // Higher = better
-    readonly dependencies?: string[]; // Package dependencies
-    create(): Promise<Decoder>;
+  readonly name: string;
+  readonly formats: string[];
+  readonly priority: number; // Higher = better
+  readonly dependencies?: string[]; // Package dependencies
+  create(): Promise<Decoder>;
 }

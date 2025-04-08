@@ -1,5 +1,3 @@
-// src/shared/error.ts
-
 export const ErrorCode = {
   FORMAT_UNSUPPORTED: 'ERR_FORMAT_UNSUPPORTED',
   NETWORK_FAILURE: 'ERR_NETWORK_FAILURE',

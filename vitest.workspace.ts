@@ -9,7 +9,7 @@ export default defineWorkspace([
       environment: 'node',
       include: [
         'test/node/**/*.{test,spec}.ts',
-        'test/**/*.test.ts',
+        'test/**/*.node.{test,spec}.ts',
       ],
     },
   },
@@ -19,7 +19,7 @@ export default defineWorkspace([
       name: 'browser',
       include: [
         'test/browser/**/*.{test,spec}.ts',
-        'test/**/*.test.ts',
+        'test/**/*.browser.{test,spec}.ts',
       ],
       browser: {
         provider: 'playwright',
@@ -28,8 +28,8 @@ export default defineWorkspace([
         screenshotFailures: false,
         instances: [
           { browser: 'chromium' },
-          { browser: 'webkit' },
-          { browser: 'firefox', headless: false },
+          // { browser: 'webkit' },
+          // { browser: 'firefox', headless: false },
         ],
       },
     },

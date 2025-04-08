@@ -1,5 +1,6 @@
-import type { Decoder, PixelData } from '../types.ts';
+import type { Decoder } from '../types.ts';
 import type { SharpInput } from 'sharp';
+import type { PixelData } from '../../../types.ts';
 
 export class SharpDecoder implements Decoder {
   async decode(buffer: SharpInput): Promise<PixelData> {

@@ -1,19 +1,21 @@
-import {readFileSync} from "fs";
-import {detect} from "./node/detect.ts";
-import {DecoderRegistry} from "./node/decoders/registry.ts";
-import {JPEGFactory} from "./node/decoders/factories/jpeg.ts";
-import {SharpFactory} from "./node/decoders/factories/sharp.ts";
+import type { PixelData, Pixelift } from './types.ts';
+import { isNode } from './core/env.ts';
 
-DecoderRegistry.registerFactory(JPEGFactory);
-DecoderRegistry.registerFactory(SharpFactory);
+// DecoderRegistry.registerFactory(JpegFactory);
+// DecoderRegistry.registerFactory(PngFactory);
+// DecoderRegistry.registerFactory(SharpFactory);
+// DecoderRegistry.registerFactory(GifFactory);
 
-export async function decode(buffer: Buffer, format?: string) {
-    format ??= detect(buffer);
-    const decoder = await DecoderRegistry.getDecoder(format);
-    return decoder.decode(buffer);
-}
+let pixeliftImpl: Pixelift | undefined;
 
-export async function execute() {
-    const buffer = readFileSync('./test/assets/test.jpg');
-    return await decode(buffer)
+
+export async function pixelift(...args: Parameters<Pixelift>): Promise<PixelData> {
+  if (isNode()) {
+    const { pixelift: pixeliftNode } = await import('./node');
+    pixeliftImpl = pixeliftNode as Pixelift;
+  } else {
+    const { pixelift: pixeliftBrowser } = await import('./browser');
+    pixeliftImpl = pixeliftBrowser as Pixelift;
+  }
+  return pixeliftImpl(...args);
 }
