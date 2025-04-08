@@ -1,6 +1,13 @@
 import type { Decoder, DecoderFactory } from './types.ts';
 import { MissingDependencyError } from '../../core';
 
+const packageLookup: Record<string, () => Promise<any>> = {
+  sharp: () => import('sharp'),
+  'jpeg-js': () => import('jpeg-js'),
+  pngjs: () => import('pngjs'),
+  omggif: () => import('omggif'),
+};
+
 export class DecoderRegistry {
   private static factories: DecoderFactory[] = [];
   private static decoderCache = new Map<string, Decoder>();
@@ -51,7 +58,8 @@ export class DecoderRegistry {
   private static async tryCreateDecoder(factory: DecoderFactory): Promise<Decoder> {
     if (factory.dependencies) {
       for (const dependency of factory.dependencies) {
-        if (!(await this.isInstalled(dependency))) {
+        const isInstalled = await this.isInstalled(dependency);
+        if (!isInstalled) {
           throw new MissingDependencyError({
             name: dependency,
             requiredBy: factory.name,
@@ -64,22 +72,22 @@ export class DecoderRegistry {
     return factory.create();
   }
 
+  /**
+   * Check if the package is installed by dynamically importing it from the lookup map.
+   * This only attempts import for packages we know about.
+   */
   private static async isInstalled(pkg: string): Promise<boolean> {
+    const loader = packageLookup[pkg];
+    if (!loader) {
+      // Package not in our allowed map, so we consider it "not installed"
+      return false;
+    }
     try {
-      await import(pkg);
+      await loader();
       return true;
     } catch {
       return false;
     }
   }
 
-  private static async verifyDependencies(deps: string[]): Promise<void> {
-    for (const dep of deps) {
-      try {
-        await import(dep);
-      } catch {
-        throw new Error(`Missing required dependency: ${dep}`);
-      }
-    }
-  }
 }

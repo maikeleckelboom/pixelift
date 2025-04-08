@@ -17,11 +17,9 @@
     }
   },
   "devDependencies": {
-    "vite": "^6.2.5",
-    "vite-plugin-dts": "^4.5.0",
-    "vitest": "^3.1.1",
-    "@types/bun": "^1.2.8",
     "@playwright/test": "^1.51.1",
+    "@rollup/plugin-dynamic-import-vars": "^2.1.5",
+    "@types/bun": "^1.2.8",
     "@types/jpeg-js": "^0.3.7",
     "@types/omggif": "^1.0.5",
     "@types/pngjs": "^6.0.5",
@@ -32,8 +30,11 @@
     "playwright": "^1.51.1",
     "pngjs": "^7.0.0",
     "prettier": "^3.5.3",
-    "sharp": ">=0.32.0",
-    "typescript": "^5"
+    "sharp": "^0.34.0",
+    "typescript": "^5",
+    "vite": "^6.2.5",
+    "vite-plugin-dts": "^4.5.0",
+    "vitest": "^3.1.1"
   },
   "peerDependencies": {
     "sharp": ">=0.32.0",

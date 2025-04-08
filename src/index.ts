@@ -1,21 +1,18 @@
 import type { PixelData, Pixelift } from './types.ts';
 import { isNode } from './core/env.ts';
-
-// DecoderRegistry.registerFactory(JpegFactory);
-// DecoderRegistry.registerFactory(PngFactory);
-// DecoderRegistry.registerFactory(SharpFactory);
-// DecoderRegistry.registerFactory(GifFactory);
-
-let pixeliftImpl: Pixelift | undefined;
-
+import { DecoderRegistry } from './node/decoders/registry.ts';
+import { SharpFactory } from './node/decoders/factories/sharp.ts';
 
 export async function pixelift(...args: Parameters<Pixelift>): Promise<PixelData> {
   if (isNode()) {
-    const { pixelift: pixeliftNode } = await import('./node');
-    pixeliftImpl = pixeliftNode as Pixelift
+    const { pixelift: nodeImpl } = await import('./node');
+    return nodeImpl(...(args as Parameters<typeof nodeImpl>));
   } else {
-    const { pixelift: pixeliftBrowser } = await import('./browser');
-    pixeliftImpl = pixeliftBrowser as Pixelift;
+    const { pixelift: browserImpl } = await import('./browser');
+    return browserImpl(...(args as Parameters<typeof browserImpl>));
   }
-  return pixeliftImpl(...args);
 }
+
+export { DecoderRegistry, SharpFactory };
+
+export { packPixels, unpackPixels } from './core/conversion.ts';
