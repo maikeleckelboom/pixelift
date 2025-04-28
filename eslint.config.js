@@ -1,8 +1,7 @@
-// eslint.config.mjs
 import { defineConfig } from 'eslint/config';
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
-import parser from '@typescript-eslint/parser';       // ← import the object
+import parser from '@typescript-eslint/parser';
 import prettier from 'eslint-config-prettier';
 import globals from 'globals';
 
@@ -16,7 +15,6 @@ export default defineConfig([
   // 3. Prettier overrides (turn off style conflicts)
   prettier,
 
-  // 4. Ignored files (flat config replaces .eslintignore)
   {
     ignores: [
       'dist/',
@@ -52,7 +50,6 @@ export default defineConfig([
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/explicit-function-return-type': 'warn',
-      '@typescript-eslint/no-empty-object-type': 'off'
     }
   }
 ]);

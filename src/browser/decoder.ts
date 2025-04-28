@@ -41,22 +41,20 @@ function loadImageFromURL(sourceURL: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();
     image.crossOrigin = 'anonymous';
-
-    image.onload = () => resolve(image);
-    image.onerror = () => {
+    image.onload = (): void => resolve(image);
+    image.onerror = (): void => {
       reject(
         PixeliftError.fileReadFailed(`Failed to load image from URL`, {
           cause: new Error('Check CORS configuration or URL validity')
         })
       );
     };
-
     image.src = sourceURL;
   });
 }
 
-async function convertSVGToBitmap(svgBlob: Blob, sourceURL: string): Promise<ImageBitmap> {
-  const objectURL = URL.createObjectURL(svgBlob);
+async function convertSVGToBitmap(imageBlob: Blob): Promise<ImageBitmap> {
+  const objectURL = URL.createObjectURL(imageBlob);
   try {
     const image = await loadImageFromURL(objectURL);
 
@@ -104,11 +102,11 @@ async function fetchAndDecodeImage(source: string | URL): Promise<ImageBitmap> {
     const debugURL = new URL(sourceURL, location.origin).toString();
     throw PixeliftError.decodeFailed(
       `Expected an image but received HTML content from ${debugURL}. This usually indicates:\n` +
-      `1. The URL points to a webpage instead of an image file\n` +
-      `2. The server returned an error page (e.g., 404, 403, 500)\n` +
-      `3. Authentication is required or cookies are missing\n` +
-      `4. The URL protocol is incorrect (Try https:// instead of http://)\n` +
-      `Tip: Open the URL in a browser to see what content is actually being returned`,
+        `1. The URL points to a webpage instead of an image file\n` +
+        `2. The server returned an error page (e.g., 404, 403, 500)\n` +
+        `3. Authentication is required or cookies are missing\n` +
+        `4. The URL protocol is incorrect (Try https:// instead of http://)\n` +
+        `Tip: Open the URL in a browser to see what content is actually being returned`,
       { cause: new Error(`Invalid content type: ${contentType} for URL: ${debugURL}`) }
     );
   }
@@ -116,7 +114,7 @@ async function fetchAndDecodeImage(source: string | URL): Promise<ImageBitmap> {
   if (contentType && !contentType.startsWith('image/') && !sourceURL.endsWith('.svg')) {
     throw PixeliftError.decodeFailed(
       `Expected an image but received content of type: ${contentType} from ${sourceURL}.\n` +
-      `Ensure the URL points directly to an image file (jpg, png, gif, etc.)`,
+        `Ensure the URL points directly to an image file (jpg, png, gif, etc.)`,
       { cause: new Error(`Invalid content type for image processing`) }
     );
   }
@@ -125,7 +123,7 @@ async function fetchAndDecodeImage(source: string | URL): Promise<ImageBitmap> {
 
   try {
     if (imageBlob.type === 'image/svg+xml' || sourceURL.endsWith('.svg')) {
-      return convertSVGToBitmap(imageBlob, sourceURL);
+      return convertSVGToBitmap(imageBlob);
     }
 
     return await createImageBitmap(imageBlob);

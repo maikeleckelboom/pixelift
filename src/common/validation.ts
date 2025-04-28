@@ -36,7 +36,7 @@ export function validateBrowserInput(input: unknown): input is PixeliftBrowserIn
   );
 }
 
-export function isImageBitmapSource(src: any): src is ImageBitmapSource {
+export function isImageBitmapSource(src: unknown): src is ImageBitmapSource {
   return (
     src instanceof HTMLImageElement ||
     src instanceof SVGImageElement ||
