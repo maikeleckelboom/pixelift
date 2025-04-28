@@ -1,0 +1,82 @@
+{
+  "name": "pixelift",
+  "version": "0.1.0",
+  "description": "A modern, universal image processing library that seamlessly extracts pixel data across Node.js and browser environments. Utilizing Sharp on the server and Canvas API in the browser, it offers a consistent interface for efficient image manipulation and analysis.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Maikel Eckelboom",
+  "module": "./dist/index.js",
+  "main": "./dist/index.cjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.js"
+    },
+    "./browser": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/browser.cjs",
+      "import": "./dist/browser.js"
+    },
+    "./server": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/server.cjs",
+      "import": "./dist/server.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "browser": {
+    "sharp": false
+  },
+  "engines": {
+    "node": ">=18",
+    "npm": ">=8"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "dev": "vitest --watch",
+    "test": "vitest",
+    "format": "prettier --write .",
+    "build": "tsup",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test && npm run build"
+  },
+  "keywords": [
+    "image",
+    "pixels",
+    "processing",
+    "universal",
+    "ssr",
+    "nodejs",
+    "sharp",
+    "browser",
+    "canvas",
+    "vision"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maikeleckelboom/pixelift.git"
+  },
+  "homepage": "https://github.com/maikeleckelboom/pixelift#readme",
+  "bugs": {
+    "url": "https://github.com/maikeleckelboom/pixelift/issues"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "@types/sharp": "^0.32.0",
+    "@vitest/browser": "^3.1.2",
+    "vitest": "^3.1.2",
+    "playwright": "^1.52.0",
+    "prettier": "^3.5.3",
+    "tsup": "^8.4.0",
+    "type-fest": "^4.40.0",
+    "sharp": "^0.34.1"
+  },
+  "optionalDependencies": {
+    "sharp": "^0.34.1"
+  }
+}
