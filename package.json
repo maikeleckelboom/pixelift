@@ -2,9 +2,10 @@
   "name": "pixelift",
   "version": "0.1.0",
   "description": "A modern, universal image processing library that seamlessly extracts pixel data across Node.js and browser environments. Utilizing Sharp on the server and Canvas API in the browser, it offers a consistent interface for efficient image manipulation and analysis.",
+  "author": "Maikel Eckelboom",
   "type": "module",
   "license": "MIT",
-  "author": "Maikel Eckelboom",
+  "sideEffects": false,
   "module": "./dist/index.js",
   "main": "./dist/index.cjs",
   "types": "./dist/index.d.ts",
@@ -31,30 +32,41 @@
     "sharp": false
   },
   "engines": {
-    "node": ">=18",
-    "npm": ">=8"
+    "node": ">=20.0.0",
+    "npm": ">=9.0.0",
+    "bun": ">=1.0.0"
   },
+  "packageManager": "bun@1.2.5",
   "publishConfig": {
     "access": "public"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/maikeleckelboom"
   },
   "scripts": {
     "dev": "vitest --watch",
     "test": "vitest",
+    "lint": "eslint 'src/**/*.ts' --max-warnings=0",
+    "lint:soft": "eslint 'src/**/*.ts'",
+    "lint:fix": "eslint 'src/**/*.ts' --fix",
     "format": "prettier --write .",
     "build": "tsup",
-    "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run build"
   },
   "keywords": [
-    "image",
-    "pixels",
-    "processing",
-    "universal",
-    "ssr",
-    "nodejs",
-    "sharp",
     "browser",
     "canvas",
+    "data",
+    "decode",
+    "extract",
+    "image",
+    "nodejs",
+    "pixels",
+    "processing",
+    "sharp",
+    "ssr",
+    "universal",
     "vision"
   ],
   "repository": {
@@ -66,17 +78,25 @@
     "url": "https://github.com/maikeleckelboom/pixelift/issues"
   },
   "devDependencies": {
-    "typescript": "^5",
-    "@types/sharp": "^0.32.0",
+    "@eslint/js": "^9.25.1",
+    "@types/node": "^22.15.3",
     "@vitest/browser": "^3.1.2",
-    "vitest": "^3.1.2",
+    "eslint": "^9.25.1",
+    "eslint-config-prettier": "^10.1.2",
+    "globals": "^16.0.0",
     "playwright": "^1.52.0",
     "prettier": "^3.5.3",
     "tsup": "^8.4.0",
     "type-fest": "^4.40.0",
-    "sharp": "^0.34.1"
+    "typescript": "^5",
+    "typescript-eslint": "^8.31.1",
+    "vitest": "^3.1.2"
   },
   "optionalDependencies": {
     "sharp": "^0.34.1"
+  },
+  "dependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.31.1",
+    "@typescript-eslint/parser": "^8.31.1"
   }
 }

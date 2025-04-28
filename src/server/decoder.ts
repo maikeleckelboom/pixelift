@@ -5,10 +5,10 @@ import type { PixeliftServerInput, PixeliftServerOptions } from './types.ts';
 
 let sharpPromise: Promise<typeof import('sharp')> | null = null;
 
-async function getSharp() {
+async function getSharp(): Promise<typeof import('sharp')> {
   if (!sharpPromise) {
     try {
-      sharpPromise = import('sharp') as Promise<typeof import('sharp')>;
+      sharpPromise = import('sharp').then((mod) => mod.default);
     } catch (cause) {
       throw new Error(
         'The "sharp" dependency is required for server-side image processing. ' +
@@ -30,7 +30,7 @@ export async function decode(
   try {
     const buffer = await getBuffer(input);
     const sharpModule = await getSharp();
-    let pipeline = sharpModule.default(buffer).toColorspace('srgb').ensureAlpha();
+    let pipeline = sharpModule(buffer).toColorspace('srgb').ensureAlpha();
 
     if (options.width || options.height) {
       pipeline = pipeline.resize(options.width, options.height, {
@@ -41,7 +41,7 @@ export async function decode(
 
     // Explicit 8-bit RGBA raw output
     const { data, info } = await pipeline
-      .raw({ depth: 'uchar', channels: 4 })
+      .raw({ depth: 'uchar' })
       .toBuffer({ resolveWithObject: true });
 
     // Match the browser's Uint8ClampedArray behavior
@@ -51,7 +51,7 @@ export async function decode(
       data: clamped,
       width: info.width,
       height: info.height,
-      channels: info.channels
+      channels: 4
     };
   } catch (cause) {
     throw PixeliftError.decodeFailed(`Server error: failed to process image.`, { cause });

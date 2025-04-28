@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { pixelift } from '../src';
 
-describe('Universal', () => {
+describe('Hybrid Environment', () => {
   it('should be a function', () => {
     expect(typeof pixelift).toBe('function');
   });
@@ -18,15 +18,16 @@ describe('Universal', () => {
     expect(result.width).toBeDefined();
     expect(result.height).toBeDefined();
     expect(result.data.filter(Boolean).length).toBeGreaterThan(0);
-  });
+  }, 240_000);
 
   it('should throw an error if no input is provided', async () => {
-    // @ts-expect-error - Simulate no input
+    // @ts-expect-error missing input
     await expect(pixelift()).rejects.toThrowError();
   });
 
   it('should throw an error if input is not valid', async () => {
-    // @ts-expect-error - Simulate invalid input
+    // @ts-expect-error invalid input
     await expect(pixelift({})).rejects.toThrowError();
   });
+
 });

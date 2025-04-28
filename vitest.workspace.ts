@@ -17,10 +17,8 @@ export default defineWorkspace([
       name: 'browser',
       include: ['**/*.browser.test.ts', '**/*.test.ts'],
       exclude: ['**/*.server.test.ts'],
-      testTimeout: 120_000,
       browser: {
         provider: 'playwright',
-        connectTimeout: 120_000,
         enabled: true,
         headless: true,
         screenshotFailures: false,

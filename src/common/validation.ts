@@ -5,7 +5,7 @@ export function isString(input: unknown): input is string {
   return typeof input === 'string' || input instanceof String;
 }
 
-export function isStringOrURL(src: any): src is string | URL {
+export function isStringOrURL(src: unknown): src is string | URL {
   return isString(src) || src instanceof URL;
 }
 

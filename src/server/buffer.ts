@@ -13,8 +13,8 @@ export async function getBuffer(input: PixeliftServerInput): Promise<Buffer> {
 
   // Check for data URL
   const dataMatch = input.match(/^data:([^;]+);base64,(.*)$/);
-  if (dataMatch) {
-    return Buffer.from(dataMatch[2]!, 'base64');
+  if (dataMatch && dataMatch[2]) {
+    return Buffer.from(dataMatch[2], 'base64');
   }
 
   let url: URL;

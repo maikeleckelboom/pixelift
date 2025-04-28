@@ -6,7 +6,7 @@ export enum PixeliftErrorCode {
 
 export class PixeliftError extends Error {
   public readonly code: PixeliftErrorCode;
-  public details?: Record<string, any>;
+  // public details?: Record<string, unknown>;
 
   constructor(
     code: PixeliftErrorCode,
@@ -48,14 +48,14 @@ export class PixeliftError extends Error {
 }
 
 // TODO: Improve error handling through-out app
-export function createError(
-  code: PixeliftErrorCode,
-  message: string,
-  details?: Record<string, any>
-): PixeliftError {
-  const error = new PixeliftError(code, message);
-  if (details) {
-    error.details = details;
-  }
-  return error;
-}
+// export function createError(
+//   code: PixeliftErrorCode,
+//   message: string,
+//   details?: Record<string, any>
+// ): PixeliftError {
+//   const error = new PixeliftError(code, message);
+//   if (details) {
+//     error.details = details;
+//   }
+//   return error;
+// }

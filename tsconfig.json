@@ -24,6 +24,7 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
+    "esModuleInterop": true,
     "paths": {
       "pixelift": [
         "./src/types.ts"
@@ -34,9 +35,10 @@
       "pixelift/server": [
         "./src/server/types.ts"
       ]
-    }
-  },
-  "exclude": [
-    "node_modules"
-  ]
+    },
+    "types": [
+      "node",
+      "sharp"
+    ]
+  }
 }
