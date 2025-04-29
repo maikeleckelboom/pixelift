@@ -20,7 +20,7 @@ export default defineConfig([
     dts: true,
     clean: true,
     minify: true,
-    splitting: false
+    splitting: false,
   },
   {
     name: 'server',

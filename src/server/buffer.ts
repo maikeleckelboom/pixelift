@@ -1,6 +1,7 @@
-import type { PixeliftServerInput } from './types.ts';
+import type { PixeliftServerInput, PixeliftServerOptions } from './types.ts';
+import { getRepositoryUrl, getVersion } from '../shared/env.ts';
 
-export async function getBuffer(input: PixeliftServerInput): Promise<Buffer> {
+export async function getBuffer(input: PixeliftServerInput, options:PixeliftServerOptions = {}): Promise<Buffer> {
   if (Buffer.isBuffer(input)) {
     return input;
   }
@@ -30,7 +31,13 @@ export async function getBuffer(input: PixeliftServerInput): Promise<Buffer> {
 
     case 'http:':
     case 'https:': {
-      const res = await fetch(url.toString());
+      const res = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          'User-Agent': `Pixelift/${getVersion()} (+${getRepositoryUrl()})`,
+          ...options.headers,
+        },
+      });
       if (!res.ok) {
         throw new Error(`HTTP request failed: ${res.status} ${res.statusText}`);
       }

@@ -1,6 +1,6 @@
 import type { PixeliftBrowserInput, PixeliftBrowserOptions } from './types.ts';
 import { PixeliftError } from '../shared/errors.ts';
-import {  isStringOrURL } from '../shared/validation.ts';
+import { isStringOrURL } from '../shared/validation.ts';
 import type { PixelData } from '../types.ts';
 import { isImageBitmapSource, isWebCodecsSupportedForType } from './validation.ts';
 
@@ -15,7 +15,7 @@ export async function decodeBlobWithWebCodecs(
     desiredWidth: options.width,
     desiredHeight: options.height,
     colorSpaceConversion: 'none',
-    // @ts-expect-error (WebCodecs is not fully typed yet)
+    // @ts-expect-error `WebCodecs API` is not yet in TS
     premultiplyAlpha: 'none'
   });
 
@@ -36,9 +36,6 @@ export async function decodeBlobWithWebCodecs(
   return { data, width, height };
 }
 
-/**
- * Fallback path using createImageBitmap + OffscreenCanvas
- */
 async function decodeWithOffscreenCanvas(
   source: PixeliftBrowserInput,
   options: PixeliftBrowserOptions = {}
@@ -47,9 +44,6 @@ async function decodeWithOffscreenCanvas(
   return decoder.decode(source, options);
 }
 
-/**
- * Resilient decoder: tries WebCodecs, auto-fallback on any failure
- */
 export async function decode(
   source: PixeliftBrowserInput,
   options: PixeliftBrowserOptions = {}
@@ -58,7 +52,7 @@ export async function decode(
 
   if (isStringOrURL(source)) {
     const url = new URL(source.toString(), location.origin).toString();
-    const response = await fetch(url, { mode: 'cors' });
+    const response = await fetch(url, { mode: 'cors', headers: options.headers });
     if (!response.ok) {
       throw PixeliftError.requestFailed(`Fetch failed (${response.status})`);
     }
