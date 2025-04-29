@@ -49,6 +49,7 @@
     "test": "vitest",
     "test:browser": "vitest --browser",
     "test:node": "vitest --node",
+    "test:types": "bun scripts/type-check.ts",
     "lint": "eslint 'src/**/*.ts' --max-warnings=0",
     "lint:fix": "eslint 'src/**/*.ts' --fix",
     "format": "prettier --write .",

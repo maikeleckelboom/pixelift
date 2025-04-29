@@ -1,6 +1,6 @@
-import type { PixelData, PixeliftInput, PixeliftOptions } from './types.ts';
-import { isServer } from './shared/env.ts';
-import { validateBrowserInput, validateServerInput } from './shared/validation.ts';
+import type { PixelData, PixeliftInput, PixeliftOptions } from './types';
+import { isServer } from './shared/env';
+import { validateBrowserInput, validateServerInput } from './shared/validation';
 
 /**
  * Main entry point for the Pixelift library.
@@ -33,7 +33,7 @@ export async function pixelift(
   }
 
   if (validateBrowserInput(input)) {
-    const decoder = await import('./browser/decoder.ts');
+    const decoder = await import('./browser/decoder');
     return decoder.decode(input, options);
   }
 
@@ -43,5 +43,3 @@ export async function pixelift(
 export { unpackPixels, packPixels } from './shared/conversion';
 
 export type { PixeliftInput, PixeliftOptions, PixelData } from './types';
-
-export { PixeliftError, PixeliftErrorCode } from './shared/errors';

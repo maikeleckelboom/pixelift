@@ -1,10 +1,7 @@
 {
   "compilerOptions": {
     // Environment setup & latest features
-    "lib": [
-      "esnext",
-      "dom"
-    ],
+    "lib": ["esnext", "dom"],
     "target": "ESNext",
     "module": "ES2022",
     "moduleDetection": "force",
@@ -12,7 +9,7 @@
     "allowJs": true,
     // Bundler mode
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
+    "allowImportingTsExtensions": false,
     "verbatimModuleSyntax": true,
     "noEmit": true,
     // Best practices
@@ -26,19 +23,10 @@
     "noPropertyAccessFromIndexSignature": false,
     "esModuleInterop": true,
     "paths": {
-      "pixelift": [
-        "./src/types.ts"
-      ],
-      "pixelift/browser": [
-        "./src/browser/types.ts"
-      ],
-      "pixelift/server": [
-        "./src/server/types.ts"
-      ]
+      "pixelift": ["./src/types.ts"],
+      "pixelift/browser": ["./src/browser/types.ts"],
+      "pixelift/server": ["./src/server/types.ts"]
     },
-    "types": [
-      "node",
-      "sharp"
-    ]
+    "types": ["node", "sharp"]
   }
 }

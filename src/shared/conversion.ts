@@ -57,19 +57,23 @@ export function unpackPixels<T extends boolean = true>(
   const { width, height, useTArray } = options || {};
 
   const bytesPerPixel = 4 as const;
-  const pixelCount = width && height ? width * height : Math.floor(data.length / bytesPerPixel);
+  const pixelCount =
+    width && height ? width * height : Math.floor(data.length / bytesPerPixel);
 
   if (width && height && data.length < width * height * bytesPerPixel) {
     throw new Error('Buffer is too small for the specified dimensions');
   }
 
-  const readRGBA = (data: Uint8Array, byteOffset: number): [number, number, number, number] =>
-    [data[byteOffset], data[byteOffset + 1], data[byteOffset + 2], data[byteOffset + 3]] as [
-      number,
-      number,
-      number,
-      number
-    ];
+  const readRGBA = (
+    data: Uint8Array,
+    byteOffset: number
+  ): [number, number, number, number] =>
+    [
+      data[byteOffset],
+      data[byteOffset + 1],
+      data[byteOffset + 2],
+      data[byteOffset + 3]
+    ] as [number, number, number, number];
 
   const pixels = useTArray ? new Uint32Array(pixelCount) : new Array(pixelCount);
 

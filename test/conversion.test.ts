@@ -10,7 +10,9 @@ describe('packPixels', () => {
 
   it('handles multiple pixels', () => {
     const input = [0x11223344, 0xaabbccdd];
-    const expected = new Uint8ClampedArray([0x22, 0x33, 0x44, 0x11, 0xbb, 0xcc, 0xdd, 0xaa]);
+    const expected = new Uint8ClampedArray([
+      0x22, 0x33, 0x44, 0x11, 0xbb, 0xcc, 0xdd, 0xaa
+    ]);
     expect(packPixels(input)).toEqual(expected);
   });
 
@@ -34,10 +36,14 @@ describe('unpackPixels', () => {
   it('accepts ArrayBuffer and other TypedArray types', () => {
     const bytes = [0x11, 0x22, 0x33, 0x44];
     const buffer1 = new Uint8Array(bytes).buffer;
-    expect(unpackPixels(buffer1, { useTArray: true })).toEqual(new Uint32Array([0x44112233]));
+    expect(unpackPixels(buffer1, { useTArray: true })).toEqual(
+      new Uint32Array([0x44112233])
+    );
 
     const buffer2 = new Uint8ClampedArray(bytes);
-    expect(unpackPixels(buffer2, { useTArray: true })).toEqual(new Uint32Array([0x44112233]));
+    expect(unpackPixels(buffer2, { useTArray: true })).toEqual(
+      new Uint32Array([0x44112233])
+    );
   });
 
   it('throws error when width and height is specified and length is invalid', () => {

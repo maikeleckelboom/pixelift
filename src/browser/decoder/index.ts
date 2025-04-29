@@ -1,0 +1,61 @@
+import type { PixelData, PixeliftOptions } from 'pixelift';
+import { isImageBitmapSource, isWebCodecsSupportedForType } from '../validation';
+import { toBlob } from '../blob';
+import type { DecoderStrategy } from './types.ts';
+import type { PixeliftBrowserInput } from 'pixelift/browser';
+
+const IMAGE_DECODERS: DecoderStrategy[] = [
+  {
+    id: 'webCodecs',
+    isSupported: (type) => isWebCodecsSupportedForType(type),
+    decode: (blob, options) => decodeWithWebCodecs(blob, options)
+  },
+  {
+    id: 'offscreenCanvas',
+    isSupported: () => Promise.resolve(true),
+    decode: (blob, options) => decodeWithOffscreenCanvas(blob, options)
+  }
+] as const;
+
+export async function decodeWithWebCodecs(
+  blob: Blob | File,
+  options: PixeliftOptions = {}
+): Promise<PixelData> {
+  const decoder = await import('./webcodecs');
+  return decoder.decode(blob, options);
+}
+
+async function decodeWithOffscreenCanvas(
+  source: PixeliftBrowserInput,
+  options: PixeliftOptions = {}
+): Promise<PixelData> {
+  const decoder = await import('./canvas');
+  return decoder.decode(source, options);
+}
+
+export async function decode(
+  source: PixeliftBrowserInput,
+  options: PixeliftOptions = {}
+): Promise<PixelData> {
+  if (isImageBitmapSource(source)) {
+    return decodeWithOffscreenCanvas(source, options);
+  }
+
+  const blob = await toBlob(source, options);
+
+  let lastError: unknown;
+  for (const { isSupported, decode } of IMAGE_DECODERS) {
+    if (!(await isSupported(blob.type))) {
+      continue;
+    }
+    try {
+      return await decode(blob, options);
+    } catch (error: unknown) {
+      lastError = error;
+    }
+  }
+
+  throw Error(`Unable to decode image format "${blob.type}".`, {
+    cause: lastError
+  });
+}

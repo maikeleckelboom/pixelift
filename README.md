@@ -31,8 +31,8 @@ npm install pixelift/server
 ```ts
 const { data, width, height } = await pixelift('/private/img.jpg', {
   headers: {
-    Authorization: `Bearer ${token}`,
-  },
+    Authorization: `Bearer ${token}`
+  }
 });
 ```
 
@@ -44,8 +44,8 @@ import { pixelift } from 'your-lib';
 
 const { data, width, height } = await pixelift('https://api.example.com/secret.jpg', {
   headers: {
-    'X-API-Key': process.env.API_KEY!,
-  },
+    'X-API-Key': process.env.API_KEY!
+  }
 });
 
 // maybe write raw bytes somewhere
@@ -58,8 +58,8 @@ await fs.writeFile('out.raw', data);
 
 - **input**: `string | URL | File | Blob | Buffer | ArrayBuffer | Uint8Array`
 - **options**:
-    - `width?`: number — target width (nearest-neighbor)
-    - `height?`: number — target height
+  - `width?`: number — target width (nearest-neighbor)
+  - `height?`: number — target height
 
 **Returns** a Promise resolving to:
 
@@ -75,7 +75,7 @@ interface PixelData {
 
 - Converts RGBA bytes to 32-bit ARGB values.
 - **options**:
-    - `useTArray?`: `boolean` (default `true`)
+  - `useTArray?`: `boolean` (default `true`)
 
 ### `packPixels(pixels) → Uint8ClampedArray`
 
@@ -94,7 +94,7 @@ import { unpackPixels, packPixels } from 'pixelift';
 const pixels = unpackPixels(source.data);
 
 // Set red channel to 255
-const tinted = pixels.map(color => (color & 0x00ffffff) | (0xff << 16));
+const tinted = pixels.map((color) => (color & 0x00ffffff) | (0xff << 16));
 
 // Convert back to RGBA bytes
 const resultData = packPixels(tinted);
@@ -109,7 +109,7 @@ import { unpackPixels, packPixels } from 'pixelift';
 
 const pixels = unpackPixels(source.data);
 
-const inverted = pixels.map(c => {
+const inverted = pixels.map((c) => {
   const a = (c >>> 24) & 0xff;
   const r = (c >>> 16) & 0xff;
   const g = (c >>> 8) & 0xff;
@@ -122,5 +122,4 @@ const resultData = packPixels(inverted);
 
 ## Contributing & License
 
-Contributions welcome: see [issues](https://github.com/maikeleckelboom/pixelift/issues).  
-
+Contributions welcome: see [issues](https://github.com/maikeleckelboom/pixelift/issues).
