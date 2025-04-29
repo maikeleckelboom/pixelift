@@ -9,20 +9,20 @@ async function getSharp(): Promise<typeof import('sharp')> {
   if (!sharpPromise) {
     try {
       sharpPromise = import('sharp').then((mod) => mod.default);
-    } catch (cause) {
+    } catch (error: unknown) {
       throw new Error(
         'The "sharp" dependency is required for server-side image processing. ' +
           'To enable this feature on the server, please install it with:\n' +
           '`npm install sharp`\n' +
-          'If server-side image processing is not needed, you can opt out of this feature.\n' +
-          `\nOriginal error: ${(cause as Error).message}`,
-        { cause }
+          'If server-side image processing is not needed, you can opt out of this feature.',
+        { cause: error }
       );
     }
   }
   return sharpPromise;
 }
 
+// Server-side decoder
 export async function decode(
   input: PixeliftServerInput,
   options: PixeliftServerOptions = {}
@@ -44,7 +44,6 @@ export async function decode(
       .raw({ depth: 'uchar' })
       .toBuffer({ resolveWithObject: true });
 
-    // Match the browser Uint8ClampedArray behavior
     const clamped = new Uint8ClampedArray(data.buffer, data.byteOffset, data.byteLength);
 
     return {

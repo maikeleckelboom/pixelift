@@ -1,9 +1,13 @@
 /**
- * Converts an array of pixel values in ARGB format into a Uint8ClampedArray,
- * where each pixel is expanded into four separate channels: red, green, blue, and alpha.
+ * Converts an array-like structure of integer pixels into a Uint8ClampedArray with RGBA components.
+ * Each input pixel is expected to represent a 32-bit ARGB value packed into a single integer.
+ * The output array contains the unpacked RGBA values in sequential order.
  *
- * @param {ArrayLike<number>} pixels An array-like object containing pixel values in ARGB format.
- * @return {Uint8ClampedArray} A typed array where each ARGB pixel is unpacked into four consecutive channels.
+ * @param {ArrayLike<number>} pixels - An array-like structure containing 32-bit integer ARGB pixels.
+ * Each integer represents one pixel with alpha, red, green, and blue components packed into it.
+ *
+ * @return {Uint8ClampedArray} A new Uint8ClampedArray where each input pixel is expanded into
+ * four elements (red, green, blue, and alpha), corresponding to the RGBA components.
  */
 export function packPixels(pixels: ArrayLike<number>): Uint8ClampedArray {
   const count = pixels.length;
@@ -21,63 +25,65 @@ export function packPixels(pixels: ArrayLike<number>): Uint8ClampedArray {
 }
 
 /**
- * Unpacks pixel data from a buffer into an array of pixel values.
- * The number of channels per pixel (bytes per pixel) can be specified or
- * automatically detected.
- * Returns either a TypedArray or a plain array based on provided options.
+ * Unpacks pixel data from a buffer into an array of pixels.
+ * Each pixel is represented as a 32-bit integer with the RGBA components packed.
  *
- * @param {Buffer | BufferSource} buffer The input buffer containing pixel data.
- * @param {Object} [options] Optional settings for pixel unpacking.
- * @param {3 | 4} [options.bytesPerPixel] - Number of bytes per pixel (3 for RGB, 4 for RGBA).
- * If not provided, it will be automatically determined.
- * @param {T extends boolean} [options.useTArray=false] A flag indicating whether to return a TypedArray
- * (Uint32Array) instead of a plain array of numbers.
- * @return {T extends boolean = false ? number[] : Uint32Array} A plain array or TypedArray of unpacked pixel values,
- * depending on the `useTArray` flag.
+ * @param {BufferSource | Buffer} buffer The buffer containing pixel data in RGBA format.
+ * @param {Object} [options] Optional unpacking options.
+ * @param {boolean} [options.useTArray=true] Indicates if a typed array (Uint32Array) should be returned.
+ * If false, a standard JavaScript array is returned.
+ * @param {number} [options.width] The width of the image in pixels. Used to calculate the number of pixels.
+ * @param {number} [options.height] The height of the image in pixels. Used to calculate the number of pixels.
+ * @return {T extends true ? Uint32Array : number[]} An array of unpacked pixels.
+ * If `useTArray` is true, returns a `Uint32Array`; otherwise, returns a standard array of numbers.
  */
-export function unpackPixels<T extends boolean = false>(
-  buffer: Buffer | BufferSource,
+export function unpackPixels<T extends boolean = true>(
+  buffer: BufferSource | Buffer,
   options: {
-    bytesPerPixel?: 3 | 4;
     useTArray?: T;
+    width?: number;
+    height?: number;
   } = {}
-): T extends false ? number[] : Uint32Array {
-
-  const bytes =
-    buffer instanceof ArrayBuffer
-      ? new Uint8Array(buffer)
-      : new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
-
-  const len = bytes.length;
-
-  let { bytesPerPixel } = options;
-
-  // Enforce or detect bytes per pixel
-  if (bytesPerPixel) {
-    if (len % bytesPerPixel !== 0) {
-      throw new Error(`Invalid length ${len}: not a multiple of ${bytesPerPixel}`);
-    }
+): T extends true ? Uint32Array : number[] {
+  let data: Uint8Array;
+  if (buffer instanceof ArrayBuffer) {
+    data = new Uint8Array(buffer);
+  } else if (ArrayBuffer.isView(buffer)) {
+    data = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
   } else {
-    const div3 = len % 3 === 0;
-    const div4 = len % 4 === 0;
-    // Prefer RGBA when divisible by both 3 and 4
-    if (div4) bytesPerPixel = 4;
-    else if (div3) bytesPerPixel = 3;
-    else throw new Error(`Invalid buffer length ${len}: must be multiple of 3 or 4`);
+    throw new Error('Invalid input type for bytes');
   }
 
-  const count = len / bytesPerPixel;
-  const result = new Uint32Array(count);
+  const { width, height, useTArray } = options || {};
 
-  for (let i = 0, j = 0; i < count; i++, j += bytesPerPixel) {
-    const r = (bytes[j] || 0) & 0xff;
-    const g = (bytes[j + 1] || 0) & 0xff;
-    const b = (bytes[j + 2] || 0) & 0xff;
-    const a = bytesPerPixel === 4 ? (bytes[j + 3] || 0) & 0xff : 0xff;
+  const bytesPerPixel = 4 as const;
+  const pixelCount = width && height ? width * height : Math.floor(data.length / bytesPerPixel);
 
-    // Build ARGB and force to unsigned
-    result[i] = ((a << 24) | (r << 16) | (g << 8) | b) >>> 0;
+  if (width && height && data.length < width * height * bytesPerPixel) {
+    throw new Error('Buffer is too small for the specified dimensions');
   }
 
-  return (options?.useTArray ? result : Array.from(result)) as T extends false ? number[] : Uint32Array;
+  const readRGBA = (data: Uint8Array, byteOffset: number): [number, number, number, number] =>
+    [data[byteOffset], data[byteOffset + 1], data[byteOffset + 2], data[byteOffset + 3]] as [
+      number,
+      number,
+      number,
+      number
+    ];
+
+  const pixels = useTArray ? new Uint32Array(pixelCount) : new Array(pixelCount);
+
+  for (let i = 0; i < pixelCount; i++) {
+    const byteOffset = i * bytesPerPixel;
+
+    if (byteOffset + 3 >= data.length) {
+      break;
+    }
+
+    const [red, green, blue, alpha] = readRGBA(data, byteOffset);
+
+    pixels[i] = ((alpha << 24) | (red << 16) | (green << 8) | blue) >>> 0;
+  }
+
+  return pixels as T extends true ? Uint32Array : number[];
 }

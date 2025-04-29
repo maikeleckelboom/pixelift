@@ -13,4 +13,5 @@ export type PixeliftInput = PixeliftBrowserInput | PixeliftServerInput;
 export interface PixeliftOptions {
   width?: number;
   height?: number;
+  headers?: HeadersInit
 }

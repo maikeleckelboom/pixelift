@@ -27,14 +27,14 @@ export async function pixelift(
   if (isServer()) {
     if (validateServerInput(input)) {
       const decoder = await import('./server/decoder');
-      return await decoder.decode(input, options);
+      return decoder.decode(input, options);
     }
     throw new TypeError('Invalid input type for server environment.');
   }
 
   if (validateBrowserInput(input)) {
-    const decoder = await import('./browser/decoder');
-    return await decoder.decode(input, options);
+    const decoder = await import('./browser/decoder.ts');
+    return decoder.decode(input, options);
   }
 
   throw new TypeError('Invalid input type for browser-side decoding.');

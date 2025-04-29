@@ -1,10 +1,10 @@
 import type { PixeliftBrowserInput, PixeliftBrowserOptions } from './types.ts';
 import { PixeliftError } from '../shared/errors.ts';
-import { isImageBitmapSource, isStringOrURL } from '../shared/validation.ts';
+import {  isStringOrURL } from '../shared/validation.ts';
 import type { PixelData } from '../types.ts';
-import { isWebCodecsSupportedForType } from './utils.ts';
+import { isImageBitmapSource, isWebCodecsSupportedForType } from './validation.ts';
 
-async function decodeWithWebCodecs(
+export async function decodeBlobWithWebCodecs(
   blob: Blob,
   options: PixeliftBrowserOptions = {}
 ): Promise<PixelData> {
@@ -15,24 +15,21 @@ async function decodeWithWebCodecs(
     desiredWidth: options.width,
     desiredHeight: options.height,
     colorSpaceConversion: 'none',
-    // @ts-expect-error: The WebCodecs API is experimental and may not be fully typed
+    // @ts-expect-error (WebCodecs is not fully typed yet)
     premultiplyAlpha: 'none'
   });
 
   await decoder.completed;
   const { image: frame } = await decoder.decode();
 
-  // Copy to a tightly packed RGBA buffer
   const byteLength = frame.allocationSize({ format: 'RGBA' });
 
   const data = new Uint8ClampedArray(byteLength);
   await frame.copyTo(data, { format: 'RGBA', colorSpace: 'srgb' });
 
-  // Get dimensions before closing the frame
   const width = frame.codedWidth;
   const height = frame.codedHeight;
 
-  // Clean up
   frame.close();
   decoder.close();
 
@@ -42,12 +39,12 @@ async function decodeWithWebCodecs(
 /**
  * Fallback path using createImageBitmap + OffscreenCanvas
  */
-async function decodeWithFallback(
+async function decodeWithOffscreenCanvas(
   source: PixeliftBrowserInput,
   options: PixeliftBrowserOptions = {}
 ): Promise<PixelData> {
   const decoder = await import('./fallback-decoder.ts');
-  return await decoder.decode(source, options);
+  return decoder.decode(source, options);
 }
 
 /**
@@ -69,22 +66,22 @@ export async function decode(
   } else if (source instanceof Blob) {
     blob = source;
   } else if (isImageBitmapSource(source)) {
-    // Cannot feed ImageBitmap to WebCodecs
-    return decodeWithFallback(source, options);
+    // No WebCodecs support
+    return decodeWithOffscreenCanvas(source, options);
   } else {
     throw PixeliftError.decodeFailed('Unsupported image source');
   }
 
-  // Try WebCodecs if supported
   if (await isWebCodecsSupportedForType(blob.type)) {
     try {
-      return await decodeWithWebCodecs(blob, options);
+      return await decodeBlobWithWebCodecs(blob, options);
     } catch (err) {
       console.warn('WebCodecs decode failed, falling back:', err);
-      return decodeWithFallback(source, options);
+      // WebCodecs Failed -> Fallback to OffscreenCanvas
+      return decodeWithOffscreenCanvas(source, options);
     }
   }
 
-  // No WebCodecs, use fallback
-  return decodeWithFallback(source, options);
+  // No WebCodecs support
+  return decodeWithOffscreenCanvas(source, options);
 }

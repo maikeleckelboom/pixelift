@@ -1,14 +1,16 @@
 import type { PixeliftBrowserInput, PixeliftBrowserOptions } from './types.ts';
 import { PixeliftError } from '../shared/errors.ts';
-import { isImageBitmapSource, isStringOrURL } from '../shared/validation.ts';
+import { isStringOrURL } from '../shared/validation.ts';
 import type { PixelData } from '../types.ts';
+import { isImageBitmapSource } from './validation.ts';
 
 /**
  * Options for `canvas.getContext('2d)` to approximate `sharp().raw()`
  */
-function canvasContextOptions(
-  _options: PixeliftBrowserOptions = {}
-): Pick<CanvasRenderingContext2DSettings, 'alpha' | 'colorSpace'> {
+function canvasRenderingOptions(): Pick<
+  CanvasRenderingContext2DSettings,
+  'alpha' | 'colorSpace'
+> {
   return {
     alpha: true,
     colorSpace: 'srgb'
@@ -29,7 +31,7 @@ function imageBitmapOptions(options: PixeliftBrowserOptions = {}): ImageBitmapOp
   };
 }
 
-function createRenderingContext(
+function createOffscreenRenderingContext(
   bitmap: ImageBitmap,
   options: PixeliftBrowserOptions = {}
 ): OffscreenCanvasRenderingContext2D {
@@ -43,7 +45,7 @@ function createRenderingContext(
   }
 
   const canvas = new OffscreenCanvas(width, height);
-  const ctx = canvas.getContext('2d', canvasContextOptions(options));
+  const ctx = canvas.getContext('2d', canvasRenderingOptions());
   if (!ctx) {
     throw PixeliftError.decodeFailed('Failed to create canvas rendering context');
   }
@@ -51,18 +53,8 @@ function createRenderingContext(
   ctx.imageSmoothingEnabled = false;
   ctx.imageSmoothingQuality = 'low';
   ctx.drawImage(bitmap, 0, 0, width, height);
-  return ctx;
-}
 
-/**
- * Reads straight RGBA pixels from the canvas
- */
-function getImageDataFromCanvas(
-  context: OffscreenCanvasRenderingContext2D,
-): ImageData {
-  return context.getImageData(0, 0, context.canvas.width, context.canvas.height, {
-    colorSpace: 'srgb'
-  });
+  return ctx;
 }
 
 /**
@@ -103,7 +95,7 @@ async function createImageBitmapFromBlob(
     }
 
     const canvas = new OffscreenCanvas(width, height);
-    const ctx = canvas.getContext('2d', canvasContextOptions(options));
+    const ctx = canvas.getContext('2d', canvasRenderingOptions());
     if (!ctx) {
       throw PixeliftError.decodeFailed('Failed to create 2D context for SVG processing');
     }
@@ -126,7 +118,7 @@ async function fetchAndCreateImageBitmap(
 ): Promise<ImageBitmap> {
   if (isStringOrURL(source)) {
     const url = new URL(source.toString(), location.origin).toString();
-    const res = await fetch(url, { mode: 'cors' });
+    const res = await fetch(url, { mode: 'cors', headers: options.headers });
     if (!res.ok) {
       throw PixeliftError.requestFailed(`Image fetch failed (HTTP ${res.status})`);
     }
@@ -149,6 +141,15 @@ async function fetchAndCreateImageBitmap(
 }
 
 /**
+ * Reads straight RGBA pixels from the canvas
+ */
+function getImageDataFromCanvas(context: OffscreenCanvasRenderingContext2D): ImageData {
+  return context.getImageData(0, 0, context.canvas.width, context.canvas.height, {
+    colorSpace: 'srgb'
+  });
+}
+
+/**
  * Public fallback decode function: returns raw PixelData via Canvas
  */
 export async function decode(
@@ -156,7 +157,7 @@ export async function decode(
   options: PixeliftBrowserOptions = {}
 ): Promise<PixelData> {
   const bitmap = await fetchAndCreateImageBitmap(imageSource, options);
-  const context = createRenderingContext(bitmap, options);
+  const context = createOffscreenRenderingContext(bitmap, options);
   const imageData = getImageDataFromCanvas(context);
   return {
     data: imageData.data,

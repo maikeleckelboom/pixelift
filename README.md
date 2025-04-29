@@ -24,13 +24,32 @@ npm install pixelift/server
 
 ---
 
-
 ## Quick Start
 
-```ts
-import { pixelift, unpackPixels, packPixels } from 'pixelift';
+### Browser
 
-const { data, width, height } = await pixelift('path/to/image.jpg');
+```ts
+const { data, width, height } = await pixelift('/private/img.jpg', {
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+});
+```
+
+### Node
+
+```ts
+import fs from 'fs/promises';
+import { pixelift } from 'your-lib';
+
+const { data, width, height } = await pixelift('https://api.example.com/secret.jpg', {
+  headers: {
+    'X-API-Key': process.env.API_KEY!,
+  },
+});
+
+// maybe write raw bytes somewhere
+await fs.writeFile('out.raw', data);
 ```
 
 ## API
@@ -49,7 +68,6 @@ interface PixelData {
   data: Uint8ClampedArray; // RGBA bytes
   width: number;
   height: number;
-  channels: 4;
 }
 ```
 
@@ -57,8 +75,7 @@ interface PixelData {
 
 - Converts RGBA bytes to 32-bit ARGB values.
 - **options**:
-    - `bytesPerPixel?`: `3 | 4` (auto)
-    - `useTArray?`: `boolean` (default `false`)
+    - `useTArray?`: `boolean` (default `true`)
 
 ### `packPixels(pixels) → Uint8ClampedArray`
 

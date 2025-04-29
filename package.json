@@ -58,7 +58,7 @@
   "keywords": [
     "browser",
     "canvas",
-    "data",
+    "codecs",
     "decode",
     "extract",
     "image",
@@ -68,8 +68,8 @@
     "sharp",
     "ssr",
     "universal",
-    "web-codecs",
-    "vision"
+    "vision",
+    "web"
   ],
   "repository": {
     "type": "git",
