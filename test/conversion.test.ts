@@ -135,7 +135,7 @@ describe('Round-trip conversions', () => {
     assertArrayType(unpacked, 'Uint32Array');
     expect(unpacked).toEqual(new Uint32Array([0xff112233]));
   });
-});
+}, 0);
 
 function assertArrayType(
   array: unknown,

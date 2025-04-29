@@ -24,14 +24,19 @@ async function decodeWithWebCodecs(
 
   // Copy to a tightly packed RGBA buffer
   const byteLength = frame.allocationSize({ format: 'RGBA' });
+
   const data = new Uint8ClampedArray(byteLength);
   await frame.copyTo(data, { format: 'RGBA', colorSpace: 'srgb' });
+
+  // Get dimensions before closing the frame
+  const width = frame.codedWidth;
+  const height = frame.codedHeight;
 
   // Clean up
   frame.close();
   decoder.close();
 
-  return { data, width: frame.codedWidth, height: frame.codedHeight };
+  return { data, width, height };
 }
 
 /**

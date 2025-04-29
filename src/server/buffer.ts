@@ -1,17 +1,14 @@
 import type { PixeliftServerInput } from './types.ts';
 
 export async function getBuffer(input: PixeliftServerInput): Promise<Buffer> {
-  // Already a Buffer - return immediately
   if (Buffer.isBuffer(input)) {
     return input;
   }
 
-  // Handle BufferSource (ArrayBuffer or TypedArray)
   if (input instanceof ArrayBuffer || ArrayBuffer.isView(input)) {
     return Buffer.from(input as ArrayBufferLike);
   }
 
-  // Check for data URL
   const dataMatch = input.match(/^data:([^;]+);base64,(.*)$/);
   if (dataMatch && dataMatch[2]) {
     return Buffer.from(dataMatch[2], 'base64');
@@ -21,7 +18,6 @@ export async function getBuffer(input: PixeliftServerInput): Promise<Buffer> {
   try {
     url = new URL(input);
   } catch {
-    // Invalid URL - treat as a filesystem path
     const fs = await import('node:fs/promises');
     return fs.readFile(input);
   }

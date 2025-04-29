@@ -4,11 +4,11 @@ import { isImageBitmapSource, isStringOrURL } from '../shared/validation.ts';
 import type { PixelData } from '../types.ts';
 
 /**
- * Canvas context creation options
+ * Options for `canvas.getContext('2d)` to approximate `sharp().raw()`
  */
 function canvasContextOptions(
-  _: PixeliftBrowserOptions = {}
-): CanvasRenderingContext2DSettings {
+  _options: PixeliftBrowserOptions = {}
+): Pick<CanvasRenderingContext2DSettings, 'alpha' | 'colorSpace'> {
   return {
     alpha: true,
     colorSpace: 'srgb'
@@ -16,67 +16,18 @@ function canvasContextOptions(
 }
 
 /**
- * Options for createImageBitmap to approximate `sharp().raw()`
+ * Options for `createImageBitmap` to approximate `sharp().raw()`
  */
 function imageBitmapOptions(options: PixeliftBrowserOptions = {}): ImageBitmapOptions {
   return {
-    resizeWidth: options.width,
-    resizeHeight: options.height,
+    resizeWidth: options.width ?? undefined,
+    resizeHeight: options.height ?? undefined,
     resizeQuality: 'pixelated',
     premultiplyAlpha: 'none',
     colorSpaceConversion: 'none',
     imageOrientation: 'none'
   };
 }
-
-// async function fetchAndDecodeImage(
-//   source: string | URL,
-//   options: PixeliftBrowserOptions = {}
-// ): Promise<ImageBitmap> {
-//   const url = source.toString();
-//   const response = await fetch(new URL(url, location.origin).toString(), { mode: 'cors' });
-//
-//   if (!response.ok) {
-//     throw PixeliftError.requestFailed(`Image fetch failed (HTTP ${response.status})`);
-//   }
-//
-//   // Check content type before processing
-//   const contentType = response.headers.get('content-type');
-//   if (contentType && contentType.startsWith('text/html')) {
-//     const debugURL = new URL(url, location.origin).toString();
-//     throw PixeliftError.decodeFailed(
-//       `Invalid content type: ${contentType} for URL: ${debugURL}. ` +
-//       `Expected an image but received HTML content from ${debugURL}. This usually indicates:\n` +
-//       `1. The URL points to a webpage instead of an image file\n` +
-//       `2. The server returned an error page (e.g., 404, 403, 500)\n` +
-//       `3. Authentication is required or cookies are missing\n` +
-//       `4. The URL protocol is incorrect (Try https:// instead of http://)\n` +
-//       `Tip: Open the URL in a browser to see what content is actually being returned`
-//     );
-//   }
-//
-//   if (contentType && !contentType.startsWith('image/') && !url.endsWith('.svg')) {
-//     throw PixeliftError.decodeFailed(
-//       `Invalid content type for image processing. ` +
-//       `Expected an image but received content of type: ${contentType} from ${url}.\n` +
-//       `Ensure the URL points directly to an image file (jpg, png, gif, etc.)`
-//     );
-//   }
-//
-//   const imageBlob = await response.blob();
-//
-//   try {
-//     if (imageBlob.type === 'image/svg+xml' || url.endsWith('.svg')) {
-//       return await createImageBitmapFromBlob(imageBlob, options);
-//     }
-//
-//     return await createImageBitmap(imageBlob, imageBitmapOptions(options));
-//   } catch (error) {
-//     throw PixeliftError.decodeFailed(`Failed to decode ${imageBlob.type || 'unknown'} image`, {
-//       cause: error as Error
-//     });
-//   }
-// }
 
 function createRenderingContext(
   bitmap: ImageBitmap,
@@ -106,9 +57,12 @@ function createRenderingContext(
 /**
  * Reads straight RGBA pixels from the canvas
  */
-function getImageDataFromCanvas(context: OffscreenCanvasRenderingContext2D): ImageData {
-  const { width, height } = context.canvas;
-  return context.getImageData(0, 0, width, height, { colorSpace: 'srgb' });
+function getImageDataFromCanvas(
+  context: OffscreenCanvasRenderingContext2D,
+): ImageData {
+  return context.getImageData(0, 0, context.canvas.width, context.canvas.height, {
+    colorSpace: 'srgb'
+  });
 }
 
 /**
@@ -202,8 +156,8 @@ export async function decode(
   options: PixeliftBrowserOptions = {}
 ): Promise<PixelData> {
   const bitmap = await fetchAndCreateImageBitmap(imageSource, options);
-  const ctx = createRenderingContext(bitmap, options);
-  const imageData = getImageDataFromCanvas(ctx);
+  const context = createRenderingContext(bitmap, options);
+  const imageData = getImageDataFromCanvas(context);
   return {
     data: imageData.data,
     width: imageData.width,

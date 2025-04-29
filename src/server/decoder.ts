@@ -44,8 +44,11 @@ export async function decode(
       .raw({ depth: 'uchar' })
       .toBuffer({ resolveWithObject: true });
 
+    // Match the browser Uint8ClampedArray behavior
+    const clamped = new Uint8ClampedArray(data.buffer, data.byteOffset, data.byteLength);
+
     return {
-      data: new Uint8ClampedArray(data.buffer, data.byteOffset, data.byteLength),
+      data: clamped,
       width: info.width,
       height: info.height
     };
