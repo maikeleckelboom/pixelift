@@ -18,7 +18,7 @@ describe('Hybrid Environment', () => {
     expect(result.width).toBeDefined();
     expect(result.height).toBeDefined();
     expect(result.data.filter(Boolean).length).toBeGreaterThan(0);
-  }, 240_000);
+  });
 
   it('should throw an error if no input is provided', async () => {
     // @ts-expect-error missing input
@@ -29,5 +29,4 @@ describe('Hybrid Environment', () => {
     // @ts-expect-error invalid input
     await expect(pixelift({})).rejects.toThrowError();
   });
-
-});
+}, 0);

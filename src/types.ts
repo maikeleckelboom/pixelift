@@ -6,7 +6,6 @@ export interface PixelData {
   data: Uint8ClampedArray;
   width: number;
   height: number;
-  channels: 4;
 }
 
 export type PixeliftInput = PixeliftBrowserInput | PixeliftServerInput;

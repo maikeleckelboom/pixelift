@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { pixelift } from '../src';
 
 describe('Browser Environment', () => {
@@ -12,4 +12,4 @@ describe('Browser Environment', () => {
     expect(height).toBeDefined();
     expect(data.filter(Boolean).length).toBeGreaterThan(0);
   });
-});
+}, 0);

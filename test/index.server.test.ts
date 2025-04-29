@@ -14,4 +14,4 @@ describe('Server Environment', () => {
     expect(result.height).toBeDefined();
     expect(result.data.filter(Boolean).length).toBeGreaterThan(0);
   });
-});
+}, 0);

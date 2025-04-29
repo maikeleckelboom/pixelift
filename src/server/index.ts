@@ -10,3 +10,5 @@ export async function pixelift(
 }
 
 export type { PixeliftServerInput, PixeliftServerOptions } from './types.ts';
+
+export { unpackPixels, packPixels } from '../shared/conversion.ts';

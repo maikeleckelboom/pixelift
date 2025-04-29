@@ -119,7 +119,7 @@ describe('Round-trip conversions', () => {
     const invertedBuffer = packPixels(invertedColors);
     const [resultColor] = unpackPixels(invertedBuffer, { useTArray: true });
 
-    expect(resultColor! >>> 0).toEqual(0xffeeddcc);
+    expect((resultColor || 0) >>> 0).toEqual(0xffeeddcc);
   });
 
   it('returns number[] when useTArray: false', () => {
@@ -138,12 +138,12 @@ describe('Round-trip conversions', () => {
 });
 
 function assertArrayType(
-  array: any,
+  array: unknown,
   type: 'number[]' | 'Uint32Array'
 ): asserts array is number[] | Uint32Array {
   if (type === 'number[]') {
     expect(Array.isArray(array)).toBe(true);
-    expect(array.every((item: unknown) => typeof item === 'number')).toBe(true);
+    expect(Array.isArray(array) && array.every((item: unknown) => typeof item === 'number')).toBe(true);
   } else if (type === 'Uint32Array') {
     expect(array instanceof Uint32Array).toBe(true);
   }

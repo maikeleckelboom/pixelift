@@ -1,6 +1,6 @@
 import type { PixelData } from '../types.ts';
 import { getBuffer } from './buffer.ts';
-import { PixeliftError } from '../common/errors.ts';
+import { PixeliftError } from '../shared/errors.ts';
 import type { PixeliftServerInput, PixeliftServerOptions } from './types.ts';
 
 let sharpPromise: Promise<typeof import('sharp')> | null = null;
@@ -44,14 +44,10 @@ export async function decode(
       .raw({ depth: 'uchar' })
       .toBuffer({ resolveWithObject: true });
 
-    // Match the browser's Uint8ClampedArray behavior
-    const clamped = new Uint8ClampedArray(data.buffer, data.byteOffset, data.byteLength);
-
     return {
-      data: clamped,
+      data: new Uint8ClampedArray(data.buffer, data.byteOffset, data.byteLength),
       width: info.width,
-      height: info.height,
-      channels: 4
+      height: info.height
     };
   } catch (cause) {
     throw PixeliftError.decodeFailed(`Server error: failed to process image.`, { cause });

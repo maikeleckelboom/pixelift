@@ -1,6 +1,6 @@
 import type { PixelData, PixeliftInput, PixeliftOptions } from './types.ts';
-import { isServer } from './common/env.ts';
-import { validateBrowserInput, validateServerInput } from './common/validation.ts';
+import { isServer } from './shared/env.ts';
+import { validateBrowserInput, validateServerInput } from './shared/validation.ts';
 
 /**
  * Main entry point for the Pixelift library.
@@ -40,8 +40,8 @@ export async function pixelift(
   throw new TypeError('Invalid input type for browser-side decoding.');
 }
 
-export { unpackPixels, packPixels } from './common/conversion.ts';
-
+export { unpackPixels, packPixels } from './shared/conversion.ts';
 
 export type { PixeliftInput, PixeliftOptions, PixelData } from './types.ts';
-export { PixeliftError, PixeliftErrorCode } from './common/errors.ts';
+
+export { PixeliftError, PixeliftErrorCode } from './shared/errors.ts';

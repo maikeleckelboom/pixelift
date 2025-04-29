@@ -47,8 +47,9 @@
   "scripts": {
     "dev": "vitest --watch",
     "test": "vitest",
+    "test:browser": "vitest --browser",
+    "test:node": "vitest --node",
     "lint": "eslint 'src/**/*.ts' --max-warnings=0",
-    "lint:soft": "eslint 'src/**/*.ts'",
     "lint:fix": "eslint 'src/**/*.ts' --fix",
     "format": "prettier --write .",
     "build": "tsup",
@@ -83,7 +84,6 @@
     "@vitest/browser": "^3.1.2",
     "eslint": "^9.25.1",
     "eslint-config-prettier": "^10.1.2",
-    "globals": "^16.0.0",
     "playwright": "^1.52.0",
     "prettier": "^3.5.3",
     "tsup": "^8.4.0",
