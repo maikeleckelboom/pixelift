@@ -1,11 +1,10 @@
 {
   "compilerOptions": {
     // Environment setup & latest features
-    "lib": ["esnext", "dom"],
+    "lib": ["ES2022", "dom"],
     "target": "ESNext",
     "module": "ES2022",
     "moduleDetection": "force",
-    "jsx": "react-jsx",
     "allowJs": true,
     // Bundler mode
     "moduleResolution": "bundler",
@@ -18,14 +17,14 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
     // Some stricter flags (disabled by default)
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "noPropertyAccessFromIndexSignature": false,
     "esModuleInterop": true,
     "paths": {
-      "pixelift": ["./src/types.ts"],
-      "pixelift/browser": ["./src/browser/types.ts"],
-      "pixelift/server": ["./src/server/types.ts"]
+      "pixelift": ["./src/index.ts"],
+      "pixelift/browser": ["./src/browser/index.ts"],
+      "pixelift/server": ["./src/server/index.ts"]
     },
     "types": ["node", "sharp"]
   }

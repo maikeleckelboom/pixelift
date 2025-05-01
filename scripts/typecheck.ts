@@ -1,7 +1,6 @@
 import ts from 'typescript';
 import * as fs from 'fs';
 
-// Simple function to check exports in a .d.ts file
 function checkTypes(filePath: string): void {
   console.log(`\nChecking ${filePath}...`);
 
@@ -51,8 +50,5 @@ function checkTypes(filePath: string): void {
 const files =
   process.argv.slice(2).length > 0
     ? process.argv.slice(2)
-    : ['./dist/browser/browser.d.ts', './dist/server/server.d.ts'];
-
-console.log('Type Export Checker');
-console.log('==================');
+    : ['./dist/browser/index.d.ts', './dist/server/index.d.ts'];
 files.forEach(checkTypes);

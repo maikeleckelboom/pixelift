@@ -10,6 +10,10 @@ export async function toBlob(
     return source;
   }
 
+  if (source instanceof File) {
+    return new Blob([source], { type: source.type });
+  }
+
   if (isStringOrURL(source)) {
     const url = new URL(source.toString(), location.origin).toString();
     let res: Response;

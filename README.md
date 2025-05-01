@@ -11,17 +11,27 @@ Canvas API).
 
 Pixelift provides dual-format builds—supporting both ESM and CommonJS—tailored for different environments.
 
-```npm
-# Full package (auto-detects runtime: browser or Node.js)
+#### Full package (Node.js + Browser)
+```bash
 npm install pixelift
+```
 
-# Browser-only (optimized for ESM bundlers)
+#### Browser-only (optimized for browsers, supports both ESM and CommonJS)
+```bash
 npm install pixelift/browser
+```
 
-# Server-only (optimized for Node.js, supports both ESM and CommonJS)
+#### Server-only (optimized for Node.js, supports both ESM and CommonJS)
+```bash
 npm install pixelift/server
 ```
 
+### Server Requirements
+
+Install `sharp` for server-side processing:
+```bash
+npm install sharp
+```
 ---
 
 ## Quick Start

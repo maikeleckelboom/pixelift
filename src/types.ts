@@ -7,6 +7,7 @@ export interface PixeliftOptions {
   width?: number;
   height?: number;
   headers?: HeadersInit;
+  signal?: AbortSignal;
 }
 
 export interface PixelData {

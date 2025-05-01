@@ -6,8 +6,8 @@
   "type": "module",
   "license": "MIT",
   "sideEffects": false,
-  "module": "./dist/index.js",
   "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
@@ -15,14 +15,14 @@
       "import": "./dist/index.js"
     },
     "./browser": {
-      "types": "./dist/index.d.ts",
-      "require": "./dist/browser.cjs",
-      "import": "./dist/browser.js"
+      "types": "./dist/browser/index.d.ts",
+      "require": "./dist/browser/index.cjs",
+      "import": "./dist/browser/index.js"
     },
     "./server": {
-      "types": "./dist/index.d.ts",
-      "require": "./dist/server.cjs",
-      "import": "./dist/server.js"
+      "types": "./dist/server/index.d.ts",
+      "require": "./dist/server/index.cjs",
+      "import": "./dist/server/index.js"
     }
   },
   "files": [
@@ -34,7 +34,8 @@
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=9.0.0",
-    "bun": ">=1.0.0"
+    "bun": ">=1.0.0",
+    "sharp": ">=0.34.1"
   },
   "packageManager": "bun@1.2.5",
   "publishConfig": {
@@ -47,9 +48,9 @@
   "scripts": {
     "dev": "vitest --watch",
     "test": "vitest",
-    "test:browser": "vitest --browser",
-    "test:node": "vitest --node",
-    "test:types": "bun scripts/type-check.ts",
+    "test:browser": "vitest --project browser",
+    "test:server": "vitest --project server",
+    "test:types": "bun scripts/typecheck.ts",
     "lint": "eslint 'src/**/*.ts' --max-warnings=0",
     "lint:fix": "eslint 'src/**/*.ts' --fix",
     "format": "prettier --write .",

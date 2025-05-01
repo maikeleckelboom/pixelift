@@ -5,7 +5,6 @@ export async function decode(
   options: PixeliftOptions = {}
 ): Promise<PixelData> {
   const buffer = await blob.arrayBuffer();
-
   const decoder = new ImageDecoder({
     type: blob.type,
     data: buffer,

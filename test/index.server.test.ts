@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import { pixelift } from '../src';
 
-describe('Server Environment', () => {
+describe('Server (Node)', () => {
   const formats = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'svg'] as const;
 
   test.each(formats)('should decode a %s image from a URL', async (format) => {

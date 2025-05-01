@@ -25,16 +25,27 @@ export async function pixelift(
   options: PixeliftOptions = {}
 ): Promise<PixelData> {
   if (isServer()) {
-    if (validateServerInput(input)) {
-      const decoder = await import('./server/decoder');
-      return decoder.decode(input, options);
+    try {
+      if (validateServerInput(input)) {
+        const decoder = await import('./server/decoder');
+        return decoder.decode(input, options);
+      }
+    } catch (error) {
+      throw new TypeError('Invalid input type for server environment.', {
+        cause: error
+      });
     }
-    throw new TypeError('Invalid input type for server environment.');
   }
 
   if (validateBrowserInput(input)) {
-    const decoder = await import('./browser/decoder');
-    return decoder.decode(input, options);
+    try {
+      const decoder = await import('./browser/decoder');
+      return decoder.decode(input, options);
+    } catch (error) {
+      throw new TypeError('Invalid input type for browser environment.', {
+        cause: error
+      });
+    }
   }
 
   throw new TypeError('Invalid input type for browser-side decoding.');

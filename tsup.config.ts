@@ -15,22 +15,22 @@ export default defineConfig([
     name: 'browser',
     platform: 'browser',
     format: ['esm', 'cjs'],
-    entry: { browser: 'src/browser/index.ts' },
+    entry: { index: 'src/browser/index.ts' },
     outDir: 'dist/browser',
     dts: true,
-    clean: true,
     minify: true,
+    clean: false,
     splitting: false
   },
   {
     name: 'server',
     platform: 'node',
     format: ['esm', 'cjs'],
-    entry: { server: 'src/server/index.ts' },
+    entry: { index: 'src/server/index.ts' },
     outDir: 'dist/server',
     dts: true,
-    clean: true,
     minify: true,
+    clean: false,
     splitting: false
   }
 ]);

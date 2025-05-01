@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { pixelift } from '../src';
 
-describe('Hybrid Environment', () => {
+describe('SSR', () => {
   it('should be a function', () => {
     expect(typeof pixelift).toBe('function');
   });

@@ -4,20 +4,42 @@ import { toBlob } from '../blob';
 import type { DecoderStrategy } from './types.ts';
 import type { PixeliftBrowserInput } from 'pixelift/browser';
 
-const IMAGE_DECODERS: DecoderStrategy[] = [
+const decoderStrategies: DecoderStrategy[] = [
   {
     id: 'webCodecs',
     isSupported: (type) => isWebCodecsSupportedForType(type),
-    decode: (blob, options) => decodeWithWebCodecs(blob, options)
+    decode: (blob, options): Promise<PixelData> => {
+      console.log('Using [ WebCodecs ] decoder for type:', blob.type);
+      return decodeWithWebCodecs(blob, options);
+    }
   },
   {
     id: 'offscreenCanvas',
     isSupported: () => Promise.resolve(true),
-    decode: (blob, options) => decodeWithOffscreenCanvas(blob, options)
+    decode: (blob, options): Promise<PixelData> => {
+      console.log('Using [ OffscreenCanvas ] decoder for type:', blob.type);
+      return decodeWithOffscreenCanvas(blob, options);
+    }
+  },
+  {
+    id: 'webgl',
+    isSupported: () => Promise.resolve(false),
+    decode: (blob, options): Promise<PixelData> => {
+      console.log(`Using [ WebGL ] decoder for type: [ ${blob.type} ] `);
+      return decodeWithWebGL(blob, options);
+    }
   }
 ] as const;
 
-export async function decodeWithWebCodecs(
+async function decodeWithWebGL(
+  blob: Blob | File,
+  options: PixeliftOptions = {}
+): Promise<PixelData> {
+  const decoder = await import('./webgl');
+  return decoder.decode(blob, options);
+}
+
+async function decodeWithWebCodecs(
   blob: Blob | File,
   options: PixeliftOptions = {}
 ): Promise<PixelData> {
@@ -44,7 +66,7 @@ export async function decode(
   const blob = await toBlob(source, options);
 
   let lastError: unknown;
-  for (const { isSupported, decode } of IMAGE_DECODERS) {
+  for (const { isSupported, decode } of decoderStrategies) {
     if (!(await isSupported(blob.type))) {
       continue;
     }

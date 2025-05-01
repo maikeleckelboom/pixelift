@@ -1,18 +1,25 @@
 let sharpPromise: Promise<typeof import('sharp')> | null = null;
 
+/**
+ * Lazily imports and caches the Sharp module for image processing
+ * @returns A promise resolving to the Sharp module
+ */
 export async function getSharp(): Promise<typeof import('sharp')> {
   if (!sharpPromise) {
-    try {
-      sharpPromise = import('sharp').then((mod) => mod.default);
-    } catch (cause: unknown) {
-      throw new Error(
-        'The "sharp" dependency is required for server-side image processing. ' +
-          'To enable this feature on the server, please install it with:\n' +
-          '`npm install sharp`\n' +
-          'If server-side image processing is not needed, you can opt out of this feature.',
-        { cause }
-      );
-    }
+    sharpPromise = import('sharp')
+      .then((module) => module.default)
+      .catch((error) => {
+        throw new Error(
+          [
+            'Sharp is required for server-side processing.',
+            'To automatically install it, run:',
+            'npm install pixelift/server',
+            'Or manually install with:',
+            'npm install sharp'
+          ].join('\n'),
+          { cause: error }
+        );
+      });
   }
   return sharpPromise;
 }
