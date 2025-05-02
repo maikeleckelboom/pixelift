@@ -1,5 +1,5 @@
 import { bench, describe } from 'vitest';
-import { decode } from '../src/browser/decoder';
+import { pixelift } from '../src/browser';
 
 import PIXELIFT_PNG_URL from './assets/pixelift.png?url';
 import PIXELIFT_JPG_URL from './assets/pixelift.jpg?url';
@@ -17,30 +17,33 @@ const IMAGES = {
 
 const DECODERS = ['webgl', 'webCodecs', 'offscreenCanvas'] as const;
 
-describe('Benchmarks', async () => {
-  const blobs: Record<string, Blob> = Object.fromEntries(
-    await Promise.all(
-      Object.entries(IMAGES).map(async ([fmt, url]) => {
-        const r = await fetch(url);
-        if (!r.ok) {
-          throw new Error(`Failed to fetch ${url}: ${r.statusText}`);
-        }
-        return [fmt, await r.blob()] as const;
-      })
-    )
-  );
-
-  describe('Image Decoder Benchmarks', () => {
-    for (const decoder of DECODERS) {
-      for (const [format, blob] of Object.entries(blobs)) {
-        bench(
-          `decode ${format} with ${decoder}`,
-          async () => {
-            await decode(blob, { decoder });
-          },
-          { iterations: 100, time: 1 }
-        );
+const blobs: Record<string, Blob> = Object.fromEntries(
+  await Promise.all(
+    Object.entries(IMAGES).map(async ([fmt, url]) => {
+      const resp = await fetch(url);
+      if (!resp.ok) {
+        throw new Error(`Failed to fetch ${url}: ${resp.status} ${resp.statusText}`);
       }
+      const blob = await resp.blob();
+      return [fmt, blob] as const;
+    })
+  )
+);
+
+describe('Image Decoder Benchmarks', () => {
+  for (const decoder of DECODERS) {
+    for (const [format, blob] of Object.entries(blobs)) {
+      bench(
+        `decode ${format} with ${decoder}`,
+        async () => {
+          await pixelift(blob, { strategy: decoder });
+        },
+        {
+          iterations: 100,
+          time: 1,
+          warmupTime: 0.5
+        }
+      );
     }
-  });
+  }
 });

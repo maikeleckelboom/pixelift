@@ -2,14 +2,12 @@ import type { PixelData, PixeliftBrowserOptions } from '../../types';
 
 export async function decode(
   blob: Blob | File,
-  options: PixeliftBrowserOptions = {}
+  _options: PixeliftBrowserOptions = {}
 ): Promise<PixelData> {
   const buffer = await blob.arrayBuffer();
   const decoder = new ImageDecoder({
     type: blob.type,
     data: buffer,
-    desiredWidth: options.width,
-    desiredHeight: options.height,
     colorSpaceConversion: 'none'
   });
 
@@ -29,4 +27,12 @@ export async function decode(
   decoder.close();
 
   return { data, width, height };
+}
+
+export async function isSupported(type: string): Promise<boolean> {
+  return (
+    'ImageDecoder' in window &&
+    typeof ImageDecoder.isTypeSupported === 'function' &&
+    (await ImageDecoder.isTypeSupported(type))
+  );
 }

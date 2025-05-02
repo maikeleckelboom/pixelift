@@ -2,26 +2,25 @@
 
 [![npm version](https://img.shields.io/npm/v/pixelift.svg)](https://www.npmjs.com/package/pixelift) [![Build Status](https://img.shields.io/github/actions/workflow/status/maikeleckelboom/pixelift/ci.yml?branch=main)](https://github.com/maikeleckelboom/pixelift/actions)
 
-A lightweight TypeScript library for extracting raw pixel data from images in both Node.js (via Sharp) and browsers (via
-Canvas API).
-
+An TypeScript library for extracting raw pixel data from images in both Node.js (via Sharp) and browsers (via
+WebGL API).
 ---
 
 ## Installation
 
 Pixelift provides dual-format builds—supporting both ESM and CommonJS—tailored for different environments.
 
-#### Full package (Node.js + Browser)
+#### Universal (Node + Browser)
 ```bash
 npm install pixelift
 ```
 
-#### Browser-only (optimized for browsers, supports both ESM and CommonJS)
+#### Browser-only
 ```bash
 npm install pixelift/browser
 ```
 
-#### Server-only (optimized for Node.js, supports both ESM and CommonJS)
+#### Server-only
 ```bash
 npm install pixelift/server
 ```
@@ -68,8 +67,8 @@ await fs.writeFile('out.raw', data);
 
 - **input**: `string | URL | File | Blob | Buffer | ArrayBuffer | Uint8Array`
 - **options**:
-  - `width?`: number — target width (nearest-neighbor)
-  - `height?`: number — target height
+  - `headers?`: `Record<string, string>` — for custom headers
+  - `signal?`: `AbortSignal` — for aborting the request
 
 **Returns** a Promise resolving to:
 

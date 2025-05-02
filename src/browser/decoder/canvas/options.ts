@@ -7,7 +7,6 @@ export function canvasRenderingOptions(): Pick<
 
 export function imageBitmapOptions(): ImageBitmapOptions {
   return {
-    resizeQuality: 'pixelated',
     premultiplyAlpha: 'none',
     colorSpaceConversion: 'none',
     imageOrientation: 'none'

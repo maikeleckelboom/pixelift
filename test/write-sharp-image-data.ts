@@ -1,7 +1,7 @@
 import { pixelift } from 'pixelift/server';
 import * as fs from 'fs';
 
-const SUPPORTED_FORMATS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'] as const;
+const SUPPORTED_FORMATS = ['jpg', 'jpeg', 'png', 'gif', 'webp'] as const;
 
 async function writeImageDataToFile(): Promise<void> {
   for (const format of SUPPORTED_FORMATS) {

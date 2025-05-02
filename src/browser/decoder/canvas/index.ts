@@ -7,106 +7,65 @@ import type {
   PixeliftBrowserOptions
 } from '../../types';
 
+let sharedCanvas: OffscreenCanvas | undefined;
+let sharedCtx: OffscreenCanvasRenderingContext2D | undefined;
+
 function getCanvasContext(
   width: number,
   height: number
 ): OffscreenCanvasRenderingContext2D {
-  const canvas = new OffscreenCanvas(width, height);
-  const ctx = canvas.getContext('2d', canvasRenderingOptions());
-  if (!ctx) throw new Error('Failed to create canvas context');
-  ctx.imageSmoothingEnabled = false;
-  ctx.imageSmoothingQuality = 'low';
-  return ctx;
-}
-
-async function loadImageElement(url: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = (): void => resolve(img);
-    img.onerror = (): void => reject(new Error('Failed to load image from URL'));
-    img.src = url;
-  });
+  if (!sharedCanvas || !sharedCtx) {
+    sharedCanvas = new OffscreenCanvas(width, height);
+    const ctx = sharedCanvas.getContext('2d', canvasRenderingOptions());
+    if (ctx === null) throw new Error('Failed to get OffscreenCanvas context');
+    sharedCtx = ctx;
+    sharedCtx.imageSmoothingEnabled = false;
+    sharedCtx.imageSmoothingQuality = 'low';
+  }
+  if (sharedCanvas.width !== width || sharedCanvas.height !== height) {
+    sharedCanvas.width = width;
+    sharedCanvas.height = height;
+  }
+  return sharedCtx;
 }
 
 function assertDimensions(width: number, height: number): void {
-  if (width <= 0 || height <= 0) {
+  if (width <= 0 || height <= 0)
     throw new TypeError('Image dimensions must be positive values');
-  }
-}
-
-async function createBitmapFromSVGBlob(
-  blob: Blob,
-  options: PixeliftBrowserOptions = {}
-): Promise<ImageBitmap> {
-  const objectURL = URL.createObjectURL(blob);
-  try {
-    const imageElement = await loadImageElement(objectURL);
-    const viewBox = imageElement.getAttribute('viewBox');
-
-    let width = options.width || imageElement.width;
-    let height = options.height || imageElement.height;
-
-    if (viewBox) {
-      const [, , w, h] = viewBox.split(' ').map(Number);
-      width = options.width || w || imageElement.width;
-      height = options.height || h || imageElement.height;
-    }
-
-    assertDimensions(width, height);
-
-    const ctx = getCanvasContext(width, height);
-    ctx.drawImage(imageElement, 0, 0, width, height);
-
-    return await createImageBitmap(ctx.canvas, imageBitmapOptions());
-  } finally {
-    URL.revokeObjectURL(objectURL);
-  }
 }
 
 async function ensureBitmap(
   blob: Blob,
-  options: PixeliftBrowserOptions
+  _options: PixeliftBrowserOptions
 ): Promise<ImageBitmap> {
-  return blob.type === 'image/svg+xml'
-    ? createBitmapFromSVGBlob(blob, options)
-    : createImageBitmap(blob, imageBitmapOptions());
-}
-
-async function fetchBlob(url: string, headers?: HeadersInit): Promise<Blob> {
-  try {
-    const res = await fetch(url, { mode: 'cors', headers });
-    return await res.blob();
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    throw new Error(`Network error: Couldn't fetch image. ${message}`, { cause: error });
-  }
+  const opts = imageBitmapOptions();
+  return createImageBitmap(blob, opts);
 }
 
 async function createImageFromSource(
   source: PixeliftBrowserInput,
   options: PixeliftBrowserOptions = {}
-): Promise<ImageBitmap> {
+): Promise<{ bitmap: ImageBitmap; blob?: Blob }> {
   if (isStringOrURL(source)) {
     const url = new URL(source.toString(), location.origin).toString();
-    try {
-      const blob = await fetchBlob(url, options.headers);
-      return ensureBitmap(blob, options);
-    } catch (error: unknown) {
-      throw new Error(`Failed to load image from URL: ${url}`, { cause: error });
-    }
+    const res = await fetch(url, { mode: 'cors', headers: options.headers });
+    const blob = await res.blob();
+    const bitmap = await ensureBitmap(blob, options);
+    return { bitmap };
   }
-
   if (source instanceof Blob) {
-    return ensureBitmap(source, options);
+    const bitmap = await ensureBitmap(source, options);
+    return { bitmap, blob: source };
   }
-
   if (isImageBitmapSource(source)) {
-    return createImageBitmap(source);
+    const bitmap = await createImageBitmap(
+      source as CanvasImageSource,
+      imageBitmapOptions()
+    );
+    return { bitmap };
   }
-
   throw new TypeError(
-    'Invalid image source. Expected URL, string, Blob, or ImageBitmapSource'
+    'Invalid image source. Expected URL/string, Blob, or ImageBitmapSource'
   );
 }
 
@@ -114,25 +73,18 @@ export async function decode(
   imageSource: PixeliftBrowserInput,
   options: PixeliftBrowserOptions = {}
 ): Promise<PixelData> {
-  const imageBitmap = await createImageFromSource(imageSource, options);
-
-  // If options.width/height were in imageBitmapOptions, imageBitmap.width/height
-  // should already reflect the desired size if createImageBitmap succeeded in resizing.
-  const width = options.width ?? imageBitmap.width;
-  const height = options.height ?? imageBitmap.height;
-
+  const { bitmap } = await createImageFromSource(imageSource, options);
+  const { width, height } = bitmap;
   assertDimensions(width, height);
 
-  // Create the final canvas at the determined dimensions
-  const context = getCanvasContext(width, height);
+  const ctx = getCanvasContext(width, height);
+  ctx.clearRect(0, 0, width, height);
+  ctx.drawImage(bitmap, 0, 0, width, height);
 
-  // Draw the imageBitmap onto the canvas
-  context.drawImage(imageBitmap, 0, 0, width, height);
-  const { data } = context.getImageData(0, 0, width, height, { colorSpace: 'srgb' });
+  const imageData = ctx.getImageData(0, 0, width, height, { colorSpace: 'srgb' });
+  return { data: imageData.data, width, height };
+}
 
-  return {
-    data,
-    width,
-    height
-  };
+export function isSupported(_type?: string): Promise<boolean> {
+  return Promise.resolve(OffscreenCanvas !== undefined);
 }

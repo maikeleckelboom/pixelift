@@ -1,99 +1,62 @@
-import type { PixelData } from 'pixelift';
-import { isImageBitmapSource, isWebCodecsSupportedForType } from '../validation';
+import { isImageBitmapSource } from '../validation';
 import { toBlob } from '../blob';
-import type { DecoderStrategy } from './types.ts';
-import type { PixeliftBrowserInput } from 'pixelift/browser';
-import type { PixeliftBrowserOptions } from '../types';
-import { DecoderError, FormatError } from '../../shared/error';
+import type { DecoderStrategy } from './types';
+import type { PixelData, PixeliftBrowserInput, PixeliftBrowserOptions } from '../types';
+import { DecoderError } from '../../shared/error';
 
-export const DecoderStrategies: DecoderStrategy[] = [
+import * as webCodecsDecoder from './webcodecs';
+import * as canvasDecoder from './canvas';
+import * as webGLDecoder from './webgl';
+
+const DecoderStrategies: DecoderStrategy[] = [
   {
     id: 'webCodecs',
-    isSupported: (type) => isWebCodecsSupportedForType(type),
+    isSupported: (type) => webCodecsDecoder.isSupported(type),
     decode: (blob, options): Promise<PixelData> => {
-      console.log(`Using [WebCodecs] decoder for [${blob.type}]`);
-      return decodeWithWebCodecs(blob, options);
+      // console.log(`Using [WebCodecs] decoder for [${blob.type}]`);
+      return webCodecsDecoder.decode(blob, options);
     }
   },
   {
     id: 'offscreenCanvas',
-    isSupported: () => Promise.resolve(true),
+    isSupported: (type) => canvasDecoder.isSupported(type),
     decode: (blob, options): Promise<PixelData> => {
-      console.log(`Using [OffscreenCanvas] decoder for [${blob.type}]`);
-      return decodeWithOffscreenCanvas(blob, options);
+      // console.log(`Using [OffscreenCanvas] decoder for [${blob.type}]`);
+      return canvasDecoder.decode(blob, options);
     }
   },
   {
     id: 'webgl',
-    isSupported: () => Promise.resolve(false),
+    isSupported: (type) => webGLDecoder.isSupported(type),
     decode: (blob, options): Promise<PixelData> => {
-      console.log(`Using [WebGL] decoder for [${blob.type}]`);
-
-      return decodeWithWebGL(blob, options);
+      // console.log(`Using [WebGL] decoder for [${blob.type}]`);
+      return webGLDecoder.decode(blob, options);
     }
   }
-] as const;
+];
 
 async function decodeUsingStrategy(
   blob: Blob,
-  strategies: readonly DecoderStrategy[],
+  strategy: DecoderStrategy,
   options: PixeliftBrowserOptions
 ): Promise<PixelData> {
-  const { decoder } = options || {};
-  const strategy = strategies.find((s) => s.id === decoder);
-
-  console.log(`Using [${decoder}] decoder for [${blob.type}]`);
-
-  if (!strategy) {
-    throw new DecoderError(
-      String(decoder),
-      `Decoder "${decoder}" not found. Available: ${strategies.map((s) => s.id).join(', ')}`,
-      blob.type
-    );
-  }
-
   if (!(await strategy.isSupported(blob.type))) {
     throw new DecoderError(
-      String(decoder),
-      `Decoder "${decoder}" unsupported for type "${blob.type}"`,
+      strategy.id,
+      `Decoder "${strategy.id}" unsupported for type "${blob.type}"`,
       blob.type
     );
   }
-
   try {
     return await strategy.decode(blob, options);
   } catch (error) {
     throw new DecoderError(
-      String(decoder),
-      `Decoder "${decoder}" failed to decode "${blob.type}"`,
+      strategy.id,
+      `Decoder "${strategy.id}" failed to decode "${blob.type}"`,
       blob.type,
       { cause: error }
     );
   }
-}
-
-async function decodeWithWebGL(
-  blob: Blob | File,
-  options: PixeliftBrowserOptions = {}
-): Promise<PixelData> {
-  const decoder = await import('./webgl');
-  return decoder.decode(blob, options);
-}
-
-async function decodeWithWebCodecs(
-  blob: Blob | File,
-  options: PixeliftBrowserOptions = {}
-): Promise<PixelData> {
-  const decoder = await import('./webcodecs');
-  return decoder.decode(blob, options);
-}
-
-async function decodeWithOffscreenCanvas(
-  source: PixeliftBrowserInput,
-  options: PixeliftBrowserOptions = {}
-): Promise<PixelData> {
-  const decoder = await import('./canvas');
-  return decoder.decode(source, options);
 }
 
 export async function decode(
@@ -101,25 +64,33 @@ export async function decode(
   options: PixeliftBrowserOptions = {}
 ): Promise<PixelData> {
   if (isImageBitmapSource(source)) {
-    return decodeWithOffscreenCanvas(source, options);
+    return canvasDecoder.decode(source, options);
   }
 
   const blob = await toBlob(source, options);
 
-  if (options.decoder) {
-    return decodeUsingStrategy(blob, DecoderStrategies, options);
+  if (options.strategy) {
+    const strategy = DecoderStrategies.find((s) => s.id === options.strategy);
+    if (!strategy) {
+      throw new DecoderError(
+        String(options.strategy),
+        `Decoder "${options.strategy}" not found. Available: ${DecoderStrategies.map((s) => s.id).join(', ')}`,
+        blob.type
+      );
+    }
+    return decodeUsingStrategy(blob, strategy, options);
   }
 
-  let lastError: unknown;
   for (const strategy of DecoderStrategies) {
-    if (!(await strategy.isSupported(blob.type))) continue;
-
+    if (!(await strategy.isSupported(blob.type))) {
+      continue;
+    }
     try {
       return await strategy.decode(blob, options);
-    } catch (error) {
-      lastError = error;
+    } catch {
+      console.warn(`Decoder "${strategy.id}" failed for type "${blob.type}"`);
     }
   }
 
-  throw new FormatError(blob.type, { cause: lastError });
+  throw new DecoderError('all', `No decoder could decode "${blob.type}"`, blob.type);
 }

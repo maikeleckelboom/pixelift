@@ -1,9 +1,13 @@
-import type { PixeliftOptions, PixeliftServerInput } from './types';
+import type { PixeliftServerInput, PixeliftServerOptions } from './types';
 
 export async function getBuffer(
   input: PixeliftServerInput,
-  options: PixeliftOptions = {}
+  options: PixeliftServerOptions = {}
 ): Promise<Buffer> {
+  const { signal, headers } = options;
+
+  signal?.throwIfAborted();
+
   if (Buffer.isBuffer(input)) {
     return input;
   }
@@ -12,21 +16,41 @@ export async function getBuffer(
     return Buffer.from(input as ArrayBufferLike);
   }
 
-  const dataMatch = input.match(/^data:([^;]+);base64,(.*)$/);
+  if (input instanceof Blob || input instanceof File) {
+    signal?.throwIfAborted();
+    const buffer = await input.arrayBuffer();
+    return Buffer.from(buffer);
+  }
+
+  const inputString = String(input);
+
+  const dataMatch = inputString.match(/^data:([^;]+);base64,(.*)$/);
   if (dataMatch && dataMatch[2]) {
     return Buffer.from(dataMatch[2], 'base64');
   }
 
   let url: URL;
   try {
-    url = new URL(input);
+    url = new URL(inputString);
+    signal?.throwIfAborted();
   } catch {
-    const fs = await import('node:fs/promises');
-    return fs.readFile(input);
+    signal?.throwIfAborted();
+    try {
+      const fs = await import('node:fs/promises');
+      return await fs.readFile(inputString);
+    } catch (err: unknown) {
+      throw new Error(
+        `Failed to read local file from path: "${inputString}".\n` +
+          `Please check if the file exists and is accessible.\n` +
+          `Error: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
   }
 
+  // --- Handle URL Protocols ---
   switch (url.protocol) {
     case 'file:': {
+      signal?.throwIfAborted();
       try {
         const fs = await import('node:fs/promises');
         const { fileURLToPath } = await import('node:url');
@@ -42,9 +66,11 @@ export async function getBuffer(
 
     case 'http:':
     case 'https:': {
+      signal?.throwIfAborted();
       const res = await fetch(url.toString(), {
         method: 'GET',
-        headers: options.headers
+        headers: headers,
+        signal: signal
       });
 
       if (!res.ok) {

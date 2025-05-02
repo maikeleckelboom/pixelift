@@ -4,8 +4,8 @@ export type PixeliftBrowserInput = string | URL | File | ImageBitmapSource;
 
 export type { PixelData } from '../types';
 
-export type BrowserDecoder = 'webCodecs' | 'offscreenCanvas' | 'webgl';
+export type BrowserDecodeStrategy = 'webCodecs' | 'offscreenCanvas' | 'webgl';
 
 export interface PixeliftBrowserOptions extends PixeliftSharedOptions {
-  decoder?: BrowserDecoder;
+  strategy?: BrowserDecodeStrategy;
 }

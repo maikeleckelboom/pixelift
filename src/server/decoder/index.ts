@@ -4,22 +4,19 @@ import { getSharp } from './sharp';
 
 export async function decode(
   input: PixeliftServerInput,
-  options: PixeliftServerOptions = {}
+  { signal }: PixeliftServerOptions = {}
 ): Promise<PixelData> {
   const buffer = await getBuffer(input);
-  const sharpModule = await getSharp();
 
-  let pipeline = sharpModule(buffer).toColorspace('srgb').ensureAlpha();
-
-  if (options.width || options.height) {
-    pipeline = pipeline.resize(options.width, options.height, {
-      fit: 'fill',
-      kernel: 'nearest'
-    });
+  if (signal?.aborted) {
+    throw new Error('Aborted');
   }
 
-  // Explicit 8-bit RGBA raw output
-  const { data, info } = await pipeline
+  const sharp = await getSharp().then((mod) => mod.default);
+
+  const { data, info } = await sharp(buffer)
+    .toColorspace('srgb')
+    .ensureAlpha()
     .raw({ depth: 'uchar' })
     .toBuffer({ resolveWithObject: true });
 

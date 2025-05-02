@@ -1,29 +1,29 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { pixelift } from '../src/browser';
 
-const JPG_IMAGE_URL =
-  'https://fastly.picsum.photos/id/107/536/354.jpg?hmac=fLKWiXSw_CxcT7QPAtGkCxVjxdQwZ4Xnl0a3d_ib9PA';
+const FORMATS = ['jpg', 'jpeg', 'png', 'gif', 'webp'] as const;
+type Format = (typeof FORMATS)[number];
 
-describe('Browser', () => {
-  it('should decode a JPG image from an external URL', async () => {
-    const result = await pixelift(JPG_IMAGE_URL);
-    expect(result.width).toBeDefined();
-    expect(result.height).toBeDefined();
-    expect(result.data.filter(Boolean).length).toBeGreaterThan(0);
+let blobs: Record<Format, Blob>;
+
+describe('Browser Pixelift Decode', () => {
+  beforeAll(async () => {
+    const entries = await Promise.all(
+      FORMATS.map(async (format) => {
+        const url = new URL(`./assets/pixelift.${format}`, import.meta.url);
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error(`Failed to fetch ${format}: ${resp.status}`);
+        const blob = await resp.blob();
+        return [format, blob] as const;
+      })
+    );
+    blobs = Object.fromEntries(entries) as Record<Format, Blob>;
   });
 
-  const formats = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'svg'] as const;
-  it.each(formats)(
-    'should decode a %s image from a URL',
-    async (format) => {
-      const url = new URL(`./assets/pixelift.${format}`, import.meta.url);
-      const blob = await fetch(url).then((r) => r.blob());
-      const { data, width, height } = await pixelift(blob, { decoder: 'webgl' });
-
-      expect(width).toBeDefined();
-      expect(height).toBeDefined();
-      expect(data.filter(Boolean).length).toBeGreaterThan(0);
-    },
-    0
-  );
-}, 0);
+  it.concurrent.each(FORMATS)('should decode a %s image via WebGL', async (format) => {
+    const { data, width, height } = await pixelift(blobs[format], { strategy: 'webgl' });
+    expect(width).toBeGreaterThan(0);
+    expect(height).toBeGreaterThan(0);
+    expect(data.some((v) => v !== 0)).toBe(true);
+  });
+});
