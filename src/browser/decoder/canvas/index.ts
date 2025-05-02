@@ -1,8 +1,11 @@
-import type { PixelData, PixeliftOptions } from 'pixelift';
-import type { PixeliftBrowserInput } from 'pixelift/browser';
 import { isStringOrURL } from '../../../shared/validation';
 import { isImageBitmapSource } from '../../validation';
 import { canvasRenderingOptions, imageBitmapOptions } from './options';
+import type {
+  PixelData,
+  PixeliftBrowserInput,
+  PixeliftBrowserOptions
+} from '../../types';
 
 function getCanvasContext(
   width: number,
@@ -34,7 +37,7 @@ function assertDimensions(width: number, height: number): void {
 
 async function createBitmapFromSVGBlob(
   blob: Blob,
-  options: PixeliftOptions = {}
+  options: PixeliftBrowserOptions = {}
 ): Promise<ImageBitmap> {
   const objectURL = URL.createObjectURL(blob);
   try {
@@ -46,10 +49,8 @@ async function createBitmapFromSVGBlob(
 
     if (viewBox) {
       const [, , w, h] = viewBox.split(' ').map(Number);
-      if (w && h) {
-        width = options.width ?? w;
-        height = options.height ?? h;
-      }
+      width = options.width || w || imageElement.width;
+      height = options.height || h || imageElement.height;
     }
 
     assertDimensions(width, height);
@@ -63,7 +64,10 @@ async function createBitmapFromSVGBlob(
   }
 }
 
-async function ensureBitmap(blob: Blob, options: PixeliftOptions): Promise<ImageBitmap> {
+async function ensureBitmap(
+  blob: Blob,
+  options: PixeliftBrowserOptions
+): Promise<ImageBitmap> {
   return blob.type === 'image/svg+xml'
     ? createBitmapFromSVGBlob(blob, options)
     : createImageBitmap(blob, imageBitmapOptions());
@@ -81,7 +85,7 @@ async function fetchBlob(url: string, headers?: HeadersInit): Promise<Blob> {
 
 async function createImageFromSource(
   source: PixeliftBrowserInput,
-  options: PixeliftOptions = {}
+  options: PixeliftBrowserOptions = {}
 ): Promise<ImageBitmap> {
   if (isStringOrURL(source)) {
     const url = new URL(source.toString(), location.origin).toString();
@@ -106,15 +110,9 @@ async function createImageFromSource(
   );
 }
 
-function getImageData(context: OffscreenCanvasRenderingContext2D): ImageData {
-  return context.getImageData(0, 0, context.canvas.width, context.canvas.height, {
-    colorSpace: 'srgb'
-  });
-}
-
 export async function decode(
   imageSource: PixeliftBrowserInput,
-  options: PixeliftOptions = {}
+  options: PixeliftBrowserOptions = {}
 ): Promise<PixelData> {
   const imageBitmap = await createImageFromSource(imageSource, options);
 
@@ -128,33 +126,13 @@ export async function decode(
   // Create the final canvas at the determined dimensions
   const context = getCanvasContext(width, height);
 
-  // Draw the imageBitmap onto the canvas. If imageBitmap.width/height differ
-  // from canvas width/height, this drawImage call performs the final scaling.
-  // The imageBitmapOptions.resizeWidth/Height *may* have already scaled it,
-  // depending on browser/format, but drawing to the target canvas size ensures it.
+  // Draw the imageBitmap onto the canvas
   context.drawImage(imageBitmap, 0, 0, width, height);
-  const imageData = getImageData(context);
-  const pixels = imageData.data;
-
-  // Manual Un-Premultiplication Logic
-  // for (let i = 0; i < pixels.length; i += 4) {
-  //   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  //   const A = pixels[i + 3]!;
-  //   if (A > 0 && A < 255) {
-  //     const inv = 255 / A;
-  //     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  //     pixels[i] = Math.min(255, pixels[i]! * inv) | 0;
-  //     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  //     pixels[i + 1] = Math.min(255, pixels[i + 1]! * inv) | 0;
-  //     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  //     pixels[i + 2] = Math.min(255, pixels[i + 2]! * inv) | 0;
-  //     // pixels[i+3] (alpha) is already correct
-  //   }
-  // }
+  const { data } = context.getImageData(0, 0, width, height, { colorSpace: 'srgb' });
 
   return {
-    data: pixels,
-    width: imageData.width,
-    height: imageData.height
+    data,
+    width,
+    height
   };
 }

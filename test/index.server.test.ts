@@ -6,7 +6,7 @@ describe('Server (Node)', () => {
   const formats = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'svg'] as const;
 
   test.each(formats)('should decode a %s image from a URL', async (format) => {
-    const url = new URL(`./assets/test.${format}`, import.meta.url);
+    const url = new URL(`./assets/pixelift.${format}`, import.meta.url);
     const buffer = readFileSync(url);
     const result = await pixelift(buffer);
 

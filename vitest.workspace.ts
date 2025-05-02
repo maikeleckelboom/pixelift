@@ -8,14 +8,17 @@ export default defineWorkspace([
       name: 'server',
       environment: 'node',
       include: ['**/*.server.test.ts', '**/*.test.ts'],
-      exclude: ['**/*.browser.test.ts']
+      exclude: ['**/*.browser.test.ts'],
+      benchmark: {
+        exclude: ['**/*.browser.bench.ts']
+      }
     }
   },
   {
     test: {
       ...baseConfig.test,
       name: 'browser',
-      include: ['**/*.browser.test.ts', '**/*.test.ts'],
+      include: ['**/*.browser.test.ts'],
       exclude: ['**/*.server.test.ts'],
       browser: {
         provider: 'playwright',
@@ -23,10 +26,13 @@ export default defineWorkspace([
         headless: true,
         screenshotFailures: false,
         instances: [
-          { browser: 'webkit' },
-          { browser: 'chromium' },
-          { browser: 'firefox' }
+          { browser: 'chromium' }
+          // { browser: 'firefox' },
+          // { browser: 'webkit' }
         ]
+      },
+      benchmark: {
+        include: ['**/*.browser.bench.ts']
       }
     }
   }

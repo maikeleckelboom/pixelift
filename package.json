@@ -48,6 +48,7 @@
   "scripts": {
     "dev": "vitest --watch",
     "test": "vitest",
+    "test:browser:verbose": "vitest --project browser --reporter verbose",
     "test:browser": "vitest --project browser",
     "test:server": "vitest --project server",
     "test:types": "bun scripts/typecheck.ts",
@@ -83,7 +84,7 @@
   },
   "devDependencies": {
     "typescript": "^5",
-    "vitest": "^3.1.2",
+    "vitest": "3.1.2",
     "@types/node": "22.15.3",
     "@eslint/js": "^9.25.1",
     "eslint": "^9.25.1",

@@ -77,15 +77,3 @@ export class SharpMissingError extends PixeliftError {
     );
   }
 }
-
-export class NetworkError extends PixeliftError {
-  constructor(message: string, options?: PixeliftErrorOptions) {
-    super('NetworkError', `Network error: ${message}`, options);
-  }
-}
-
-export class InvalidInputError extends PixeliftError {
-  constructor(message: string, options?: PixeliftErrorOptions) {
-    super('InvalidInputError', `Invalid input: ${message}`, options);
-  }
-}

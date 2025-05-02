@@ -97,4 +97,4 @@ describe('Round-trip conversions', () => {
 
     expect((resultColor || 0) >>> 0).toEqual(0xffeeddcc);
   });
-}, 0);
+});

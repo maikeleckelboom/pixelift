@@ -1,37 +1,18 @@
 import type { PixelData, PixeliftOptions } from 'pixelift';
+import type { PixeliftBrowserOptions } from '../../types';
 
 async function blobToImageBitmap(
   blob: Blob,
-  options: PixeliftOptions
+  options: PixeliftBrowserOptions = {}
 ): Promise<ImageBitmap> {
-  // For SVG, some browsers don’t support direct createImageBitmap
   if (blob.type === 'image/svg+xml') {
-    const url = URL.createObjectURL(blob);
-    try {
-      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-        const el = new Image();
-        el.crossOrigin = 'anonymous';
-        el.onload = (): void => resolve(el);
-        el.onerror = (): void => reject(new Error('Failed to load SVG'));
-        el.src = url;
-      });
-      const width = options.width ?? img.width;
-      const height = options.height ?? img.height;
-      const canvas = new OffscreenCanvas(width, height);
-      const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Failed to create canvas context');
-      ctx.drawImage(img, 0, 0, width, height);
-      return await createImageBitmap(canvas);
-    } finally {
-      URL.revokeObjectURL(url);
-    }
+    throw new TypeError('SVG images are not supported for decoding via WebGL');
   }
 
-  // For all other formats, direct createImageBitmap will handle orientation & colors
   return await createImageBitmap(blob, {
     imageOrientation: 'none',
     premultiplyAlpha: 'none',
-    colorSpaceConversion: 'default',
+    colorSpaceConversion: 'none',
     resizeQuality: 'low',
     resizeWidth: options.width,
     resizeHeight: options.height
@@ -55,7 +36,7 @@ export async function decode(
   // 2. Set up OffscreenCanvas & WebGL2 context
   const canvas = new OffscreenCanvas(width, height);
   const gl = canvas.getContext('webgl2', {
-    alpha: true,
+    alpha: false,
     premultipliedAlpha: false,
     antialias: false,
     depth: false,
@@ -68,138 +49,84 @@ export async function decode(
 
   gl.viewport(0, 0, width, height);
 
-  // 3. Configure unpacking
+  // 3. Configure unpacking (no flip)
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
   // 4. Create and bind texture
   const tex = gl.createTexture();
   if (!tex) throw new Error('Failed to create WebGL texture');
   gl.bindTexture(gl.TEXTURE_2D, tex);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-  // Upload the ImageBitmap into the texture
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmap);
+  // Upload the ImageBitmap into the texture using RGBA8 internal format
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, bitmap);
 
-  // 5. Create a simple shader & framebuffer-less draw (we can use the default framebuffer)
-  //    We only need to draw a full-screen quad; if you're in need of shaders, you can bind a vertex buffer.
-  //    But WebGL will sample the texture into the canvas implicitly if we just call readPixels.
-
-  // Vertex shader: positions a quad covering clip space
+  // 5. Create shaders with optimized vertex generation and flipped sampling
   const vsSource = `#version 300 es
-in vec2 a_position;
-out vec2 v_uv;
-void main() {
-  v_uv = (a_position + 1.0) * 0.5;
-  gl_Position = vec4(a_position, 0.0, 1.0);
-}`;
+  out vec2 v_uv;
+  void main() {
+    int vertexID = gl_VertexID;
+    vec2 pos;
+    if (vertexID == 0)      pos = vec2(-1.0, 1.0);
+    else if (vertexID == 1) pos = vec2(-1.0, -1.0);
+    else if (vertexID == 2) pos = vec2(1.0, 1.0);
+    else if (vertexID == 3) pos = vec2(1.0, 1.0);
+    else if (vertexID == 4) pos = vec2(-1.0, -1.0);
+    else                    pos = vec2(1.0, -1.0);
+    gl_Position = vec4(pos, 0.0, 1.0);
+    v_uv = (pos + 1.0) * 0.5;
+  }`;
 
-  // Fragment shader: samples the bound texture at v_uv
   const fsSource = `#version 300 es
-precision highp float;
-uniform sampler2D u_texture;
-in vec2 v_uv;
-out vec4 outColor;
-void main() {
-  outColor = texture(u_texture, v_uv);
-}`;
+  precision mediump float;
+  uniform sampler2D u_texture;
+  in vec2 v_uv;
+  out vec4 outColor;
+  void main() {
+    outColor = texture(u_texture, vec2(v_uv.x, 1.0 - v_uv.y));
+  }`;
 
-  // Helper to compile a shader
-  function compileShader(
-    gl: WebGL2RenderingContext,
-    source: string,
-    type: number
-  ): WebGLShader {
+  // Compile shaders and link program
+  const compileShader = (source: string, type: number): WebGLShader => {
     const shader = gl.createShader(type);
     if (!shader) throw new Error('Failed to create shader');
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      const log = gl.getShaderInfoLog(shader);
-      gl.deleteShader(shader);
-      throw new Error(`Shader compile failed: ${log}`);
+      throw new Error(`Shader compile error: ${gl.getShaderInfoLog(shader)}`);
     }
     return shader;
+  };
+
+  const vs = compileShader(vsSource, gl.VERTEX_SHADER);
+  const fs = compileShader(fsSource, gl.FRAGMENT_SHADER);
+  const program = gl.createProgram();
+  gl.attachShader(program, vs);
+  gl.attachShader(program, fs);
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    throw new Error(`Program link error: ${gl.getProgramInfoLog(program)}`);
   }
 
-  // Helper to link program
-  function createProgram(
-    gl: WebGL2RenderingContext,
-    vs: WebGLShader,
-    fs: WebGLShader
-  ): WebGLProgram {
-    const prog = gl.createProgram();
-    if (!prog) throw new Error('Failed to create program');
-    gl.attachShader(prog, vs);
-    gl.attachShader(prog, fs);
-    gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
-      const log = gl.getProgramInfoLog(prog);
-      gl.deleteProgram(prog);
-      throw new Error(`Program link failed: ${log}`);
-    }
-    return prog;
-  }
-
-  // Compile and link
-  const vs = compileShader(gl, vsSource, gl.VERTEX_SHADER);
-  const fs = compileShader(gl, fsSource, gl.FRAGMENT_SHADER);
-  const program = createProgram(gl, vs, fs);
-
-  // Look up attribute/uniform locations
-  const posLoc = gl.getAttribLocation(program, 'a_position');
-  const texLoc = gl.getUniformLocation(program, 'u_texture');
-
-  // Create a VAO for our quad
-  const vao = gl.createVertexArray();
-  if (!vao) throw new Error('Failed to create VAO');
-  gl.bindVertexArray(vao);
-
-  // Full-screen quad positions (two triangles)
-  //   (-1, +1) ─── (+1, +1)
-  //     │ \       │
-  //     │  \      │
-  //   (-1, -1) ─── (+1, -1)
-  const vertexCoordinates = new Float32Array([
-    -1, +1, -1, -1, +1, +1, +1, +1, -1, -1, +1, -1
-  ]);
-  const vbo = gl.createBuffer();
-  if (!vbo) throw new Error('Failed to create VBO');
-  gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-  gl.bufferData(gl.ARRAY_BUFFER, vertexCoordinates, gl.STATIC_DRAW);
-  gl.enableVertexAttribArray(posLoc);
-  gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
-
-  // Bind texture unit 0
+  // 6. Execute draw call
+  gl.useProgram(program);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, tex);
-
-  // Draw
-  gl.useProgram(program);
-  gl.uniform1i(texLoc, 0);
-  gl.bindVertexArray(vao);
+  gl.uniform1i(gl.getUniformLocation(program, 'u_texture'), 0);
   gl.drawArrays(gl.TRIANGLES, 0, 6);
 
-  // 6. Read back pixels
-  const rawBytes = new Uint8Array(width * height * 4);
-  gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, rawBytes);
+  // 7. Read pixels directly into clamped array
+  const data = new Uint8ClampedArray(width * height * 4);
+  gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, data);
 
-  // 7. The data from readPixels is bottom-to-top; flip it in JS to top-to-bottom.
-  const rowBytes = width * 4;
-  const flipped = new Uint8ClampedArray(rawBytes.length);
-  for (let row = 0; row < height; row++) {
-    const srcOffset = (height - 1 - row) * rowBytes;
-    const dstOffset = row * rowBytes;
-    flipped.set(rawBytes.subarray(srcOffset, srcOffset + rowBytes), dstOffset);
-  }
+  // 8. Cleanup WebGL resources
+  gl.deleteTexture(tex);
+  gl.deleteProgram(program);
+  gl.deleteShader(vs);
+  gl.deleteShader(fs);
 
-  // 8. Return in Pixelift’s format
-  return {
-    data: flipped,
-    width,
-    height
-  };
+  return { data, width, height };
 }

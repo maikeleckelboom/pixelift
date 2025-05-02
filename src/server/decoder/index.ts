@@ -1,14 +1,14 @@
-import type { PixelData, PixeliftOptions } from 'pixelift';
-import type { PixeliftServerInput } from 'pixelift/server';
+import type { PixelData, PixeliftServerInput, PixeliftServerOptions } from '../types';
 import { getBuffer } from '../buffer';
 import { getSharp } from './sharp';
 
 export async function decode(
   input: PixeliftServerInput,
-  options: PixeliftOptions = {}
+  options: PixeliftServerOptions = {}
 ): Promise<PixelData> {
   const buffer = await getBuffer(input);
   const sharpModule = await getSharp();
+
   let pipeline = sharpModule(buffer).toColorspace('srgb').ensureAlpha();
 
   if (options.width || options.height) {

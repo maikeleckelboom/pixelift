@@ -1,5 +1,5 @@
-import type { PixelData, PixeliftOptions } from '../types';
-import type { PixeliftBrowserInput } from './types';
+import type { PixelData } from '../types';
+import type { PixeliftBrowserInput, PixeliftBrowserOptions } from './types';
 
 /**
  * Browser-side entry point for the Pixelift library.
@@ -10,13 +10,14 @@ import type { PixeliftBrowserInput } from './types';
  */
 export async function pixelift(
   input: PixeliftBrowserInput,
-  options: PixeliftOptions = {}
+  options: PixeliftBrowserOptions = {}
 ): Promise<PixelData> {
   const decoder = await import('./decoder');
   return await decoder.decode(input, options);
 }
 
-export type { PixelData, PixeliftOptions } from '../types';
-export type { PixeliftBrowserInput } from './types';
+export type { PixelData, PixeliftBrowserInput } from './types';
+
+export type { PixeliftOptions } from '../types';
 
 export { unpackPixels, packPixels } from '../shared/conversion';

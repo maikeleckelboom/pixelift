@@ -1,3 +1,11 @@
+import type { PixeliftSharedOptions } from '../types';
+
 export type PixeliftBrowserInput = string | URL | File | ImageBitmapSource;
 
-export type { PixeliftOptions, PixelData } from '../types';
+export type { PixelData } from '../types';
+
+export type BrowserDecoder = 'webCodecs' | 'offscreenCanvas' | 'webgl';
+
+export interface PixeliftBrowserOptions extends PixeliftSharedOptions {
+  decoder?: BrowserDecoder;
+}

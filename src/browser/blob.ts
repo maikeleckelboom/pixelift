@@ -1,10 +1,9 @@
-import type { PixeliftOptions } from 'pixelift';
-import type { PixeliftBrowserInput } from 'pixelift/browser';
 import { isStringOrURL } from '../shared/validation';
+import type { PixeliftBrowserInput, PixeliftBrowserOptions } from './types';
 
 export async function toBlob(
   source: PixeliftBrowserInput,
-  options: PixeliftOptions = {}
+  options: PixeliftBrowserOptions = {}
 ): Promise<Blob> {
   if (source instanceof Blob) {
     return source;

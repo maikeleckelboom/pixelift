@@ -1,8 +1,8 @@
-import type { PixelData, PixeliftOptions } from 'pixelift';
+import type { PixelData, PixeliftBrowserOptions } from '../../types';
 
 export async function decode(
   blob: Blob | File,
-  options: PixeliftOptions = {}
+  options: PixeliftBrowserOptions = {}
 ): Promise<PixelData> {
   const buffer = await blob.arrayBuffer();
   const decoder = new ImageDecoder({
