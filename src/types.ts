@@ -1,5 +1,5 @@
 import type { PixeliftServerInput, PixeliftServerOptions } from './server';
-import type { PixeliftBrowserOptions, PixeliftBrowserInput } from './browser/types';
+import type { PixeliftBrowserInput, PixeliftBrowserOptions } from './browser/types';
 
 export interface PixelData {
   data: Uint8ClampedArray;
@@ -14,4 +14,4 @@ export interface PixeliftSharedOptions {
 
 export type PixeliftInput = PixeliftBrowserInput | PixeliftServerInput;
 
-export type PixeliftOptions = PixeliftBrowserOptions | PixeliftServerOptions;
+export type PixeliftOptions = PixeliftBrowserOptions & PixeliftServerOptions;
