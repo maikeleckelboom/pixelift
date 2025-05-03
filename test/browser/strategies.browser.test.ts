@@ -1,17 +1,17 @@
 import { beforeAll, describe, expect, test } from 'vitest';
-import { decode } from '../src/browser/decoder';
+import { decode } from '../../src/browser/decoder';
 
-import PIXELIFT_PNG_URL from './assets/pixelift.png?url';
-import PIXELIFT_JPG_URL from './assets/pixelift.jpg?url';
-import PIXELIFT_JPEG_URL from './assets/pixelift.jpeg?url';
-import PIXELIFT_GIF_URL from './assets/pixelift.gif?url';
-import PIXELIFT_WEBP_URL from './assets/pixelift.webp?url';
+import PIXELIFT_PNG_URL from '../assets/pixelift.png?url';
+import PIXELIFT_JPG_URL from '../assets/pixelift.jpg?url';
+import PIXELIFT_JPEG_URL from '../assets/pixelift.jpeg?url';
+import PIXELIFT_GIF_URL from '../assets/pixelift.gif?url';
+import PIXELIFT_WEBP_URL from '../assets/pixelift.webp?url';
 
-import PIXELIFT_PNG_TXT_URL from './assets/txt/pixelift.png.txt?url';
-import PIXELIFT_JPG_TXT_URL from './assets/txt/pixelift.jpg.txt?url';
-import PIXELIFT_JPEG_TXT_URL from './assets/txt/pixelift.jpeg.txt?url';
-import PIXELIFT_GIF_TXT_URL from './assets/txt/pixelift.gif.txt?url';
-import PIXELIFT_WEBP_TXT_URL from './assets/txt/pixelift.webp.txt?url';
+import PIXELIFT_PNG_TXT_URL from '../assets/txt/pixelift.png.txt?url';
+import PIXELIFT_JPG_TXT_URL from '../assets/txt/pixelift.jpg.txt?url';
+import PIXELIFT_JPEG_TXT_URL from '../assets/txt/pixelift.jpeg.txt?url';
+import PIXELIFT_GIF_TXT_URL from '../assets/txt/pixelift.gif.txt?url';
+import PIXELIFT_WEBP_TXT_URL from '../assets/txt/pixelift.webp.txt?url';
 
 const PIXELIFT_IMAGES = {
   png: PIXELIFT_PNG_URL,

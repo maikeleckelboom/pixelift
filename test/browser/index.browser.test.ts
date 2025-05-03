@@ -10,7 +10,7 @@ describe('Browser Pixelift Decode', () => {
   beforeAll(async () => {
     const entries = await Promise.all(
       FORMATS.map(async (format) => {
-        const url = new URL(`./assets/pixelift.${format}`, import.meta.url);
+        const url = new URL(`../assets/pixelift.${format}`, import.meta.url);
         const resp = await fetch(url);
         if (!resp.ok) throw new Error(`Failed to fetch ${format}: ${resp.status}`);
         const blob = await resp.blob();

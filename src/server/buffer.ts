@@ -3,7 +3,7 @@ import type { PixeliftServerInput, PixeliftServerOptions } from './types';
 async function sanitizeFilePath(url: URL): Promise<string> {
   const { fileURLToPath } = await import('node:url');
   const path = await import('node:path');
-  const decodedPath = fileURLToPath(url); // Automatically decodes URL components
+  const decodedPath = fileURLToPath(url);
   const resolved = path.resolve(decodedPath);
 
   if (!resolved.startsWith(process.cwd())) {
@@ -19,10 +19,8 @@ async function resolveLocalPath(inputPath: string): Promise<string> {
   const decodedPath = decodeURIComponent(inputPath);
   const resolved = path.resolve(decodedPath);
 
-  // Get project root directory (where package.json lives)
   const projectRoot = path.resolve(process.cwd());
 
-  // Normalize both paths for consistent comparison
   const absolutePath = path.normalize(resolved);
   const normalizedRoot = path.normalize(projectRoot + path.sep);
 

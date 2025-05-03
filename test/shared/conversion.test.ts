@@ -1,4 +1,4 @@
-import { packPixels, unpackPixels } from '../src';
+import { packPixels, unpackPixels } from 'pixelift';
 import { describe, expect, it } from 'vitest';
 
 describe('packPixels', () => {
