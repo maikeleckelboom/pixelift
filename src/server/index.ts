@@ -18,6 +18,6 @@ export async function pixelift(
 
 export type { PixelData, PixeliftServerInput, PixeliftServerOptions } from './types';
 
-export type { PixeliftOptions } from '../types';
+export type { PixeliftServerOptions as PixeliftOptions } from './types';
 
 export { unpackPixels, packPixels } from '../shared/conversion';

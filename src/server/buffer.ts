@@ -13,14 +13,11 @@ async function sanitizeFilePath(url: URL): Promise<string> {
   return resolved;
 }
 
-// src/server/buffer.ts
 async function resolveLocalPath(inputPath: string): Promise<string> {
   const path = await import('node:path');
   const decodedPath = decodeURIComponent(inputPath);
   const resolved = path.resolve(decodedPath);
-
   const projectRoot = path.resolve(process.cwd());
-
   const absolutePath = path.normalize(resolved);
   const normalizedRoot = path.normalize(projectRoot + path.sep);
 
@@ -30,6 +27,7 @@ async function resolveLocalPath(inputPath: string): Promise<string> {
 
   return absolutePath;
 }
+
 export async function getBuffer(
   input: PixeliftServerInput,
   options: PixeliftServerOptions = {}

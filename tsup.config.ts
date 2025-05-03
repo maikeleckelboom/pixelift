@@ -3,7 +3,9 @@ import { defineConfig } from 'tsup';
 export default defineConfig([
   {
     name: 'full',
-    entry: { index: 'src/index.ts' },
+    entry: {
+      index: 'src/index.ts'
+    },
     format: ['esm', 'cjs'],
     outDir: 'dist',
     dts: true,
@@ -15,7 +17,10 @@ export default defineConfig([
     name: 'browser',
     platform: 'browser',
     format: ['esm', 'cjs'],
-    entry: { index: 'src/browser/index.ts' },
+    entry: {
+      index: 'src/browser/index.ts',
+      types: 'src/browser/types.ts'
+    },
     outDir: 'dist/browser',
     dts: true,
     minify: true,
@@ -26,7 +31,10 @@ export default defineConfig([
     name: 'server',
     platform: 'node',
     format: ['esm', 'cjs'],
-    entry: { index: 'src/server/index.ts' },
+    entry: {
+      index: 'src/server/index.ts',
+      types: 'src/server/types.ts'
+    },
     outDir: 'dist/server',
     dts: true,
     minify: true,

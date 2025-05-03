@@ -1,25 +1,32 @@
 import type { PixelData, PixeliftInput, PixeliftOptions } from './types';
 import { isServer } from './shared/env';
 import { validateBrowserInput, validateServerInput } from './shared/validation';
+import type { PixeliftServerInput, PixeliftServerOptions } from './server/types';
+import type { PixeliftBrowserInput, PixeliftBrowserOptions } from './browser/types';
 
+// Browser-specific overload
 /**
- * Main entry point for the Pixelift library.
- * Processes images in both browser and server environments.
- *
- * @param input - Source image (URL, file path, Buffer, Blob, etc.)
- * @param options - Processing options (width, height, etc.)
- * @returns Promise resolving to pixel data
- * @throws PixeliftError if processing fails
- *
- * @example
- * ```ts
- * // Basic usage
- * const { data, width, height } = await pixelift('image.jpg');
- *
- * // With options
- * const result = await pixelift(imageBlob);
- * ```
+ * Browser-side image processing with pixel data extraction
+ * @param input Image URL, Blob, File, or ImageBitmapSource
+ * @param options Browser-specific processing options
  */
+export async function pixelift(
+  input: PixeliftBrowserInput,
+  options?: PixeliftBrowserOptions
+): Promise<PixelData>;
+
+// Server-specific overload
+/**
+ * Server-side image processing with pixel data extraction
+ * @param input File path, Buffer, or ArrayBuffer
+ * @param options Server-specific processing options
+ */
+export async function pixelift(
+  input: PixeliftServerInput,
+  options?: PixeliftServerOptions
+): Promise<PixelData>;
+
+// Implementation signature
 export async function pixelift(
   input: PixeliftInput,
   options: PixeliftOptions = {}

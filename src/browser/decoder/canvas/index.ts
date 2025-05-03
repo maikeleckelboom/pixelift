@@ -8,17 +8,12 @@ import type {
 let sharedCanvas: OffscreenCanvas | undefined;
 let sharedCtx: OffscreenCanvasRenderingContext2D | undefined;
 
-export async function decode(
-  imageSource: PixeliftBrowserInput,
-  options: PixeliftBrowserOptions = {}
-): Promise<PixelData> {
-  const bitmap = await createImageFromSource(imageSource, options);
-  const { width, height } = bitmap;
-  const ctx = getCanvasContext(width, height);
-  ctx.clearRect(0, 0, width, height);
-  ctx.drawImage(bitmap, 0, 0, width, height);
-  const { data } = ctx.getImageData(0, 0, width, height, { colorSpace: 'srgb' });
-  return { data, width, height };
+export async function isSupported(): Promise<boolean> {
+  return (
+    'OffscreenCanvas' in window &&
+    typeof OffscreenCanvas === 'function' &&
+    typeof createImageBitmap === 'function'
+  );
 }
 
 function getCanvasContext(
@@ -40,6 +35,19 @@ function getCanvasContext(
   return sharedCtx;
 }
 
+export async function decode(
+  imageSource: PixeliftBrowserInput,
+  options: PixeliftBrowserOptions = {}
+): Promise<PixelData> {
+  const bitmap = await createImageFromSource(imageSource, options);
+  const { width, height } = bitmap;
+  const ctx = getCanvasContext(width, height);
+  ctx.clearRect(0, 0, width, height);
+  ctx.drawImage(bitmap, 0, 0, width, height);
+  const { data } = ctx.getImageData(0, 0, width, height, { colorSpace: 'srgb' });
+  return { data, width, height };
+}
+
 async function createImageFromSource(
   source: PixeliftBrowserInput,
   options: PixeliftBrowserOptions = {}
@@ -53,9 +61,7 @@ async function createImageFromSource(
   return ensureBitmap(source);
 }
 
-async function ensureBitmap(
-  blob: Response | Blob | ImageBitmapSource
-): Promise<ImageBitmap> {
+async function ensureBitmap(blob: Response | ImageBitmapSource): Promise<ImageBitmap> {
   if (blob instanceof Response) {
     const res = await blob.blob();
     return ensureBitmap(res);
@@ -70,12 +76,4 @@ async function ensureBitmap(
     colorSpaceConversion: 'none',
     imageOrientation: 'none'
   });
-}
-
-export async function isSupported(): Promise<boolean> {
-  return (
-    'OffscreenCanvas' in window &&
-    typeof OffscreenCanvas === 'function' &&
-    typeof createImageBitmap === 'function'
-  );
 }

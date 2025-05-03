@@ -14,4 +14,4 @@ export interface PixeliftSharedOptions {
 
 export type PixeliftInput = PixeliftBrowserInput | PixeliftServerInput;
 
-export type PixeliftOptions = PixeliftBrowserOptions & PixeliftServerOptions;
+export type PixeliftOptions = PixeliftBrowserOptions | PixeliftServerOptions;
