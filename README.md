@@ -11,16 +11,19 @@ WebGL API).
 Pixelift provides dual-format builds—supporting both ESM and CommonJS—tailored for different environments.
 
 #### Universal (Node + Browser)
+
 ```bash
 npm install pixelift
 ```
 
 #### Browser-only
+
 ```bash
 npm install pixelift/browser
 ```
 
 #### Server-only
+
 ```bash
 npm install pixelift/server
 ```
@@ -28,43 +31,38 @@ npm install pixelift/server
 ### Server Requirements
 
 Install `sharp` for server-side processing:
+
 ```bash
 npm install sharp
 ```
+
 ---
 
 ## Quick Start
 
-### Browser
+### Browser-only
 
 ```ts
-const { data, width, height } = await pixelift('/private/img.jpg', {
-  headers: {
-    Authorization: `Bearer ${token}`
-  }
-});
+import { pixelift } from 'pixelift/browser';
+
+const { data, width, height } = await pixelift('/private/img.jpg');
 ```
 
-### Node
+### Node-only
 
 ```ts
-import fs from 'fs/promises';
-import { pixelift } from 'your-lib';
+import { pixelift } from 'pixelift/server';
 
-const { data, width, height } = await pixelift('https://api.example.com/secret.jpg', {
-  headers: {
-    'X-API-Key': process.env.API_KEY!
-  }
-});
+const { data, width, height } = await pixelift('https://api.example.com/secret.jpg');
 
-// maybe write raw bytes somewhere
+// Save the raw pixel data to a file (for example)
 await fs.writeFile('out.raw', data);
 ```
-
 
 ## Conversion Utilities
 
 Import from the main package:
+
 ```ts
 import { unpackPixels, packPixels } from 'pixelift';
 
@@ -81,8 +79,8 @@ import { unpackPixels, packPixels } from 'pixelift/server';
 
 - **input**: `string | URL | File | Blob | Buffer | ArrayBuffer | Uint8Array`
 - **options**:
-  - `headers?`: `Record<string, string>` — for custom headers
-  - `signal?`: `AbortSignal` — for aborting the request
+    - `headers?`: `Record<string, string>` — for custom headers
+    - `signal?`: `AbortSignal` — for aborting the request
 
 **Returns** a Promise resolving to:
 
@@ -98,7 +96,7 @@ interface PixelData {
 
 - Converts RGBA bytes to 32-bit ARGB values.
 - **options**:
-  - `useTArray?`: `boolean` (default `true`)
+    - `useTArray?`: `boolean` (default `true`)
 
 ### `packPixels(pixels) → Uint8ClampedArray`
 

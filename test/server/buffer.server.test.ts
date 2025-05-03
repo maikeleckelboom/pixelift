@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { getBuffer } from '../../src/server/buffer';
-import { assetsDir, loadAsset, path } from '../fixtures';
+import { assetsDir, loadAsset, path } from '../fixtures/server-utils';
 
 describe('Server Buffer Security', () => {
   const SAFE_IMAGE_BUFFER = loadAsset('pixelift.png');

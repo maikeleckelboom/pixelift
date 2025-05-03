@@ -1,23 +1,36 @@
-import type { PixelData, PixeliftInput, PixeliftOptions } from './types';
-import { isServer } from './shared/env';
 import { validateBrowserInput, validateServerInput } from './shared/validation';
+import { isServer } from './shared/env';
+import { createError } from './shared/error';
+import type { PixelData, PixeliftInput, PixeliftOptions } from './types';
 import type { ServerInput, ServerOptions } from './server/types';
 import type { BrowserInput, BrowserOptions } from './browser/types';
+import type { Decoder } from './browser/decoder/types';
+
+interface EnvironmentConfig<In, Opts> {
+  validate: (input: unknown) => input is In;
+  importDecoder: () => Promise<Decoder<Opts>>;
+  errorMessage: string;
+}
+
+const browserConfig: EnvironmentConfig<BrowserInput, BrowserOptions> = {
+  validate: validateBrowserInput,
+  importDecoder: () => import('./browser/decoder') as Promise<Decoder<BrowserOptions>>,
+  errorMessage: 'Invalid input type for browser-side decoding.'
+};
+
+const serverConfig: EnvironmentConfig<ServerInput, ServerOptions> = {
+  validate: validateServerInput,
+  importDecoder: () => import('./server/decoder') as Promise<Decoder<ServerOptions>>,
+  errorMessage: 'Invalid input type for server-side decoding.'
+};
 
 /**
- * Browser-side image processing with pixel data extraction
- * @param input Image URL, Blob, File, or ImageBitmapSource
- * @param options Browser-specific processing options
+ * Main Pixelift decoding function – runs in Node or browser.
  */
 export async function pixelift(
   input: BrowserInput,
   options?: BrowserOptions
 ): Promise<PixelData>;
-/**
- * Server-side image processing with pixel data extraction
- * @param input File path, Buffer, or ArrayBuffer
- * @param options Server-specific processing options
- */
 export async function pixelift(
   input: ServerInput,
   options?: ServerOptions
@@ -26,31 +39,24 @@ export async function pixelift(
   input: PixeliftInput,
   options: PixeliftOptions = {}
 ): Promise<PixelData> {
-  if (isServer()) {
-    try {
-      if (validateServerInput(input)) {
-        const decoder = await import('./server/decoder');
-        return decoder.decode(input, <ServerOptions>options);
-      }
-    } catch (error) {
-      throw new TypeError('Invalid input type for server environment.', {
-        cause: error
-      });
-    }
+  const isServerEnvironment = isServer();
+
+  const config = isServerEnvironment ? serverConfig : browserConfig;
+
+  if (!config.validate(input)) {
+    throw createError.invalidInput(config.errorMessage, typeof input);
   }
 
-  if (validateBrowserInput(input)) {
-    try {
-      const decoder = await import('./browser/decoder');
-      return decoder.decode(input, <BrowserOptions>options);
-    } catch (error) {
-      throw new TypeError('Invalid input type for browser environment.', {
-        cause: error
-      });
-    }
+  try {
+    const decoder = await config.importDecoder();
+    return decoder.decode(input as never, options as never);
+  } catch (error) {
+    throw createError.decodingFailed(
+      'Exhaustive decoder error',
+      config.errorMessage,
+      error
+    );
   }
-
-  throw new TypeError('Invalid input type for browser-side decoding.');
 }
 
 export { unpackPixels, packPixels } from './shared/conversion';

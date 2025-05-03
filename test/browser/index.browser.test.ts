@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, test } from 'vitest';
-import { pixelift } from 'pixelift';
+import { pixelift } from '../../src/browser';
 
 const FORMATS = ['jpg', 'jpeg', 'png', 'gif', 'webp'] as const;
 type Format = (typeof FORMATS)[number];

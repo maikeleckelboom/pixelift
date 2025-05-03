@@ -1,35 +1,29 @@
 export const ErrorCode = {
-  decoderNotFound: 'decoder-not-found',
   decoderUnsupported: 'decoder-unsupported',
   decodingFailed: 'decoding-failed',
   invalidInput: 'invalid-input',
   unsupportedFormat: 'unsupported-format',
   dependencyMissing: 'dependency-missing',
   environmentUnsupported: 'environment-unsupported',
-  networkError: 'network-error',
-  fileAccessError: 'file-access-error',
   fetchFailed: 'fetch-failed',
+  networkError: 'network-error',
   pathTraversal: 'path-traversal',
-  invalidOperation: 'invalid-operation',
   aborted: 'aborted'
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
 
 const MESSAGES: Record<ErrorCode, string> = {
-  [ErrorCode.decoderNotFound]: 'No decoder available for {type}',
   [ErrorCode.decoderUnsupported]: 'Decoder {decoder} is not supported for {detail}',
   [ErrorCode.decodingFailed]: 'Failed to decode {type}: {detail}',
   [ErrorCode.invalidInput]: 'Invalid input: expected {expected}, got {received}',
   [ErrorCode.unsupportedFormat]: 'Unsupported image format: {format}',
   [ErrorCode.dependencyMissing]: 'Required dependency missing: {dependency}',
   [ErrorCode.environmentUnsupported]: 'Current environment does not support {feature}',
-  [ErrorCode.networkError]: 'Network error: {detail}',
-  [ErrorCode.fileAccessError]: 'File access error: {detail}',
   [ErrorCode.fetchFailed]: 'Failed to fetch from {url}: {status} {statusText}',
   [ErrorCode.pathTraversal]: 'Path traversal attempt detected: {path}',
-  [ErrorCode.invalidOperation]: '{detail}',
-  [ErrorCode.aborted]: 'Operation aborted'
+  [ErrorCode.aborted]: 'Operation aborted',
+  [ErrorCode.networkError]: 'Network error: {detail}'
 };
 
 function formatMessage(template: string, context: Record<string, unknown> = {}): string {
@@ -54,15 +48,12 @@ export class PixeliftError extends Error {
     this.context = context;
   }
 
-  static isErrorWithCode(error: unknown, code: ErrorCode): error is PixeliftError {
-    return error instanceof PixeliftError && error.code === code;
+  public toString(): string {
+    return `${this.name} [${this.code}]: ${this.message}`;
   }
 }
 
 export const createError = {
-  decoderNotFound: (type: string): PixeliftError =>
-    new PixeliftError(ErrorCode.decoderNotFound, { type }),
-
   decoderUnsupported: (decoder: string, detail: string): PixeliftError =>
     new PixeliftError(ErrorCode.decoderUnsupported, { decoder, detail }),
 
@@ -84,17 +75,11 @@ export const createError = {
   networkError: (detail: string, cause?: unknown): PixeliftError =>
     new PixeliftError(ErrorCode.networkError, { detail }, { cause }),
 
-  fileAccessError: (detail: string, cause?: unknown): PixeliftError =>
-    new PixeliftError(ErrorCode.fileAccessError, { detail }, { cause }),
-
   fetchFailed: (url: string, status: number, statusText: string): PixeliftError =>
     new PixeliftError(ErrorCode.fetchFailed, { url, status, statusText }),
 
   pathTraversal: (path: string): PixeliftError =>
     new PixeliftError(ErrorCode.pathTraversal, { path }),
-
-  invalidOperation: (detail: string): PixeliftError =>
-    new PixeliftError(ErrorCode.invalidOperation, { detail }),
 
   aborted: (): PixeliftError => new PixeliftError(ErrorCode.aborted)
 };
