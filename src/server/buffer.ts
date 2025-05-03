@@ -1,5 +1,37 @@
 import type { PixeliftServerInput, PixeliftServerOptions } from './types';
 
+async function sanitizeFilePath(url: URL): Promise<string> {
+  const { fileURLToPath } = await import('node:url');
+  const path = await import('node:path');
+  const decodedPath = fileURLToPath(url); // Automatically decodes URL components
+  const resolved = path.resolve(decodedPath);
+
+  if (!resolved.startsWith(process.cwd())) {
+    throw new Error(`Path traversal attempt detected: ${resolved}`);
+  }
+
+  return resolved;
+}
+
+// src/server/buffer.ts
+async function resolveLocalPath(inputPath: string): Promise<string> {
+  const path = await import('node:path');
+  const decodedPath = decodeURIComponent(inputPath);
+  const resolved = path.resolve(decodedPath);
+
+  // Get project root directory (where package.json lives)
+  const projectRoot = path.resolve(process.cwd());
+
+  // Normalize both paths for consistent comparison
+  const absolutePath = path.normalize(resolved);
+  const normalizedRoot = path.normalize(projectRoot + path.sep);
+
+  if (!absolutePath.startsWith(normalizedRoot)) {
+    throw new Error(`Path traversal attempt detected: ${absolutePath}`);
+  }
+
+  return absolutePath;
+}
 export async function getBuffer(
   input: PixeliftServerInput,
   options: PixeliftServerOptions = {}
@@ -37,28 +69,28 @@ export async function getBuffer(
     signal?.throwIfAborted();
     try {
       const fs = await import('node:fs/promises');
-      return await fs.readFile(inputString);
+      const safePath = await resolveLocalPath(inputString);
+      return await fs.readFile(safePath);
     } catch (err: unknown) {
       throw new Error(
-        `Failed to read local file from path: "${inputString}".\n` +
-          `Please check if the file exists and is accessible.\n` +
+        `Failed to read local file: "${inputString}".\n` +
+          `Path must be within project directory.\n` +
           `Error: ${err instanceof Error ? err.message : String(err)}`
       );
     }
   }
 
-  // --- Handle URL Protocols ---
   switch (url.protocol) {
     case 'file:': {
       signal?.throwIfAborted();
       try {
         const fs = await import('node:fs/promises');
-        const { fileURLToPath } = await import('node:url');
-        return await fs.readFile(fileURLToPath(url));
+        const safePath = await sanitizeFilePath(url);
+        return await fs.readFile(safePath);
       } catch (err: unknown) {
         throw new Error(
           `Failed to read local file from URL: "${url.toString()}".\n` +
-            `Please check if the file exists and is accessible.\n` +
+            `Path must be within project directory.\n` +
             `Error: ${err instanceof Error ? err.message : String(err)}`
         );
       }

@@ -30,12 +30,12 @@ const PIXELIFT_TEXTS = {
 } as const;
 
 const DECODERS = ['webCodecs', 'offscreenCanvas'] as const;
-type Decoder = (typeof DECODERS)[number];
+
 type Format = keyof typeof PIXELIFT_IMAGES;
 
 describe.concurrent.each(DECODERS)(
   '%s decoder',
-  (decoder: Decoder) => {
+  (decoder: (typeof DECODERS)[number]) => {
     let blobs: Record<Format, Blob>;
 
     beforeAll(async () => {

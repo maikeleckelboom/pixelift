@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { beforeAll, describe, expect, test } from 'vitest';
-import { pixelift } from '../src';
+import { pixelift } from 'pixelift';
 
 const formats = ['jpg', 'jpeg', 'png', 'gif', 'webp'] as const;
 
@@ -12,7 +12,7 @@ describe('Server Pixelift Decode', () => {
   beforeAll(() => {
     buffers = Object.fromEntries(
       formats.map((format) => {
-        const url = new URL(`./assets/pixelift.${format}`, import.meta.url);
+        const url = new URL(`../assets/pixelift.${format}`, import.meta.url);
         return [format, readFileSync(url)] as const;
       })
     ) as Record<Format, Buffer>;
