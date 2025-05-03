@@ -1,9 +1,9 @@
 import type { PixelData } from 'pixelift';
-import type { PixeliftBrowserOptions } from '../../types';
+import type { BrowserOptions } from '../../types';
 
 export async function decode(
   blob: Blob | File,
-  { signal }: PixeliftBrowserOptions = {}
+  { signal }: BrowserOptions = {}
 ): Promise<PixelData> {
   const buffer = await blob.arrayBuffer();
 

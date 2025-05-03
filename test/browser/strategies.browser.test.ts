@@ -58,12 +58,16 @@ describe.concurrent.each(DECODERS)(
       ${'jpeg'} | ${PIXELIFT_TEXTS.jpeg}
       ${'gif'}  | ${PIXELIFT_TEXTS.gif}
       ${'webp'} | ${PIXELIFT_TEXTS.webp}
-    `('decodes $format correctly', async ({ format, expected }) => {
-      const blob = blobs[format as Format];
-      const { data } = await decode(blob, { decoder });
-      const expectedText = await fetch(expected).then((r) => r.text());
-      expect(data.toString()).toBe(expectedText);
-    });
+    `(
+      'decodes $format correctly',
+      async ({ format, expected }) => {
+        const blob = blobs[format as Format];
+        const { data } = await decode(blob, { decoder });
+        const expectedText = await fetch(expected).then((r) => r.text());
+        expect(data.toString()).toBe(expectedText);
+      },
+      0
+    );
   },
   0
 );

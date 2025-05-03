@@ -1,9 +1,9 @@
-import type { PixeliftSharedOptions } from '../types';
+import type { DecoderOptions } from '../types';
 
-export type PixeliftBrowserInput = string | URL | File | ImageBitmapSource;
-
-export type { PixelData } from '../types';
-
-export interface PixeliftBrowserOptions extends PixeliftSharedOptions {
+export interface BrowserOptions extends DecoderOptions {
   decoder?: 'webCodecs' | 'offscreenCanvas';
 }
+
+export type BrowserInput = string | URL | File | ImageBitmapSource;
+
+export type { PixelData } from '../types';

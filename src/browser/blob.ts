@@ -1,10 +1,10 @@
 import { isStringOrURL } from '../shared/validation';
-import type { PixeliftBrowserInput, PixeliftBrowserOptions } from './types';
+import type { BrowserInput, BrowserOptions } from './types';
 import { createError } from '../shared/error';
 
 export async function toBlob(
-  source: PixeliftBrowserInput,
-  options: PixeliftBrowserOptions = {}
+  source: BrowserInput,
+  options: BrowserOptions = {}
 ): Promise<Blob> {
   if (source instanceof Blob) {
     return source;

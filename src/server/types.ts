@@ -1,9 +1,9 @@
-import type { PixeliftSharedOptions } from '../types';
+import type { DecoderOptions } from '../types';
 
-export type PixeliftServerInput = string | URL | File | Buffer | BufferSource;
+export type ServerInput = string | URL | File | Buffer | BufferSource;
 
 export type { PixelData } from '../types';
 
-export interface PixeliftServerOptions extends PixeliftSharedOptions {
+export interface ServerOptions extends DecoderOptions {
   decoder?: 'sharp';
 }

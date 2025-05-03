@@ -1,9 +1,5 @@
 import { isStringOrURL } from '../../../shared/validation';
-import type {
-  PixelData,
-  PixeliftBrowserInput,
-  PixeliftBrowserOptions
-} from '../../types';
+import type { PixelData, BrowserInput, BrowserOptions } from '../../types';
 
 let sharedCanvas: OffscreenCanvas | undefined;
 let sharedCtx: OffscreenCanvasRenderingContext2D | undefined;
@@ -36,8 +32,8 @@ function getCanvasContext(
 }
 
 export async function decode(
-  imageSource: PixeliftBrowserInput,
-  options: PixeliftBrowserOptions = {}
+  imageSource: BrowserInput,
+  options: BrowserOptions = {}
 ): Promise<PixelData> {
   const bitmap = await createImageFromSource(imageSource, options);
   const { width, height } = bitmap;
@@ -49,8 +45,8 @@ export async function decode(
 }
 
 async function createImageFromSource(
-  source: PixeliftBrowserInput,
-  options: PixeliftBrowserOptions = {}
+  source: BrowserInput,
+  options: BrowserOptions = {}
 ): Promise<ImageBitmap> {
   if (isStringOrURL(source)) {
     const { headers, signal } = options;

@@ -1,11 +1,11 @@
-import type { PixelData, PixeliftServerInput, PixeliftServerOptions } from '../types';
+import type { PixelData, ServerInput, ServerOptions } from '../types';
 import { getBuffer } from '../buffer';
 import { getSharp } from './sharp';
 import { createError } from '../../shared/error';
 
 export async function decode(
-  input: PixeliftServerInput,
-  { signal }: PixeliftServerOptions = {}
+  input: ServerInput,
+  { signal }: ServerOptions = {}
 ): Promise<PixelData> {
   const buffer = await getBuffer(input);
 
@@ -18,7 +18,7 @@ export async function decode(
   const sharp = sharpModule.default;
 
   if (typeof sharp !== 'function') {
-    throw createError.decoderNotFound('sharp');
+    throw createError.dependencyMissing('sharp');
   }
 
   const { data, info } = await sharp(buffer)

@@ -1,5 +1,5 @@
-import type { PixeliftServerInput, PixeliftServerOptions } from './server';
-import type { PixeliftBrowserInput, PixeliftBrowserOptions } from './browser/types';
+import type { ServerOptions, ServerInput } from './server';
+import type { BrowserOptions, BrowserInput } from './browser';
 
 export interface PixelData {
   data: Uint8ClampedArray;
@@ -7,11 +7,11 @@ export interface PixelData {
   height: number;
 }
 
-export interface PixeliftSharedOptions {
+export interface DecoderOptions {
   headers?: HeadersInit;
   signal?: AbortSignal;
 }
 
-export type PixeliftInput = PixeliftBrowserInput | PixeliftServerInput;
+export type PixeliftInput = BrowserInput | ServerInput; // Uses correct original names
 
-export type PixeliftOptions = PixeliftBrowserOptions | PixeliftServerOptions;
+export type PixeliftOptions = BrowserOptions | ServerOptions; // Correct union

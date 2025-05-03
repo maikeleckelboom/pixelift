@@ -1,8 +1,9 @@
+import { createError } from '../../shared/error';
 import { isImageBitmapSource } from '../validation';
 import { toBlob } from '../blob';
 import type { DecoderStrategy } from './types';
-import type { PixelData, PixeliftBrowserOptions } from '../types';
-import { createError } from '../../shared/error';
+import type { PixelData } from '../../types';
+import type { BrowserInput, BrowserOptions } from '../types';
 
 const webCodecsModule: Promise<typeof import('./webcodecs')> = import('./webcodecs');
 
@@ -20,7 +21,7 @@ const DECODER_STRATEGIES: DecoderStrategy[] = [
     id: 'webCodecs',
     isSupported: (type: string) =>
       webCodecsModule.then(({ isSupported }) => isSupported(type)),
-    decode: (blob: Blob, options: PixeliftBrowserOptions) =>
+    decode: (blob: Blob, options?: BrowserOptions): Promise<PixelData> =>
       webCodecsModule.then(({ decode }) => decode(blob, options))
   },
   {
@@ -29,7 +30,7 @@ const DECODER_STRATEGIES: DecoderStrategy[] = [
       const { isSupported } = await loadCanvasDecoder();
       return isSupported(type);
     },
-    decode: async (blob: Blob, options: PixeliftBrowserOptions): Promise<PixelData> => {
+    decode: async (blob: Blob, options?: BrowserOptions): Promise<PixelData> => {
       const { decode } = await loadCanvasDecoder();
       return decode(blob, options);
     }
@@ -38,7 +39,7 @@ const DECODER_STRATEGIES: DecoderStrategy[] = [
 
 async function findSupportedStrategy(
   blob: Blob,
-  decoder: PixeliftBrowserOptions['decoder']
+  decoder: BrowserOptions['decoder']
 ): Promise<DecoderStrategy> {
   if (decoder) {
     const strategy = DECODER_STRATEGIES.find((s) => s.id === decoder);
@@ -74,8 +75,8 @@ async function findSupportedStrategy(
 }
 
 export async function decode(
-  source: Blob,
-  options: PixeliftBrowserOptions = {}
+  source: BrowserInput,
+  options: BrowserOptions = {}
 ): Promise<PixelData> {
   if (isImageBitmapSource(source)) {
     const { decode } = await loadCanvasDecoder();

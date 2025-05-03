@@ -1,5 +1,5 @@
-import type { PixeliftServerInput } from '../server';
-import type { PixeliftBrowserInput } from '../browser';
+import type { ServerInput } from '../server';
+import type { BrowserInput } from '../browser';
 
 export function isString(input: unknown): input is string {
   return typeof input === 'string' || input instanceof String;
@@ -9,7 +9,7 @@ export function isStringOrURL(src: unknown): src is string | URL {
   return isString(src) || src instanceof URL;
 }
 
-export function validateServerInput(input: unknown): input is PixeliftServerInput {
+export function validateServerInput(input: unknown): input is ServerInput {
   if (typeof input === 'string') return true;
   if (Buffer.isBuffer(input)) return true;
   if (input instanceof ArrayBuffer) return true;
@@ -19,7 +19,7 @@ export function validateServerInput(input: unknown): input is PixeliftServerInpu
   return ArrayBuffer.isView(input) && 'BYTES_PER_ELEMENT' in input.constructor;
 }
 
-export function validateBrowserInput(input: unknown): input is PixeliftBrowserInput {
+export function validateBrowserInput(input: unknown): input is BrowserInput {
   return (
     typeof input === 'string' ||
     input instanceof URL ||

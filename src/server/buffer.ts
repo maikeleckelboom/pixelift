@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import fs from 'node:fs/promises';
-import type { PixeliftServerInput, PixeliftServerOptions } from './types';
+import type { ServerInput, ServerOptions } from './types';
 import { createError } from '../shared/error';
 
 function sanitizeFilePath(url: URL): string {
@@ -27,8 +27,8 @@ function resolveLocalPath(inputPath: string): string {
 }
 
 export async function getBuffer(
-  input: PixeliftServerInput,
-  options: PixeliftServerOptions = {}
+  input: ServerInput,
+  options: ServerOptions = {}
 ): Promise<Buffer> {
   const { signal, headers } = options;
   signal?.throwIfAborted();

@@ -1,8 +1,15 @@
-import type { PixelData } from 'pixelift';
-import type { PixeliftBrowserOptions } from '../types';
+import type { PixelData } from '../../types';
+import type { BrowserOptions } from '../types';
 
-export interface DecoderStrategy {
+export interface DecoderOptions {
+  signal?: AbortSignal;
+}
+
+export interface Decoder<Input, Options extends DecoderOptions = BrowserOptions> {
+  decode: (input: Input, options?: Options) => Promise<PixelData>;
+}
+
+export interface DecoderStrategy extends Decoder<Blob> {
   id: string;
   isSupported: (type: string) => Promise<boolean>;
-  decode: (blob: Blob, options: PixeliftBrowserOptions) => Promise<PixelData>;
 }
