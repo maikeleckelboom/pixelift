@@ -12,7 +12,16 @@ export async function decode(
     throw new Error('Aborted');
   }
 
-  const sharp = await getSharp().then((mod) => mod.default);
+  const sharpModule = await getSharp();
+
+  const sharp = sharpModule.default;
+
+  if (typeof sharp !== 'function') {
+    throw new Error(
+      'Failed to access the main `sharp` function from the loaded module. ' +
+        'The package structure may have changed or the import failed unexpectedly.'
+    );
+  }
 
   const { data, info } = await sharp(buffer)
     .toColorspace('srgb')

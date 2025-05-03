@@ -8,4 +8,5 @@ export type BrowserDecodeStrategy = 'webCodecs' | 'offscreenCanvas' | 'webgl';
 
 export interface PixeliftBrowserOptions extends PixeliftSharedOptions {
   strategy?: BrowserDecodeStrategy;
+  debug?: boolean;
 }

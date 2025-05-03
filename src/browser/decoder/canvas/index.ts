@@ -1,5 +1,4 @@
 import { isStringOrURL } from '../../../shared/validation';
-import { isImageBitmapSource } from '../../validation';
 import { canvasRenderingOptions, imageBitmapOptions } from './options';
 import type {
   PixelData,
@@ -29,53 +28,40 @@ function getCanvasContext(
   return sharedCtx;
 }
 
-function assertDimensions(width: number, height: number): void {
-  if (width <= 0 || height <= 0)
-    throw new TypeError('Image dimensions must be positive values');
-}
-
 async function ensureBitmap(
-  blob: Blob,
-  _options: PixeliftBrowserOptions
+  blob: Response | Blob | ImageBitmapSource
 ): Promise<ImageBitmap> {
-  const opts = imageBitmapOptions();
-  return createImageBitmap(blob, opts);
+  if (blob instanceof Response) {
+    const res = await blob.blob();
+    return ensureBitmap(res);
+  }
+
+  if (blob instanceof ImageBitmap) {
+    return blob;
+  }
+
+  return createImageBitmap(blob, imageBitmapOptions());
 }
 
 async function createImageFromSource(
   source: PixeliftBrowserInput,
   options: PixeliftBrowserOptions = {}
-): Promise<{ bitmap: ImageBitmap; blob?: Blob }> {
+): Promise<ImageBitmap> {
   if (isStringOrURL(source)) {
+    const { headers, signal } = options;
     const url = new URL(source.toString(), location.origin).toString();
-    const res = await fetch(url, { mode: 'cors', headers: options.headers });
-    const blob = await res.blob();
-    const bitmap = await ensureBitmap(blob, options);
-    return { bitmap };
+    const response = await fetch(url, { mode: 'cors', headers, signal });
+    return ensureBitmap(response);
   }
-  if (source instanceof Blob) {
-    const bitmap = await ensureBitmap(source, options);
-    return { bitmap, blob: source };
-  }
-  if (isImageBitmapSource(source)) {
-    const bitmap = await createImageBitmap(
-      source as CanvasImageSource,
-      imageBitmapOptions()
-    );
-    return { bitmap };
-  }
-  throw new TypeError(
-    'Invalid image source. Expected URL/string, Blob, or ImageBitmapSource'
-  );
+  return ensureBitmap(source);
 }
 
 export async function decode(
   imageSource: PixeliftBrowserInput,
   options: PixeliftBrowserOptions = {}
 ): Promise<PixelData> {
-  const { bitmap } = await createImageFromSource(imageSource, options);
+  const bitmap = await createImageFromSource(imageSource, options);
   const { width, height } = bitmap;
-  assertDimensions(width, height);
 
   const ctx = getCanvasContext(width, height);
   ctx.clearRect(0, 0, width, height);

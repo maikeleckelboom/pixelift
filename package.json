@@ -5,7 +5,6 @@
   "author": "Maikel Eckelboom",
   "type": "module",
   "license": "MIT",
-
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -49,8 +48,8 @@
   "scripts": {
     "dev": "vitest --watch",
     "test": "vitest",
-    "bench": "vitest --run bench --reporter=verbose",
-    "bench:browser": "vitest --run bench --project browser --reporter verbose",
+    "bench": "vitest --run bench --reporter default",
+    "bench:verbose": "vitest --run bench --reporter verbose",
     "test:browser": "vitest --project browser",
     "test:server": "vitest --project server",
     "test:types": "bun scripts/typecheck.ts",

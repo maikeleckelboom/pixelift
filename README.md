@@ -61,6 +61,20 @@ const { data, width, height } = await pixelift('https://api.example.com/secret.j
 await fs.writeFile('out.raw', data);
 ```
 
+
+## Conversion Utilities
+
+Import from the main package:
+```ts
+import { unpackPixels, packPixels } from 'pixelift';
+
+// Browser-specific
+import { unpackPixels, packPixels } from 'pixelift/browser';
+
+// Server-specific
+import { unpackPixels, packPixels } from 'pixelift/server';
+```
+
 ## API
 
 ### `pixelift(input, options?) → Promise<PixelData>`
