@@ -1,5 +1,6 @@
 import { isStringOrURL } from '../../../shared/validation';
-import type { PixelData, BrowserInput, BrowserOptions } from '../../types';
+import type { PixelData } from '../../../types';
+import type { BrowserInput, BrowserOptions } from '../../types';
 
 let sharedCanvas: OffscreenCanvas | undefined;
 let sharedCtx: OffscreenCanvasRenderingContext2D | undefined;

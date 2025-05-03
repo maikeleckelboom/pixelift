@@ -1,5 +1,5 @@
-import type { ServerInput } from '../server';
-import type { BrowserInput } from '../browser';
+import type { ServerInput } from '../server/types';
+import type { BrowserInput } from '../browser/types';
 
 export function isString(input: unknown): input is string {
   return typeof input === 'string' || input instanceof String;

@@ -1,5 +1,5 @@
-import type { ServerOptions, ServerInput } from './server';
-import type { BrowserOptions, BrowserInput } from './browser';
+import type { ServerOptions, ServerInput } from './server/types';
+import type { BrowserOptions, BrowserInput } from './browser/types';
 
 export interface PixelData {
   data: Uint8ClampedArray;
@@ -12,6 +12,6 @@ export interface DecoderOptions {
   signal?: AbortSignal;
 }
 
-export type PixeliftInput = BrowserInput | ServerInput; // Uses correct original names
+export type PixeliftInput = BrowserInput | ServerInput;
 
-export type PixeliftOptions = BrowserOptions | ServerOptions; // Correct union
+export type PixeliftOptions = BrowserOptions | ServerOptions;

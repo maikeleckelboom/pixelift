@@ -1,4 +1,4 @@
-import type { PixelData } from 'pixelift';
+import type { PixelData } from '../../../types';
 import type { BrowserOptions } from '../../types';
 
 export async function decode(

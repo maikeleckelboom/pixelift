@@ -1,7 +1,10 @@
 {
   "compilerOptions": {
     // Environment setup & latest features
-    "lib": ["ES2022", "dom"],
+    "lib": [
+      "ES2022",
+      "dom"
+    ],
     "target": "ESNext",
     "module": "ES2022",
     "moduleDetection": "force",
@@ -22,10 +25,23 @@
     "noPropertyAccessFromIndexSignature": false,
     "esModuleInterop": true,
     "paths": {
-      "pixelift": ["./src/index.ts"],
-      "pixelift/browser": ["./src/browser/index.ts"],
-      "pixelift/server": ["./src/server/index.ts"]
+      "pixelift": [
+        "./src/index.ts"
+      ],
+      "pixelift/browser": [
+        "./src/browser/index.ts"
+      ],
+      "pixelift/server": [
+        "./src/server/index.ts"
+      ]
     },
-    "types": ["node", "sharp"]
-  }
+    "types": [
+      "node",
+      "sharp"
+    ]
+  },
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

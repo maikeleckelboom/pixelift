@@ -1,9 +1,5 @@
-import type { PixelData } from '../../types';
+import type { DecoderOptions, PixelData } from '../../types';
 import type { BrowserOptions } from '../types';
-
-export interface DecoderOptions {
-  signal?: AbortSignal;
-}
 
 export interface Decoder<Input, Options extends DecoderOptions = BrowserOptions> {
   decode: (input: Input, options?: Options) => Promise<PixelData>;
