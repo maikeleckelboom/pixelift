@@ -8,7 +8,7 @@ import type {
 let sharedCanvas: OffscreenCanvas | undefined;
 let sharedCtx: OffscreenCanvasRenderingContext2D | undefined;
 
-export async function isSupported(): Promise<boolean> {
+export async function isSupported(_type: string = ''): Promise<boolean> {
   return (
     'OffscreenCanvas' in window &&
     typeof OffscreenCanvas === 'function' &&
@@ -64,6 +64,13 @@ async function createImageFromSource(
 async function ensureBitmap(blob: Response | ImageBitmapSource): Promise<ImageBitmap> {
   if (blob instanceof Response) {
     const res = await blob.blob();
+
+    if (res.type === 'image/svg+xml') {
+      const svgText = await res.text();
+      const svgBlob = new Blob([svgText], { type: 'image/svg+xml' });
+      return createImageBitmap(svgBlob);
+    }
+
     return ensureBitmap(res);
   }
 

@@ -60,7 +60,7 @@ describe.concurrent.each(DECODERS)(
       ${'webp'} | ${PIXELIFT_TEXTS.webp}
     `('decodes $format correctly', async ({ format, expected }) => {
       const blob = blobs[format as Format];
-      const { data } = await decode(blob, { strategy: decoder });
+      const { data } = await decode(blob, { decoder });
       const expectedText = await fetch(expected).then((r) => r.text());
       expect(data.toString()).toBe(expectedText);
     });

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { getBuffer } from '../../src/server/buffer';
-import { assetsDir, loadAsset, path } from '../shared/fixtures';
+import { assetsDir, loadAsset, path } from '../fixtures';
 
 describe('Server Buffer Security', () => {
   const SAFE_IMAGE_BUFFER = loadAsset('pixelift.png');
@@ -17,17 +17,17 @@ describe('Server Buffer Security', () => {
     test('rejects encoded path traversal', async () => {
       const encodedTraversal = path.join(assetsDir, '..%2F..%2F..%2F..%2Fetc%2Fpasswd');
 
-      await expect(() => getBuffer(encodedTraversal)).rejects.toThrow(
-        /Path traversal attempt detected/
-      );
+      await expect(() => getBuffer(encodedTraversal)).rejects.toMatchObject({
+        code: 'path-traversal'
+      });
     });
 
     test('rejects relative path traversal', async () => {
       const maliciousPath = path.join(assetsDir, '../../../../etc/passwd');
 
-      await expect(() => getBuffer(maliciousPath)).rejects.toThrow(
-        /Path traversal attempt detected/
-      );
+      await expect(() => getBuffer(maliciousPath)).rejects.toMatchObject({
+        code: 'path-traversal'
+      });
     });
   });
 

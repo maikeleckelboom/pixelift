@@ -1,5 +1,6 @@
 import { isStringOrURL } from '../shared/validation';
 import type { PixeliftBrowserInput, PixeliftBrowserOptions } from './types';
+import { createError } from '../shared/error';
 
 export async function toBlob(
   source: PixeliftBrowserInput,
@@ -19,25 +20,18 @@ export async function toBlob(
 
     try {
       res = await fetch(url, { mode: 'cors', headers: options.headers });
-    } catch (cause: unknown) {
-      throw new Error(
-        `Network error: Unable to fetch from "${url}". Please check your network connection.`,
-        { cause }
-      );
+    } catch (error: unknown) {
+      throw createError.networkError(`Network error: Unable to fetch from "${url}".`, {
+        cause: error
+      });
     }
 
     if (!res.ok) {
-      throw new Error(
-        `Resource error: Failed to fetch from "${url}" (${res.status} ${res.statusText}). ` +
-          `Please verify the resource exists and is accessible via CORS.`
-      );
+      throw createError.fetchFailed(url, res.status, res.statusText);
     }
 
     return res.blob();
   }
 
-  throw new TypeError(
-    `Type error: Expected a Blob or URL string, but received ${typeof source}. ` +
-      `Please provide a valid input format.`
-  );
+  throw createError.invalidInput('"Blob", "File", or a valid URL', typeof source);
 }

@@ -1,21 +1,100 @@
-export class DecoderError extends Error {
+export const ErrorCode = {
+  decoderNotFound: 'decoder-not-found',
+  decoderUnsupported: 'decoder-unsupported',
+  decodingFailed: 'decoding-failed',
+  invalidInput: 'invalid-input',
+  unsupportedFormat: 'unsupported-format',
+  dependencyMissing: 'dependency-missing',
+  environmentUnsupported: 'environment-unsupported',
+  networkError: 'network-error',
+  fileAccessError: 'file-access-error',
+  fetchFailed: 'fetch-failed',
+  pathTraversal: 'path-traversal',
+  invalidOperation: 'invalid-operation',
+  aborted: 'aborted'
+} as const;
+
+export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
+
+const MESSAGES: Record<ErrorCode, string> = {
+  [ErrorCode.decoderNotFound]: 'No decoder available for {type}',
+  [ErrorCode.decoderUnsupported]: 'Decoder {decoder} is not supported for {detail}',
+  [ErrorCode.decodingFailed]: 'Failed to decode {type}: {detail}',
+  [ErrorCode.invalidInput]: 'Invalid input: expected {expected}, got {received}',
+  [ErrorCode.unsupportedFormat]: 'Unsupported image format: {format}',
+  [ErrorCode.dependencyMissing]: 'Required dependency missing: {dependency}',
+  [ErrorCode.environmentUnsupported]: 'Current environment does not support {feature}',
+  [ErrorCode.networkError]: 'Network error: {detail}',
+  [ErrorCode.fileAccessError]: 'File access error: {detail}',
+  [ErrorCode.fetchFailed]: 'Failed to fetch from {url}: {status} {statusText}',
+  [ErrorCode.pathTraversal]: 'Path traversal attempt detected: {path}',
+  [ErrorCode.invalidOperation]: '{detail}',
+  [ErrorCode.aborted]: 'Operation aborted'
+};
+
+function formatMessage(template: string, context: Record<string, unknown> = {}): string {
+  return template.replace(/\{(\w+)}/g, (_, key) =>
+    key in context ? String(context[key]) : `{${key}}`
+  );
+}
+
+export class PixeliftError extends Error {
+  public readonly code: ErrorCode;
+  public readonly context: Record<string, unknown>;
+
   constructor(
-    public readonly decoderId: string,
-    message: string,
-    public readonly type?: string,
+    code: ErrorCode,
+    context: Record<string, unknown> = {},
     options?: ErrorOptions
   ) {
+    const message = formatMessage(MESSAGES[code], context);
     super(message, options);
-    this.name = 'DecoderError';
+    this.name = 'PixeliftError';
+    this.code = code;
+    this.context = context;
+  }
+
+  static isErrorWithCode(error: unknown, code: ErrorCode): error is PixeliftError {
+    return error instanceof PixeliftError && error.code === code;
   }
 }
 
-export class FormatError extends Error {
-  constructor(
-    public readonly type: string,
-    options?: ErrorOptions
-  ) {
-    super(`Unable to decode image format "${type}"`, options);
-    this.name = 'FormatError';
-  }
-}
+export const createError = {
+  decoderNotFound: (type: string): PixeliftError =>
+    new PixeliftError(ErrorCode.decoderNotFound, { type }),
+
+  decoderUnsupported: (decoder: string, detail: string): PixeliftError =>
+    new PixeliftError(ErrorCode.decoderUnsupported, { decoder, detail }),
+
+  decodingFailed: (type: string, detail: string, cause?: unknown): PixeliftError =>
+    new PixeliftError(ErrorCode.decodingFailed, { type, detail }, { cause }),
+
+  invalidInput: (expected: string, received: string): PixeliftError =>
+    new PixeliftError(ErrorCode.invalidInput, { expected, received }),
+
+  unsupportedFormat: (format: string): PixeliftError =>
+    new PixeliftError(ErrorCode.unsupportedFormat, { format }),
+
+  dependencyMissing: (dependency: string, cause?: unknown): PixeliftError =>
+    new PixeliftError(ErrorCode.dependencyMissing, { dependency }, { cause }),
+
+  environmentUnsupported: (feature: string): PixeliftError =>
+    new PixeliftError(ErrorCode.environmentUnsupported, { feature }),
+
+  networkError: (detail: string, cause?: unknown): PixeliftError =>
+    new PixeliftError(ErrorCode.networkError, { detail }, { cause }),
+
+  fileAccessError: (detail: string, cause?: unknown): PixeliftError =>
+    new PixeliftError(ErrorCode.fileAccessError, { detail }, { cause }),
+
+  fetchFailed: (url: string, status: number, statusText: string): PixeliftError =>
+    new PixeliftError(ErrorCode.fetchFailed, { url, status, statusText }),
+
+  pathTraversal: (path: string): PixeliftError =>
+    new PixeliftError(ErrorCode.pathTraversal, { path }),
+
+  invalidOperation: (detail: string): PixeliftError =>
+    new PixeliftError(ErrorCode.invalidOperation, { detail }),
+
+  aborted: (): PixeliftError => new PixeliftError(ErrorCode.aborted)
+};

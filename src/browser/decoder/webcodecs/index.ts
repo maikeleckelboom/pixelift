@@ -1,7 +1,14 @@
 import type { PixelData } from 'pixelift';
+import type { PixeliftBrowserOptions } from '../../types';
 
-export async function decode(blob: Blob | File): Promise<PixelData> {
+export async function decode(
+  blob: Blob | File,
+  { signal }: PixeliftBrowserOptions = {}
+): Promise<PixelData> {
   const buffer = await blob.arrayBuffer();
+
+  signal?.throwIfAborted();
+
   const decoder = new ImageDecoder({
     type: blob.type,
     data: buffer,
@@ -10,7 +17,7 @@ export async function decode(blob: Blob | File): Promise<PixelData> {
 
   await decoder.completed;
 
-  const { image: frame } = await decoder.decode();
+  const { image: frame } = await decoder.decode({ frameIndex: 0 });
 
   const byteLength = frame.allocationSize({ format: 'RGBA' });
 

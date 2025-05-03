@@ -36,7 +36,7 @@ describe('Image Decoder Benchmarks', () => {
       bench(
         `decode ${format} with ${decoder}`,
         async () => {
-          await pixelift(blob, { strategy: decoder });
+          await pixelift(blob, { decoder });
         },
         {
           iterations: 100,

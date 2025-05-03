@@ -5,5 +5,5 @@ export type PixeliftBrowserInput = string | URL | File | ImageBitmapSource;
 export type { PixelData } from '../types';
 
 export interface PixeliftBrowserOptions extends PixeliftSharedOptions {
-  strategy?: 'webCodecs' | 'offscreenCanvas';
+  decoder?: 'webCodecs' | 'offscreenCanvas';
 }

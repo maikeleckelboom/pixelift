@@ -1,6 +1,7 @@
 import type { PixelData, PixeliftServerInput, PixeliftServerOptions } from '../types';
 import { getBuffer } from '../buffer';
 import { getSharp } from './sharp';
+import { createError } from '../../shared/error';
 
 export async function decode(
   input: PixeliftServerInput,
@@ -9,7 +10,7 @@ export async function decode(
   const buffer = await getBuffer(input);
 
   if (signal?.aborted) {
-    throw new Error('Aborted');
+    throw createError.aborted();
   }
 
   const sharpModule = await getSharp();
@@ -17,10 +18,7 @@ export async function decode(
   const sharp = sharpModule.default;
 
   if (typeof sharp !== 'function') {
-    throw new Error(
-      'Failed to access the main `sharp` function from the loaded module. ' +
-        'The package structure may have changed or the import failed unexpectedly.'
-    );
+    throw createError.decoderNotFound('sharp');
   }
 
   const { data, info } = await sharp(buffer)
