@@ -29,7 +29,7 @@ const PIXELIFT_TEXTS = {
   webp: PIXELIFT_WEBP_TXT_URL
 } as const;
 
-const DECODERS = ['webgl', 'webCodecs', 'offscreenCanvas'] as const;
+const DECODERS = ['webCodecs', 'offscreenCanvas'] as const;
 type Decoder = (typeof DECODERS)[number];
 type Format = keyof typeof PIXELIFT_IMAGES;
 

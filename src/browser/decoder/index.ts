@@ -15,18 +15,6 @@ async function getCanvasDecoder(): Promise<typeof import('./canvas')> {
 
 const DECODER_STRATEGIES: DecoderStrategy[] = [
   {
-    id: 'webgl',
-    isSupported: async (type: string): Promise<boolean> => {
-      const { isSupported } = await import('./webgl');
-      return isSupported(type);
-    },
-    decode: async (blob: Blob, options: PixeliftBrowserOptions): Promise<PixelData> => {
-      const { decode } = await import('./webgl');
-      if (options.debug) console.log(`Using [WebGL] decoder for [${blob.type}]`);
-      return decode(blob, options);
-    }
-  },
-  {
     id: 'webCodecs',
     isSupported: async (type: string): Promise<boolean> => {
       const { isSupported } = await import('./webcodecs');
@@ -35,20 +23,20 @@ const DECODER_STRATEGIES: DecoderStrategy[] = [
     decode: async (blob: Blob, options: PixeliftBrowserOptions): Promise<PixelData> => {
       const { decode } = await import('./webcodecs');
       if (options.debug) console.log(`Using [WebCodecs] decoder for [${blob.type}]`);
-      return decode(blob, options);
+      return decode(blob);
     }
   },
   {
     id: 'offscreenCanvas',
-    isSupported: async (type: string): Promise<boolean> => {
+    isSupported: async (): Promise<boolean> => {
       const { isSupported } = await getCanvasDecoder();
-      return isSupported(type);
+      return isSupported();
     },
     decode: async (blob: Blob, options: PixeliftBrowserOptions): Promise<PixelData> => {
       const { decode } = await getCanvasDecoder();
       if (options.debug)
         console.log(`Using [OffscreenCanvas] decoder for [${blob.type}]`);
-      return decode(blob, options);
+      return decode(blob);
     }
   }
 ];

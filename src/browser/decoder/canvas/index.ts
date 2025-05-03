@@ -1,5 +1,4 @@
 import { isStringOrURL } from '../../../shared/validation';
-import { canvasRenderingOptions, imageBitmapOptions } from './options';
 import type {
   PixelData,
   PixeliftBrowserInput,
@@ -9,13 +8,26 @@ import type {
 let sharedCanvas: OffscreenCanvas | undefined;
 let sharedCtx: OffscreenCanvasRenderingContext2D | undefined;
 
+export async function decode(
+  imageSource: PixeliftBrowserInput,
+  options: PixeliftBrowserOptions = {}
+): Promise<PixelData> {
+  const bitmap = await createImageFromSource(imageSource, options);
+  const { width, height } = bitmap;
+  const ctx = getCanvasContext(width, height);
+  ctx.clearRect(0, 0, width, height);
+  ctx.drawImage(bitmap, 0, 0, width, height);
+  const { data } = ctx.getImageData(0, 0, width, height, { colorSpace: 'srgb' });
+  return { data, width, height };
+}
+
 function getCanvasContext(
   width: number,
   height: number
 ): OffscreenCanvasRenderingContext2D {
   if (!sharedCanvas || !sharedCtx) {
     sharedCanvas = new OffscreenCanvas(width, height);
-    const ctx = sharedCanvas.getContext('2d', canvasRenderingOptions());
+    const ctx = sharedCanvas.getContext('2d', { alpha: true, colorSpace: 'srgb' });
     if (ctx === null) throw new Error('Failed to get OffscreenCanvas context');
     sharedCtx = ctx;
     sharedCtx.imageSmoothingEnabled = false;
@@ -26,21 +38,6 @@ function getCanvasContext(
     sharedCanvas.height = height;
   }
   return sharedCtx;
-}
-
-async function ensureBitmap(
-  blob: Response | Blob | ImageBitmapSource
-): Promise<ImageBitmap> {
-  if (blob instanceof Response) {
-    const res = await blob.blob();
-    return ensureBitmap(res);
-  }
-
-  if (blob instanceof ImageBitmap) {
-    return blob;
-  }
-
-  return createImageBitmap(blob, imageBitmapOptions());
 }
 
 async function createImageFromSource(
@@ -56,21 +53,29 @@ async function createImageFromSource(
   return ensureBitmap(source);
 }
 
-export async function decode(
-  imageSource: PixeliftBrowserInput,
-  options: PixeliftBrowserOptions = {}
-): Promise<PixelData> {
-  const bitmap = await createImageFromSource(imageSource, options);
-  const { width, height } = bitmap;
+async function ensureBitmap(
+  blob: Response | Blob | ImageBitmapSource
+): Promise<ImageBitmap> {
+  if (blob instanceof Response) {
+    const res = await blob.blob();
+    return ensureBitmap(res);
+  }
 
-  const ctx = getCanvasContext(width, height);
-  ctx.clearRect(0, 0, width, height);
-  ctx.drawImage(bitmap, 0, 0, width, height);
+  if (blob instanceof ImageBitmap) {
+    return blob;
+  }
 
-  const imageData = ctx.getImageData(0, 0, width, height, { colorSpace: 'srgb' });
-  return { data: imageData.data, width, height };
+  return createImageBitmap(blob, {
+    premultiplyAlpha: 'none',
+    colorSpaceConversion: 'none',
+    imageOrientation: 'none'
+  });
 }
 
-export function isSupported(_type?: string): Promise<boolean> {
-  return Promise.resolve(OffscreenCanvas !== undefined);
+export async function isSupported(): Promise<boolean> {
+  return (
+    'OffscreenCanvas' in window &&
+    typeof OffscreenCanvas === 'function' &&
+    typeof createImageBitmap === 'function'
+  );
 }

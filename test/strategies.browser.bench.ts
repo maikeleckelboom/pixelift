@@ -15,7 +15,7 @@ const IMAGES = {
   webp: PIXELIFT_WEBP_URL
 } as const;
 
-const DECODERS = ['webgl', 'webCodecs', 'offscreenCanvas'] as const;
+const DECODERS = ['webCodecs', 'offscreenCanvas'] as const;
 
 const blobs: Record<string, Blob> = Object.fromEntries(
   await Promise.all(

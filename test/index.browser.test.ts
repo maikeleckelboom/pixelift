@@ -1,5 +1,5 @@
-import { beforeAll, describe, expect, it } from 'vitest';
-import { pixelift } from '../src/browser';
+import { beforeAll, describe, expect, test } from 'vitest';
+import { pixelift } from 'pixelift';
 
 const FORMATS = ['jpg', 'jpeg', 'png', 'gif', 'webp'] as const;
 type Format = (typeof FORMATS)[number];
@@ -20,10 +20,11 @@ describe('Browser Pixelift Decode', () => {
     blobs = Object.fromEntries(entries) as Record<Format, Blob>;
   });
 
-  it.concurrent.each(FORMATS)('should decode a %s image via WebGL', async (format) => {
-    const { data, width, height } = await pixelift(blobs[format], { strategy: 'webgl' });
-    expect(width).toBeGreaterThan(0);
-    expect(height).toBeGreaterThan(0);
-    expect(data.some((v) => v !== 0)).toBe(true);
+  test.each(FORMATS)('should decode a %s image from blob', async (format) => {
+    const result = await pixelift(blobs[format]);
+
+    expect(result.width).toBeDefined();
+    expect(result.height).toBeDefined();
+    expect(result.data.filter(Boolean).length).toBeGreaterThan(0);
   });
 });

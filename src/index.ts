@@ -17,7 +17,7 @@ import { validateBrowserInput, validateServerInput } from './shared/validation';
  * const { data, width, height } = await pixelift('image.jpg');
  *
  * // With options
- * const result = await pixelift(imageBlob, { width: 300, height: 200 });
+ * const result = await pixelift(imageBlob);
  * ```
  */
 export async function pixelift(
