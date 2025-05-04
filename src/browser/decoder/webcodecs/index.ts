@@ -3,11 +3,11 @@ import type { BrowserOptions } from '../../types';
 
 export async function decode(
   blob: Blob | File,
-  { signal }: BrowserOptions = {}
+  _: BrowserOptions = {}
 ): Promise<PixelData> {
   const buffer = await blob.arrayBuffer();
 
-  signal?.throwIfAborted();
+  // options.signal?.throwIfAborted();
 
   const decoder = new ImageDecoder({
     type: blob.type,
@@ -17,7 +17,7 @@ export async function decode(
 
   await decoder.completed;
 
-  const { image: frame } = await decoder.decode({ frameIndex: 0 });
+  const { image: frame } = await decoder.decode();
 
   const byteLength = frame.allocationSize({ format: 'RGBA' });
 

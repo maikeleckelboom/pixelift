@@ -5,5 +5,3 @@ export interface BrowserOptions extends DecoderOptions {
 }
 
 export type BrowserInput = string | URL | File | ImageBitmapSource;
-
-export type { PixelData } from '../types';

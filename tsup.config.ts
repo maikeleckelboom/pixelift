@@ -18,8 +18,7 @@ export default defineConfig([
     platform: 'browser',
     format: ['esm', 'cjs'],
     entry: {
-      index: 'src/browser/index.ts',
-      types: 'src/browser/types.ts'
+      index: 'src/browser/index.ts'
     },
     outDir: 'dist/browser',
     dts: true,
@@ -32,8 +31,7 @@ export default defineConfig([
     platform: 'node',
     format: ['esm', 'cjs'],
     entry: {
-      index: 'src/server/index.ts',
-      types: 'src/server/types.ts'
+      index: 'src/server/index.ts'
     },
     outDir: 'dist/server',
     dts: true,

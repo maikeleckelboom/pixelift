@@ -2,7 +2,6 @@ export const ErrorCode = {
   decoderUnsupported: 'decoder-unsupported',
   decodingFailed: 'decoding-failed',
   invalidInput: 'invalid-input',
-  unsupportedFormat: 'unsupported-format',
   dependencyMissing: 'dependency-missing',
   environmentUnsupported: 'environment-unsupported',
   fetchFailed: 'fetch-failed',
@@ -17,7 +16,6 @@ const MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.decoderUnsupported]: 'Decoder {decoder} is not supported for {detail}',
   [ErrorCode.decodingFailed]: 'Failed to decode {type}: {detail}',
   [ErrorCode.invalidInput]: 'Invalid input: expected {expected}, got {received}',
-  [ErrorCode.unsupportedFormat]: 'Unsupported image format: {format}',
   [ErrorCode.dependencyMissing]: 'Required dependency missing: {dependency}',
   [ErrorCode.environmentUnsupported]: 'Current environment does not support {feature}',
   [ErrorCode.fetchFailed]: 'Failed to fetch from {url}: {status} {statusText}',
@@ -54,17 +52,13 @@ export class PixeliftError extends Error {
 }
 
 export const createError = {
+  aborted: (): PixeliftError => new PixeliftError(ErrorCode.aborted),
+
   decoderUnsupported: (decoder: string, detail: string): PixeliftError =>
     new PixeliftError(ErrorCode.decoderUnsupported, { decoder, detail }),
 
   decodingFailed: (type: string, detail: string, cause?: unknown): PixeliftError =>
     new PixeliftError(ErrorCode.decodingFailed, { type, detail }, { cause }),
-
-  invalidInput: (expected: string, received: string): PixeliftError =>
-    new PixeliftError(ErrorCode.invalidInput, { expected, received }),
-
-  unsupportedFormat: (format: string): PixeliftError =>
-    new PixeliftError(ErrorCode.unsupportedFormat, { format }),
 
   dependencyMissing: (dependency: string, cause?: unknown): PixeliftError =>
     new PixeliftError(ErrorCode.dependencyMissing, { dependency }, { cause }),
@@ -72,14 +66,15 @@ export const createError = {
   environmentUnsupported: (feature: string): PixeliftError =>
     new PixeliftError(ErrorCode.environmentUnsupported, { feature }),
 
-  networkError: (detail: string, cause?: unknown): PixeliftError =>
-    new PixeliftError(ErrorCode.networkError, { detail }, { cause }),
-
   fetchFailed: (url: string, status: number, statusText: string): PixeliftError =>
     new PixeliftError(ErrorCode.fetchFailed, { url, status, statusText }),
 
-  pathTraversal: (path: string): PixeliftError =>
-    new PixeliftError(ErrorCode.pathTraversal, { path }),
+  invalidInput: (expected: string, received: string): PixeliftError =>
+    new PixeliftError(ErrorCode.invalidInput, { expected, received }),
 
-  aborted: (): PixeliftError => new PixeliftError(ErrorCode.aborted)
-};
+  networkError: (detail: string, cause?: unknown): PixeliftError =>
+    new PixeliftError(ErrorCode.networkError, { detail }, { cause }),
+
+  pathTraversal: (path: string): PixeliftError =>
+    new PixeliftError(ErrorCode.pathTraversal, { path })
+} as const;

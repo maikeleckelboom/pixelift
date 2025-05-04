@@ -6,14 +6,6 @@ export async function toBlob(
   source: BrowserInput,
   options: BrowserOptions = {}
 ): Promise<Blob> {
-  if (source instanceof Blob) {
-    return source;
-  }
-
-  if (source instanceof File) {
-    return new Blob([source], { type: source.type });
-  }
-
   if (isStringOrURL(source)) {
     const url = new URL(source.toString(), location.origin).toString();
     let res: Response;
@@ -31,6 +23,14 @@ export async function toBlob(
     }
 
     return res.blob();
+  }
+
+  if (source instanceof Blob) {
+    return source;
+  }
+
+  if (source instanceof File) {
+    return new Blob([source], { type: source.type });
   }
 
   throw createError.invalidInput('"Blob", "File", or a valid URL', typeof source);

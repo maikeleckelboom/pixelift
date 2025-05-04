@@ -1,4 +1,5 @@
-import type { PixelData, ServerInput, ServerOptions } from '../types';
+import type { ServerInput, ServerOptions } from '../types';
+import type { PixelData } from '../../types';
 import { getBuffer } from '../buffer';
 import { getSharp } from './sharp';
 import { createError } from '../../shared/error';

@@ -52,7 +52,7 @@ export async function pixelift(
     return decoder.decode(input as never, options as never);
   } catch (error) {
     throw createError.decodingFailed(
-      'Exhaustive decoder error',
+      'Pixelift decoding failed',
       config.errorMessage,
       error
     );

@@ -1,9 +1,10 @@
 import { describe, expect, test } from 'vitest';
 import { getBuffer } from '../../src/server/buffer';
-import { assetsDir, loadAsset, path } from '../fixtures/server-utils';
+import { assetsDir, loadAsset } from './utils.server';
+import path from 'node:path';
 
 describe('Server Buffer Security', () => {
-  const SAFE_IMAGE_BUFFER = loadAsset('pixelift.png');
+  const SAFE_IMAGE_BUFFER = loadAsset('./pixelift.png');
 
   describe('Valid Path Handling', () => {
     test('reads actual test image from valid path', async () => {

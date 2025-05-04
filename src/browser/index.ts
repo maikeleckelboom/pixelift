@@ -16,6 +16,4 @@ export async function pixelift(
   return await decoder.decode(input, options);
 }
 
-export type { BrowserOptions, BrowserInput, PixelData };
-
-export { unpackPixels, packPixels } from '../shared/conversion';
+export type { BrowserOptions, BrowserInput };
