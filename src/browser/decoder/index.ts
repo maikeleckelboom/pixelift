@@ -81,9 +81,7 @@ export async function decode(
     const { decode } = await loadCanvasDecoder();
     return decode(source, options);
   }
-
   const blob = await toBlob(source, options);
   const strategy = await findSupportedStrategy(blob, options.decoder);
-
   return strategy.decode(blob, options);
 }

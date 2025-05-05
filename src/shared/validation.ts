@@ -10,7 +10,7 @@ export function isStringOrURL(src: unknown): src is string | URL {
 }
 
 export function validateServerInput(input: unknown): input is ServerInput {
-  if (typeof input === 'string') return true;
+  if (isStringOrURL(input)) return true;
   if (Buffer.isBuffer(input)) return true;
   if (input instanceof ArrayBuffer) return true;
   if (typeof SharedArrayBuffer !== 'undefined' && input instanceof SharedArrayBuffer) {

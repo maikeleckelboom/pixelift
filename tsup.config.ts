@@ -10,8 +10,7 @@ export default defineConfig([
     outDir: 'dist',
     dts: true,
     clean: true,
-    minify: true,
-    splitting: false
+    minify: true
   },
   {
     name: 'browser',
@@ -22,9 +21,7 @@ export default defineConfig([
     },
     outDir: 'dist/browser',
     dts: true,
-    minify: true,
-    clean: false,
-    splitting: false
+    minify: true
   },
   {
     name: 'server',
@@ -35,8 +32,6 @@ export default defineConfig([
     },
     outDir: 'dist/server',
     dts: true,
-    minify: true,
-    clean: false,
-    splitting: false
+    minify: true
   }
 ]);

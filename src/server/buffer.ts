@@ -1,8 +1,8 @@
-import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import type { ServerInput, ServerOptions } from './types';
 import { createError } from '../shared/error';
+import { fileURLToPath } from 'node:url';
 
 function sanitizeFilePath(url: URL): string {
   const decoded = fileURLToPath(url);
