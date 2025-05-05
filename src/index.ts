@@ -6,27 +6,24 @@ import type { ServerInput, ServerOptions } from './server/types';
 import type { BrowserInput, BrowserOptions } from './browser/types';
 import type { Decoder } from './browser/decoder/types';
 
-interface EnvironmentConfig<In, Opts> {
-  validate: (input: unknown) => input is In;
-  importDecoder: () => Promise<Decoder<Opts>>;
+interface EnvironmentConfig<I extends PixeliftInput, O extends PixeliftOptions> {
+  validate: (input: unknown) => input is I;
+  importDecoder: () => Promise<Decoder<I, O>>;
   errorMessage: string;
 }
 
 const browserConfig: EnvironmentConfig<BrowserInput, BrowserOptions> = {
   validate: validateBrowserInput,
-  importDecoder: () => import('./browser/decoder') as Promise<Decoder<BrowserOptions>>,
+  importDecoder: () => import('./browser/decoder'),
   errorMessage: 'Invalid input type for browser-side decoding.'
 };
 
 const serverConfig: EnvironmentConfig<ServerInput, ServerOptions> = {
   validate: validateServerInput,
-  importDecoder: () => import('./server/decoder') as Promise<Decoder<ServerOptions>>,
+  importDecoder: () => import('./server/decoder'),
   errorMessage: 'Invalid input type for server-side decoding.'
 };
 
-/**
- * Main Pixelift decoding function – runs in Node or browser.
- */
 export async function pixelift(
   input: BrowserInput,
   options?: BrowserOptions
@@ -37,11 +34,9 @@ export async function pixelift(
 ): Promise<PixelData>;
 export async function pixelift(
   input: PixeliftInput,
-  options: PixeliftOptions = {}
+  options?: PixeliftOptions
 ): Promise<PixelData> {
-  const isServerEnvironment = isServer();
-
-  const config = isServerEnvironment ? serverConfig : browserConfig;
+  const config = isServer() ? serverConfig : browserConfig;
 
   if (!config.validate(input)) {
     throw createError.invalidInput(config.errorMessage, typeof input);
@@ -51,11 +46,7 @@ export async function pixelift(
     const decoder = await config.importDecoder();
     return decoder.decode(input as never, options as never);
   } catch (error) {
-    throw createError.decodingFailed(
-      'Pixelift decoding failed',
-      config.errorMessage,
-      error
-    );
+    throw createError.rethrow(error);
   }
 }
 

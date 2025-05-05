@@ -6,11 +6,11 @@ import { createError } from '../../shared/error';
 
 export async function decode(
   input: ServerInput,
-  { signal }: ServerOptions = {}
+  options?: ServerOptions
 ): Promise<PixelData> {
   const buffer = await getBuffer(input);
 
-  if (signal?.aborted) {
+  if (options?.signal?.aborted) {
     throw createError.aborted();
   }
 

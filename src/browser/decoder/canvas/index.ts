@@ -13,6 +13,19 @@ export async function isSupported(_type: string = ''): Promise<boolean> {
   );
 }
 
+export async function decode(
+  input: BrowserInput,
+  options?: BrowserOptions
+): Promise<PixelData> {
+  const bitmap = await createImageFromSource(input, options);
+  const { width, height } = bitmap;
+  const ctx = getCanvasContext(width, height);
+  ctx.clearRect(0, 0, width, height);
+  ctx.drawImage(bitmap, 0, 0, width, height);
+  const { data } = ctx.getImageData(0, 0, width, height, { colorSpace: 'srgb' });
+  return { data, width, height };
+}
+
 function getCanvasContext(
   width: number,
   height: number
@@ -30,19 +43,6 @@ function getCanvasContext(
     sharedCanvas.height = height;
   }
   return sharedCtx;
-}
-
-export async function decode(
-  imageSource: BrowserInput,
-  options: BrowserOptions = {}
-): Promise<PixelData> {
-  const bitmap = await createImageFromSource(imageSource, options);
-  const { width, height } = bitmap;
-  const ctx = getCanvasContext(width, height);
-  ctx.clearRect(0, 0, width, height);
-  ctx.drawImage(bitmap, 0, 0, width, height);
-  const { data } = ctx.getImageData(0, 0, width, height, { colorSpace: 'srgb' });
-  return { data, width, height };
 }
 
 async function createImageFromSource(

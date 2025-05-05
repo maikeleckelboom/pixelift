@@ -6,7 +6,6 @@ import type { PixelData } from '../../types';
 import type { BrowserInput, BrowserOptions } from '../types';
 
 const webCodecsModule: Promise<typeof import('./webcodecs')> = import('./webcodecs');
-
 let canvasDecoderModule: Promise<typeof import('./canvas')> | null = null;
 
 async function loadCanvasDecoder(): Promise<typeof import('./canvas')> {
@@ -16,13 +15,13 @@ async function loadCanvasDecoder(): Promise<typeof import('./canvas')> {
   return canvasDecoderModule;
 }
 
-const DECODER_STRATEGIES: DecoderStrategy[] = [
+const DECODER_STRATEGIES: DecoderStrategy<BrowserInput, BrowserOptions>[] = [
   {
     id: 'webCodecs',
     isSupported: (type: string) =>
       webCodecsModule.then(({ isSupported }) => isSupported(type)),
-    decode: (blob: Blob, options?: BrowserOptions): Promise<PixelData> =>
-      webCodecsModule.then(({ decode }) => decode(blob, options))
+    decode: (blob: BrowserInput, options?: BrowserOptions): Promise<PixelData> =>
+      webCodecsModule.then(({ decode }) => decode(blob as Blob, options))
   },
   {
     id: 'offscreenCanvas',
@@ -30,7 +29,7 @@ const DECODER_STRATEGIES: DecoderStrategy[] = [
       const { isSupported } = await loadCanvasDecoder();
       return isSupported(type);
     },
-    decode: async (blob: Blob, options?: BrowserOptions): Promise<PixelData> => {
+    decode: async (blob: BrowserInput, options?: BrowserOptions): Promise<PixelData> => {
       const { decode } = await loadCanvasDecoder();
       return decode(blob, options);
     }
@@ -40,13 +39,13 @@ const DECODER_STRATEGIES: DecoderStrategy[] = [
 async function findSupportedStrategy(
   blob: Blob,
   decoder: BrowserOptions['decoder']
-): Promise<DecoderStrategy> {
+): Promise<DecoderStrategy<BrowserInput, BrowserOptions>> {
   if (decoder) {
     const strategy = DECODER_STRATEGIES.find((s) => s.id === decoder);
 
     if (!strategy) {
       throw createError.decoderUnsupported(
-        decoder.toString(),
+        decoder,
         `Unknown decoder strategy "${decoder.toString()}"`
       );
     }

@@ -1,13 +1,19 @@
 import type { PixelData } from '../../../types';
 import type { BrowserOptions } from '../../types';
 
+export async function isSupported(type: string): Promise<boolean> {
+  return (
+    'ImageDecoder' in window &&
+    typeof ImageDecoder.isTypeSupported === 'function' &&
+    (await ImageDecoder.isTypeSupported(type))
+  );
+}
+
 export async function decode(
   blob: Blob | File,
-  _: BrowserOptions = {}
+  _options?: BrowserOptions
 ): Promise<PixelData> {
   const buffer = await blob.arrayBuffer();
-
-  // options.signal?.throwIfAborted();
 
   const decoder = new ImageDecoder({
     type: blob.type,
@@ -31,12 +37,4 @@ export async function decode(
   decoder.close();
 
   return { data, width, height };
-}
-
-export async function isSupported(type: string): Promise<boolean> {
-  return (
-    'ImageDecoder' in window &&
-    typeof ImageDecoder.isTypeSupported === 'function' &&
-    (await ImageDecoder.isTypeSupported(type))
-  );
 }

@@ -76,5 +76,19 @@ export const createError = {
     new PixeliftError(ErrorCode.networkError, { detail }, { cause }),
 
   pathTraversal: (path: string): PixeliftError =>
-    new PixeliftError(ErrorCode.pathTraversal, { path })
+    new PixeliftError(ErrorCode.pathTraversal, { path }),
+
+  rethrow: (error: unknown): PixeliftError => {
+    if (error instanceof PixeliftError) {
+      return error;
+    }
+    if (error instanceof Error) {
+      return new PixeliftError(
+        ErrorCode.decodingFailed,
+        { detail: error.message },
+        { cause: error }
+      );
+    }
+    return new PixeliftError(ErrorCode.decodingFailed, { detail: String(error) });
+  }
 } as const;

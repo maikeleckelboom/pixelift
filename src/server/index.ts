@@ -10,7 +10,7 @@ import type { ServerInput, ServerOptions } from './types';
  */
 export async function pixelift(
   input: ServerInput,
-  options: ServerOptions = {}
+  options?: ServerOptions
 ): Promise<PixelData> {
   const decoder = await import('./decoder');
   return await decoder.decode(input, options);

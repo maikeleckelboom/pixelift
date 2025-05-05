@@ -1,11 +1,18 @@
-import type { DecoderOptions, PixelData } from '../../types';
-import type { BrowserOptions } from '../types';
+import type {
+  DecoderOptions,
+  PixelData,
+  PixeliftInput,
+  PixeliftOptions
+} from '../../types';
 
-export interface Decoder<Input, Options extends DecoderOptions = BrowserOptions> {
+export interface Decoder<Input extends PixeliftInput, Options extends DecoderOptions> {
   decode: (input: Input, options?: Options) => Promise<PixelData>;
 }
 
-export interface DecoderStrategy extends Decoder<Blob> {
+export interface DecoderStrategy<
+  Input extends PixeliftInput,
+  Options extends PixeliftOptions
+> extends Decoder<Input, Options> {
   id: string;
   isSupported: (type: string) => Promise<boolean>;
 }

@@ -96,7 +96,7 @@ const pixelData = await pixelift('path/to/image.jpg');
 // }
 ```
 
-## Conversion with`unpackPixels` and `packPixels`
+## `unpackPixels` and `packPixels`
 
 ### Red Tint
 

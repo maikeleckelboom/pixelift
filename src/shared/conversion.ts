@@ -28,7 +28,7 @@ export function packPixels(pixels: ArrayLike<number>): Uint8ClampedArray {
  * Unpacks pixel data from a buffer into an array of pixels.
  * Each pixel is represented as a 32-bit integer with the RGBA components packed.
  *
- * @param {BufferSource | Buffer} buffer The buffer containing pixel data in RGBA format.
+ * @param {BufferSource | Buffer} dataBuffer The buffer containing pixel data in RGBA format.
  * @param {Object} [options] Optional unpacking options.
  * @param {boolean} [options.useTArray=true] Indicates if a typed array (Uint32Array) should be returned.
  * If false, a standard JavaScript array is returned.
@@ -38,18 +38,22 @@ export function packPixels(pixels: ArrayLike<number>): Uint8ClampedArray {
  * If `useTArray` is true, returns a `Uint32Array`; otherwise, returns a standard array of numbers.
  */
 export function unpackPixels<T extends boolean = true>(
-  buffer: BufferSource | Buffer,
+  dataBuffer: BufferSource | Buffer,
   options: {
-    useTArray?: T;
     width?: number;
     height?: number;
+    useTArray?: T;
   } = {}
 ): T extends true ? Uint32Array : number[] {
   let data: Uint8Array;
-  if (buffer instanceof ArrayBuffer) {
-    data = new Uint8Array(buffer);
-  } else if (ArrayBuffer.isView(buffer)) {
-    data = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+  if (dataBuffer instanceof ArrayBuffer) {
+    data = new Uint8Array(dataBuffer);
+  } else if (ArrayBuffer.isView(dataBuffer)) {
+    data = new Uint8Array(
+      dataBuffer.buffer,
+      dataBuffer.byteOffset,
+      dataBuffer.byteLength
+    );
   } else {
     throw new Error('Invalid input type for bytes');
   }
