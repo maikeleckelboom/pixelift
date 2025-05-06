@@ -50,6 +50,6 @@ export async function pixelift(
   }
 }
 
-export { unpackPixels, packPixels } from './shared/conversion';
+export { argbFromRgbaBytes, rgbaBytesFromArgb } from './shared/conversion';
 
 export type { PixeliftInput, PixeliftOptions, PixelData } from './types';

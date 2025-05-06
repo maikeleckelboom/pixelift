@@ -96,23 +96,23 @@ const pixelData = await pixelift('path/to/image.jpg');
 // }
 ```
 
-## `unpackPixels` and `packPixels`
+## `argbFromRgbaBytes` and `rgbaBytesFromArgb`
 
 ### Red Tint
 
 Apply a red tint by maxing out the red channel:
 
 ```ts
-import { unpackPixels, packPixels } from 'pixelift';
+import { argbFromRgbaBytes, rgbaBytesFromArgb } from 'pixelift';
 
 // Get pixel data as ARGB integers
-const pixels = unpackPixels(source.data);
+const pixels = argbFromRgbaBytes(source.data);
 
 // Set red channel to 255
 const tinted = pixels.map((color) => (color & 0x00ffffff) | (0xff << 16));
 
 // Convert back to RGBA bytes
-const resultData = packPixels(tinted);
+const resultData = rgbaBytesFromArgb(tinted);
 ```
 
 ### Invert Colors
@@ -120,9 +120,9 @@ const resultData = packPixels(tinted);
 Invert RGB channels while preserving alpha:
 
 ```ts
-import { unpackPixels, packPixels } from 'pixelift';
+import { argbFromRgbaBytes, rgbaBytesFromArgb } from 'pixelift';
 
-const pixels = unpackPixels(source.data);
+const pixels = argbFromRgbaBytes(source.data);
 
 const inverted = pixels.map((c) => {
   const a = (c >>> 24) & 0xff;
@@ -132,7 +132,7 @@ const inverted = pixels.map((c) => {
   return ((a << 24) | ((255 - r) << 16) | ((255 - g) << 8) | (255 - b)) >>> 0;
 });
 
-const resultData = packPixels(inverted);
+const resultData = rgbaBytesFromArgb(inverted);
 ```
 ---
 
@@ -155,13 +155,13 @@ interface PixelData {
 }
 ```
 
-### `unpackPixels(buffer, options?) → number[] | Uint32Array`
+### `argbFromRgbaBytes(buffer, options?) → number[] | Uint32Array`
 
 - Converts RGBA bytes to 32-bit ARGB values.
 - **options**:
     - `useTArray?`: `boolean` (default `true`)
 
-### `packPixels(pixels) → Uint8ClampedArray`
+### `rgbaBytesFromArgb(pixels) → Uint8ClampedArray`
 
 - Converts ARGB integers back to RGBA bytes.
 

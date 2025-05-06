@@ -1,7 +1,7 @@
 {
   "name": "pixelift",
   "version": "0.1.0",
-  "description": "A modern, universal image processing library that seamlessly extracts pixel data across Node.js and browser environments. Utilizing Sharp on the server and Canvas API in the browser, it offers a consistent interface for efficient image manipulation and analysis.",
+  "description": "A modern, universal image processing library that seamlessly extracts pixel data across Node.js and browser environments. Utilizing Sharp on the server and Canvas or WebCodecs API in the browser, it offers a consistent interface for efficient image manipulation and analysis.",
   "author": "Maikel Eckelboom",
   "type": "module",
   "license": "MIT",
