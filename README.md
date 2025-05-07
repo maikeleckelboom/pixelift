@@ -1,83 +1,70 @@
-[//]: # ([![npm version]&#40;https://img.shields.io/npm/v/pixelift.svg&#41;]&#40;https://www.npmjs.com/package/pixelift&#41;)
-[//]: # ([![Build Status]&#40;https://img.shields.io/github/workflow/status/maikeleckelboom/pixelift/CI/main&#41;]&#40;&#41;)
-[//]: # ([![npm bundle size]&#40;https://img.shields.io/bundlephobia/minzip/pixelift&#41;]&#40;https://bundlephobia.com/package/pixelift&#41;)
-[//]: # ([![npm downloads]&#40;https://img.shields.io/npm/dm/pixelift.svg&#41;]&#40;https://www.npmjs.com/package/pixelift&#41;)
+[![npm version](https://img.shields.io/npm/v/pixelift.svg)](https://www.npmjs.com/package/pixelift)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/pixelift)](https://bundlephobia.com/package/pixelift)
+[![downloads](https://img.shields.io/npm/dm/pixelift)](https://www.npmjs.com/package/pixelift)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/maikeleckelboom/pixelift/blob/main/LICENSE)
 
 # Pixelift
 
-Unified API for decoding various image sources into raw 8-bit RGBA pixels, consistently in both browser and server.
+**Cross-platform image decoder**—convert any image source (URL, file, Blob, HTML element, etc.) into consistent 8-bit RGBA pixels via one lightweight API for both browser and Node.js.
 
 ---
 
-## 🔍 Overview
+## 📋 Table of Contents
 
-**Pixelift provides a unified API to decode images from a variety of sources—URLs, file paths, buffers, HTML elements,
-video frames, canvas elements, blobs, and more—into raw pixel data (`Uint8ClampedArray`) in a consistent 8-bit per
-channel RGBA format, along with width and height information.** It automatically detects your runtime environment and
-dispatches to the appropriate implementation:
-
-- **Browser**: Automatically selects the best available decoding strategy, prioritizing the modern **WebCodecs API** and
-  falling back to the widely compatible **OffscreenCanvas API**. You can also force a specific decoder.
-- **Server (Node.js)**: **Exclusively leverages [Sharp](https://github.com/lovell/sharp)** for high-performance, native
-  image decoding and conversion.
-
-A core goal of Pixelift is to ensure **consistent output**: the raw pixel data obtained from the _exact same image
-source_ is designed to be **pixel-by-pixel identical** (in the 8-bit RGBA format) whether decoded by Sharp on the server
-or the chosen mechanism in the browser, matching Sharp's standard output.
-
-**Key features:**
-
-- Multi-format support: JPEG, PNG, GIF, WebP, AVIF, SVG, etc.
-- Broad source compatibility: `string`, `URL`, `File`, `Blob`, `HTMLImageElement`, `HTMLVideoElement`,
-  `HTMLCanvasElement`, `OffscreenCanvas`, `ImageBitmap`, `VideoFrame`, `ImageData`, `Buffer`, `ArrayBuffer`,
-  `TypedArray`.
-- Robust error handling: Distinct error class (`PixeliftError`) provides clear codes and stack traces. Includes helpful
-  guidance if the `sharp` dependency is missing on the server.
-- Pure TypeScript: Strong types and built-in validation utilities.
-
-* ***Server-side decoding (requires Sharp):** For high-performance decoding in Node.js, Pixelift requires the native *
-  *Sharp** library. Install it as a dependency in your project (`npm install sharp`). Sharp is automatically excluded
-  from browser bundles.
-
-- **Modular structure**: The project is organized into a modular structure, separating browser and server
-  implementations while sharing common utilities.
+1. [Why Pixelift?](#why-pixelift)
+2. [Features](#features)
+3. [Installation](#installation)
+4. [Quick Start](#quick-start)
+5. [Browser vs Server](#browser-vs-server)
+6. [Advanced Usage](#advanced-usage)
+7. [API Reference](#api-reference)
+8. [Contributing](#contributing)
+9. [License](#license)
 
 ---
 
-## ⚙️ Installation
+## Why Pixelift?
 
-You can install **Pixelift** in one step using any of the four major JavaScript package managers—npm, Yarn, pnpm, or
-Bun—by running the respective `install`/`add` command.
+* 🎯 **One API** for **all** image sources (URLs, file paths, buffers, HTML elements, video frames, blobs, …)
+* ⚡️ **High performance**: Leverages WebCodecs/OffscreenCanvas in browser and Sharp on server
+* 🔄 **Consistent output**: Pixel-perfect identical RGBA for lossless formats; near-identical for lossy formats
+* 🔍 **Format-agnostic**: JPEG, PNG, GIF, WebP, AVIF, SVG, etc.
+* 🔧 **Fully typed**: Built in TypeScript with rich type definitions
 
-1. **npm**
+---
 
-   ```bash
-   npm install pixelift
-   ```
-2. **yarn**
+## Features
 
-   ```bash
-   yarn add pixelift
-   ```
-3. **pnpm**
+* ✅ Decode from `string|URL|File|Blob|HTMLImageElement|HTMLVideoElement|Canvas…`
+* ✅ Automatic runtime detection (browser ↔ Node.js)
+* ✅ Pure TypeScript, zero dependencies in browser
+* ✅ Modular exports (`./browser`, `./server`)
+* ✅ Robust error handling with clear codes (throws `PixeliftError`)
+* ✅ Tree-shakable, no side effects
 
-   ```bash
-   pnpm add pixelift
-   ```
-4. **bun**
+---
 
-   ```bash
-   bun add pixelift
-   ```
-
-### Server Requirements
-
-For server-side decoding, **Pixelift** requires the native **Sharp** library.
+## Installation
 
 ```bash
-npm install sharp
+# npm
+npm install pixelift
+
+# yarn
+yarn add pixelift
+
+# pnpm
+pnpm add pixelift
+
+# bun
+bun add pixelift
 ```
+
+> **Server only:** don’t forget to install [sharp](https://github.com/lovell/sharp)
+>
+> ```bash
+> npm install sharp
+> ```
 
 ---
 
@@ -86,17 +73,78 @@ npm install sharp
 ```ts
 import { pixelift } from 'pixelift';
 
-const pixelData = await pixelift('path/to/image.jpg');
+async function run() {
+  const { data, width, height } = await pixelift('path/to/image.jpg');
+  console.log(`Decoded ${width}×${height}, ${data.length} bytes`);
+}
 
-// ▶ pixelData
-// { 
-//   data: Uint8ClampedArray(160000) [ 23, 27, 153, 255, … ],
-//   width: 200,
-//   height: 200
-// }
+run();
 ```
 
-## `argbFromRgbaBytes` and `rgbaBytesFromArgb`
+---
+
+## Browser vs Server
+
+### Browser
+
+* Defaults to WebCodecs
+* Falls back to OffscreenCanvas
+* Fully runs in standard browsers (no native modules)
+
+### Server
+
+* Requires `sharp`
+* Leverages native bindings for blazing speed
+
+---
+
+## Advanced Usage
+
+### Force a specific decoder
+
+```ts
+pixelift(url, { decoder: 'offscreenCanvas' });
+```
+
+### Abort long requests
+
+```ts
+const controller = new AbortController();
+pixelift(url, { signal: controller.signal });
+// …
+controller.abort();
+```
+
+---
+
+## API Reference
+
+### `pixelift(input, options?) → Promise<PixelData>`
+
+* **input**: `string | URL | File | Blob | Buffer | ArrayBuffer | Uint8Array`
+* **options**: `{ headers?: Record<string, string>; signal?: AbortSignal; decoder?: 'webcodecs' | 'offscreen-canvas' }`
+* **returns**:
+
+  ```ts
+  interface PixelData {
+    data: Uint8ClampedArray;
+    width: number;
+    height: number;
+  }
+  ```
+
+### `argbFromRgbaBytes(buffer, options?) → number[] | Uint32Array`
+
+* Converts RGBA bytes to ARGB ints
+* **options**: `{ useTArray?: boolean }`
+
+### `rgbaBytesFromArgb(pixels) → Uint8ClampedArray`
+
+* Converts ARGB ints back to RGBA bytes
+
+---
+
+## Conversion Examples
 
 ### Red Tint
 
@@ -134,40 +182,15 @@ const inverted = pixels.map((c) => {
 
 const resultData = rgbaBytesFromArgb(inverted);
 ```
----
-
-## API
-
-### `pixelift(input, options?) → Promise<PixelData>`
-
-- **input**: `string | URL | File | Blob | Buffer | ArrayBuffer | Uint8Array`
-- **options**:
-    - `headers?`: `Record<string, string>` — for custom headers
-    - `signal?`: `AbortSignal` — for aborting the request
-
-**Returns** a Promise resolving to:
-
-```ts
-interface PixelData {
-  data: Uint8ClampedArray; // RGBA bytes
-  width: number;
-  height: number;
-}
-```
-
-### `argbFromRgbaBytes(buffer, options?) → number[] | Uint32Array`
-
-- Converts RGBA bytes to 32-bit ARGB values.
-- **options**:
-    - `useTArray?`: `boolean` (default `true`)
-
-### `rgbaBytesFromArgb(pixels) → Uint8ClampedArray`
-
-- Converts ARGB integers back to RGBA bytes.
-
 
 ---
 
-## Contributing & License
+## Contributing
 
-Contributions welcome: see [issues](https://github.com/maikeleckelboom/pixelift/issues).
+Contributions welcome! Please check out the [issue tracker](https://github.com/maikeleckelboom/pixelift/issues) or open a pull request.
+
+---
+
+## License
+
+This project is licensed under the MIT License.

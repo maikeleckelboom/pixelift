@@ -24,6 +24,13 @@ const serverConfig: EnvironmentConfig<ServerInput, ServerOptions> = {
   errorMessage: 'Invalid input type for server-side decoding.'
 };
 
+/**
+ * Processes pixel-based input data using a specific decoder and returns the resulting pixel data.
+ *
+ * @param {PixeliftInput} input - The pixel input data to be processed.
+ * @param {PixeliftOptions} [options] - Optional configuration parameters for the decoding process.
+ * @return {Promise<PixelData>} A promise that resolves to the processed pixel data.
+ */
 export async function pixelift(
   input: BrowserInput,
   options?: BrowserOptions

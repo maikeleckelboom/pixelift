@@ -1,7 +1,7 @@
 {
   "name": "pixelift",
   "version": "0.1.0",
-  "description": "A modern, universal image processing library that seamlessly extracts pixel data across Node.js and browser environments. Utilizing Sharp on the server and Canvas or WebCodecs API in the browser, it offers a consistent interface for efficient image manipulation and analysis.",
+  "description": "Cross-platform image decoder: convert any image source (URL, file, Blob, HTML element, etc.) into consistent 8-bit RGBA pixel data, with a single lightweight API for browser & Node.js.",
   "author": "Maikel Eckelboom",
   "type": "module",
   "license": "MIT",
@@ -60,20 +60,18 @@
     "prepublishOnly": "npm test && npm run build"
   },
   "keywords": [
+    "image-decoder",
+    "raw-pixels",
+    "rgba",
+    "cross-platform",
     "browser",
-    "canvas",
-    "codecs",
-    "decode",
-    "extract",
-    "image",
     "nodejs",
-    "pixels",
-    "processing",
-    "sharp",
     "ssr",
-    "universal",
-    "vision",
-    "web"
+    "webcodecs",
+    "offscreen-canvas",
+    "sharp",
+    "canvas",
+    "typescript"
   ],
   "repository": {
     "type": "git",
