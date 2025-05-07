@@ -27,4 +27,16 @@ describe('Browser Pixelift Decode', () => {
     expect(result.height).toBeDefined();
     expect(result.data.filter(Boolean).length).toBeGreaterThan(0);
   });
+
+  test.each(FORMATS)('should decode a %s image from url', async (format) => {
+    const url = new URL(`../assets/pixelift.${format}`, import.meta.url);
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`Failed to fetch ${format}: ${resp.status}`);
+    const blob = await resp.blob();
+    const result = await pixelift(blob);
+
+    expect(result.width).toBeDefined();
+    expect(result.height).toBeDefined();
+    expect(result.data.filter(Boolean).length).toBeGreaterThan(0);
+  });
 });

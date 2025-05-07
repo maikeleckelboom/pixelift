@@ -60,7 +60,7 @@ pnpm add pixelift
 bun add pixelift
 ```
 
-> **Server only:** don’t forget to install [sharp](https://github.com/lovell/sharp)
+> **Server:** remember to install [sharp](https://github.com/lovell/sharp)
 >
 > ```bash
 > npm install sharp
