@@ -1,6 +1,11 @@
 import { validateBrowserInput, validateServerInput } from './shared/validation';
 import { isServer } from './shared/env';
 import { createError } from './shared/error';
+import {
+  PIXELIFT_BROWSER_DECODERS,
+  PIXELIFT_SERVER_DECODERS,
+  type PixeliftDecoder
+} from './shared/constants';
 import type { PixelData, PixeliftInput, PixeliftOptions } from './types';
 import type { ServerInput, ServerOptions } from './server/types';
 import type { BrowserInput, BrowserOptions } from './browser/types';
@@ -43,10 +48,15 @@ export async function pixelift(
   input: PixeliftInput,
   options?: PixeliftOptions
 ): Promise<PixelData> {
-  const config = isServer() ? serverConfig : browserConfig;
+  const isNode = isServer();
+  const config = isNode ? serverConfig : browserConfig;
 
   if (!config.validate(input)) {
     throw createError.invalidInput(config.errorMessage, typeof input);
+  }
+
+  if (options?.decoder && !validateDecoderOption(options.decoder, isNode)) {
+    throw createError.decoderUnsupported(options.decoder);
   }
 
   try {
@@ -55,6 +65,18 @@ export async function pixelift(
   } catch (error) {
     throw createError.rethrow(error);
   }
+}
+
+function validateDecoderOption(
+  decoder: string | undefined,
+  isServer: boolean
+): decoder is PixeliftDecoder {
+  if (!decoder) return true;
+
+  const decoderList = Array.from(
+    isServer ? PIXELIFT_SERVER_DECODERS : PIXELIFT_BROWSER_DECODERS
+  );
+  return decoderList.includes(decoder as PixeliftDecoder);
 }
 
 export { argbFromRgbaBytes, rgbaBytesFromArgb } from './shared/conversion';

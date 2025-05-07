@@ -1,5 +1,7 @@
 import type { PixelData } from '../../../types';
-import type { BrowserOptions } from '../../types';
+import type { BrowserInput, BrowserOptions } from '../../types';
+import { createError } from '../../../shared/error';
+import { imageDecoderOptions } from './options';
 
 export async function isSupported(type: string): Promise<boolean> {
   return (
@@ -10,16 +12,15 @@ export async function isSupported(type: string): Promise<boolean> {
 }
 
 export async function decode(
-  blob: Blob | File,
+  input: BrowserInput,
   _options?: BrowserOptions
 ): Promise<PixelData> {
-  const buffer = await blob.arrayBuffer();
+  if (!(input instanceof Blob || input instanceof File)) {
+    throw createError.invalidInput('Blob or File', typeof input);
+  }
 
-  const decoder = new ImageDecoder({
-    type: blob.type,
-    data: buffer,
-    colorSpaceConversion: 'none'
-  });
+  const buffer = await input.arrayBuffer();
+  const decoder = new ImageDecoder(imageDecoderOptions(buffer, input));
 
   await decoder.completed;
 

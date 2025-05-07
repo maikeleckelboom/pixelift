@@ -1,5 +1,4 @@
 import { createError } from '../../shared/error';
-import { isImageBitmapSource } from '../validation';
 import { toBlob } from '../blob';
 import type { DecoderStrategy } from './types';
 import type { PixelData } from '../../types';
@@ -20,8 +19,8 @@ const DECODER_STRATEGIES: DecoderStrategy<BrowserInput, BrowserOptions>[] = [
     id: 'webCodecs',
     isSupported: (type: string) =>
       webCodecsModule.then(({ isSupported }) => isSupported(type)),
-    decode: (blob: BrowserInput, options?: BrowserOptions): Promise<PixelData> =>
-      webCodecsModule.then(({ decode }) => decode(blob as Blob, options))
+    decode: (input: BrowserInput, options?: BrowserOptions): Promise<PixelData> =>
+      webCodecsModule.then(({ decode }) => decode(input, options))
   },
   {
     id: 'offscreenCanvas',
@@ -29,9 +28,9 @@ const DECODER_STRATEGIES: DecoderStrategy<BrowserInput, BrowserOptions>[] = [
       const { isSupported } = await loadCanvasDecoder();
       return isSupported(type);
     },
-    decode: async (blob: BrowserInput, options?: BrowserOptions): Promise<PixelData> => {
+    decode: async (input: BrowserInput, options?: BrowserOptions): Promise<PixelData> => {
       const { decode } = await loadCanvasDecoder();
-      return decode(blob, options);
+      return decode(input, options);
     }
   }
 ];
@@ -51,6 +50,7 @@ async function findSupportedStrategy(
     }
 
     const isSupported = await strategy.isSupported(blob.type);
+
     if (!isSupported) {
       throw createError.decoderUnsupported(
         strategy.id,
@@ -77,10 +77,6 @@ export async function decode(
   source: BrowserInput,
   options: BrowserOptions = {}
 ): Promise<PixelData> {
-  if (isImageBitmapSource(source)) {
-    const { decode } = await loadCanvasDecoder();
-    return decode(source, options);
-  }
   const blob = await toBlob(source, options);
   const strategy = await findSupportedStrategy(blob, options.decoder);
   return strategy.decode(blob, options);

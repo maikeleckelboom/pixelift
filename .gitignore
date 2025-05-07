@@ -40,3 +40,6 @@ bun.lock
 # Temporary files while developing
 .changeset
 .github
+
+# Test snapshots
+__snapshots__

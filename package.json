@@ -48,11 +48,15 @@
   "scripts": {
     "dev": "vitest --watch",
     "test": "vitest",
-    "bench": "vitest --run bench --reporter default",
-    "bench:verbose": "vitest --run bench --reporter verbose",
+
+    "bench": "vitest --run bench --reporter verbose",
+    "bench:browser": "vitest --project browser --run bench --reporter verbose",
+    "bench:server": "vitest --project server --run bench --reporter verbose",
+
     "test:browser": "vitest --project browser",
     "test:server": "vitest --project server",
-    "test:types": "bun scripts/typecheck.ts",
+    "test:update": "bun test/__fixtures__/update-snapshots.ts",
+    "test:ci": "VITEST_UPDATE_SNAPSHOT=false vitest --run",
     "lint": "eslint 'src/**/*.ts' --max-warnings=0",
     "lint:fix": "eslint 'src/**/*.ts' --fix",
     "format": "prettier --write .",

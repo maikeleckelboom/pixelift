@@ -7,6 +7,7 @@ export const ErrorCode = {
   fetchFailed: 'fetch-failed',
   networkError: 'network-error',
   pathTraversal: 'path-traversal',
+  runtimeError: 'runtime-error',
   aborted: 'aborted'
 } as const;
 
@@ -19,9 +20,10 @@ const MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.dependencyMissing]: 'Required dependency missing: {dependency}',
   [ErrorCode.environmentUnsupported]: 'Current environment does not support {feature}',
   [ErrorCode.fetchFailed]: 'Failed to fetch from {url}: {status} {statusText}',
+  [ErrorCode.networkError]: 'Network error: {detail}',
   [ErrorCode.pathTraversal]: 'Path traversal attempt detected: {path}',
   [ErrorCode.aborted]: 'Operation aborted',
-  [ErrorCode.networkError]: 'Network error: {detail}'
+  [ErrorCode.runtimeError]: 'Runtime error: {detail}'
 };
 
 function formatMessage(template: string, context: Record<string, unknown> = {}): string {
@@ -54,7 +56,7 @@ export class PixeliftError extends Error {
 export const createError = {
   aborted: (): PixeliftError => new PixeliftError(ErrorCode.aborted),
 
-  decoderUnsupported: (decoder: string, detail: string): PixeliftError =>
+  decoderUnsupported: (decoder: string, detail?: string): PixeliftError =>
     new PixeliftError(ErrorCode.decoderUnsupported, { decoder, detail }),
 
   decodingFailed: (type: string, detail: string, cause?: unknown): PixeliftError =>
@@ -77,6 +79,9 @@ export const createError = {
 
   pathTraversal: (path: string): PixeliftError =>
     new PixeliftError(ErrorCode.pathTraversal, { path }),
+
+  runtimeError: (detail: string, cause?: unknown): PixeliftError =>
+    new PixeliftError(ErrorCode.runtimeError, { detail }, { cause }),
 
   rethrow: (error: unknown): PixeliftError => {
     if (error instanceof PixeliftError) {

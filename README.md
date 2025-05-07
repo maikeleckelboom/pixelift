@@ -5,7 +5,8 @@
 
 # Pixelift
 
-**Cross-platform image decoder**—convert any image source (URL, file, Blob, HTML element, etc.) into consistent 8-bit RGBA pixels via one lightweight API for both browser and Node.js.
+**Cross-platform image decoder**—convert any image source (URL, file, Blob, HTML element, etc.) into consistent 8-bit
+RGBA pixels via one lightweight API for both browser and Node.js.
 
 ---
 
@@ -29,7 +30,7 @@
 * ⚡️ **High performance**: Leverages WebCodecs/OffscreenCanvas in browser and Sharp on server
 * 🔄 **Consistent output**: Pixel-perfect identical RGBA for lossless formats; near-identical for lossy formats
 * 🔍 **Format-agnostic**: JPEG, PNG, GIF, WebP, AVIF, SVG, etc.
-* 🔧 **Fully typed**: Built in TypeScript
+* 🔧 **Fully typed**: Built in TypeScript with zero dependencies in the browser
 
 ---
 
@@ -60,7 +61,7 @@ pnpm add pixelift
 bun add pixelift
 ```
 
-> **Server:** remember to install [sharp](https://github.com/lovell/sharp)
+> **Server:** Pixelift uses [sharp](https://github.com/lovell/sharp) for server-side decoding; ensure it's installed.
 >
 > ```bash
 > npm install sharp
@@ -187,7 +188,8 @@ const resultData = rgbaBytesFromArgb(inverted);
 
 ## Contributing
 
-Contributions welcome! Please check out the [issue tracker](https://github.com/maikeleckelboom/pixelift/issues) or open a pull request.
+Contributions welcome! Please check out the [issue tracker](https://github.com/maikeleckelboom/pixelift/issues) or open
+a pull request.
 
 ---
 
