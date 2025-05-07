@@ -3,8 +3,8 @@ import { getBuffer } from '../../src/server/buffer';
 import path from 'node:path';
 
 describe('Server Buffer Security', () => {
-  const SAFE_IMAGE_BUFFER = new URL('../assets/pixelift.png', import.meta.url);
-  const assetsDir = path.dirname(SAFE_IMAGE_BUFFER.pathname);
+  const SAFE_IMAGE_BUFFER = new URL('../fixtures/pixelift.png', import.meta.url);
+  const fixturesDir = path.dirname(SAFE_IMAGE_BUFFER.pathname);
 
   describe('Valid Path Handling', () => {
     test('reads actual test image from valid path', async () => {
@@ -16,7 +16,7 @@ describe('Server Buffer Security', () => {
 
   describe('Path Traversal Prevention', () => {
     test('rejects encoded path traversal', async () => {
-      const encodedTraversal = path.join(assetsDir, '..%2F..%2F..%2F..%2Fetc%2Fpasswd');
+      const encodedTraversal = path.join(fixturesDir, '..%2F..%2F..%2F..%2Fetc%2Fpasswd');
 
       await expect(() => getBuffer(encodedTraversal)).rejects.toMatchObject({
         code: 'path-traversal'
@@ -24,7 +24,7 @@ describe('Server Buffer Security', () => {
     });
 
     test('rejects relative path traversal', async () => {
-      const maliciousPath = path.join(assetsDir, '../../../../etc/passwd');
+      const maliciousPath = path.join(fixturesDir, '../../../../etc/passwd');
 
       await expect(() => getBuffer(maliciousPath)).rejects.toMatchObject({
         code: 'path-traversal'

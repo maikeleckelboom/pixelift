@@ -56,9 +56,11 @@ async function createImageFromSource(
     const { headers, signal } = options || {};
     const url = new URL(input.toString(), location.origin).toString();
     const response = await fetch(url, { mode: 'cors', headers, signal });
+
     if (!response.ok) {
       throw createError.fetchFailed(url, response.status, response.statusText);
     }
+
     const blob = await response.blob();
     return createBitmap(blob);
   }

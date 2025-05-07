@@ -7,10 +7,10 @@ export default defineWorkspace([
       ...baseConfig.test,
       name: 'server',
       environment: 'node',
-      include: ['**/*.server.test.ts', '**/*.test.ts'],
-      exclude: ['**/*.browser.test.ts'],
+      include: ['**/*.test.ts', '**/*.server.test.ts', '**/server/**/*.test.ts'],
+      exclude: ['**/*.browser.test.ts', '**/browser/**/*.test.ts'],
       benchmark: {
-        exclude: ['**/*.browser.bench.ts']
+        exclude: ['**/*.browser.bench.ts', '**/browser/**/*.bench.ts']
       }
     }
   },
@@ -18,8 +18,11 @@ export default defineWorkspace([
     test: {
       ...baseConfig.test,
       name: 'browser',
-      include: ['**/*.browser.test.ts'],
-      exclude: ['**/*.server.test.ts'],
+      include: ['**/*.browser.test.ts', '**/browser/**/*.test.ts'],
+      exclude: ['**/*.server.test.ts', '**/server/**/*.test.ts'],
+      benchmark: {
+        include: ['**/*.browser.bench.ts', '**/browser/**/*.bench.ts']
+      },
       browser: {
         provider: 'playwright',
         enabled: true,
@@ -30,9 +33,6 @@ export default defineWorkspace([
           { browser: 'firefox' },
           { browser: 'webkit' }
         ]
-      },
-      benchmark: {
-        include: ['**/*.browser.bench.ts']
       }
     }
   }

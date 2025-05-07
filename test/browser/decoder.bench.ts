@@ -1,13 +1,13 @@
 import { bench, describe } from 'vitest';
 import { pixelift } from 'pixelift/browser';
 
-import PIXELIFT_PNG_URL from '../assets/pixelift.png?url';
-import PIXELIFT_JPG_URL from '../assets/pixelift.jpg?url';
-import PIXELIFT_JPEG_URL from '../assets/pixelift.jpeg?url';
-import PIXELIFT_GIF_URL from '../assets/pixelift.gif?url';
-import PIXELIFT_WEBP_URL from '../assets/pixelift.webp?url';
-import PIXELIFT_AVIF_URL from '../assets/pixelift.avif?url';
-import PIXELIFT_SVG_URL from '../assets/pixelift.svg?url';
+import PIXELIFT_PNG_URL from '../fixtures/pixelift.png?url';
+import PIXELIFT_JPG_URL from '../fixtures/pixelift.jpg?url';
+import PIXELIFT_JPEG_URL from '../fixtures/pixelift.jpeg?url';
+import PIXELIFT_GIF_URL from '../fixtures/pixelift.gif?url';
+import PIXELIFT_WEBP_URL from '../fixtures/pixelift.webp?url';
+import PIXELIFT_AVIF_URL from '../fixtures/pixelift.avif?url';
+import PIXELIFT_SVG_URL from '../fixtures/pixelift.svg?url';
 
 const IMAGES = {
   png: PIXELIFT_PNG_URL,
