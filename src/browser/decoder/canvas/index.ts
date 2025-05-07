@@ -32,7 +32,11 @@ function getCanvasContext(
 ): OffscreenCanvasRenderingContext2D {
   if (!sharedCanvas || !sharedCtx) {
     sharedCanvas = new OffscreenCanvas(width, height);
-    const ctx = sharedCanvas.getContext('2d', { alpha: true, colorSpace: 'srgb' });
+    const ctx = sharedCanvas.getContext('2d', {
+      alpha: true,
+      colorSpace: 'srgb',
+      willReadFrequently: true
+    });
     if (ctx === null) throw new Error('Failed to get OffscreenCanvas context');
     sharedCtx = ctx;
     sharedCtx.imageSmoothingEnabled = false;
