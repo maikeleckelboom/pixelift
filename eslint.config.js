@@ -5,11 +5,8 @@ import parser from '@typescript-eslint/parser';
 import prettier from 'eslint-config-prettier';
 
 export default defineConfig([
-  // 1. Base JS rules
   js.configs.recommended,
-  // 2. TypeScript strict rules
   ...tseslint.configs.strict,
-  // 3. Prettier rules
   prettier,
   {
     ignores: [
@@ -22,7 +19,6 @@ export default defineConfig([
       '**/*.mjs'
     ]
   },
-  // 5. Global language options & parser
   {
     languageOptions: {
       parser,
@@ -34,7 +30,6 @@ export default defineConfig([
       }
     }
   },
-  // 6. File-specific rules
   {
     files: ['**/*.ts'],
     rules: {

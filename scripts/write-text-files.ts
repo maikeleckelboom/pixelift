@@ -5,7 +5,7 @@ const SUPPORTED_FORMATS = ['jpg', 'jpeg', 'png', 'gif', 'webp'] as const;
 
 async function run(): Promise<void> {
   for (const format of SUPPORTED_FORMATS) {
-    const originalPath = `../assets/pixelift.${format}`;
+    const originalPath = `./test/assets/pixelift.${format}`;
     const url = new URL(originalPath, import.meta.url);
 
     console.log(`Processing ${format}, preparing output: ${originalPath}...`);
@@ -13,7 +13,11 @@ async function run(): Promise<void> {
     try {
       const buffer = fs.readFileSync(url);
       const { data } = await pixelift(buffer);
-      fs.writeFileSync(`../assets/txt/pixelift.${format}.txt`, data.toString(), 'utf-8');
+      fs.writeFileSync(
+        `./test/assets/txt/pixelift.${format}.txt`,
+        data.toString(),
+        'utf-8'
+      );
     } catch (error) {
       console.error('❌ Error during processing:', error);
     }

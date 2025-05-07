@@ -1,6 +1,8 @@
 import { isStringOrURL } from '../../../shared/validation';
+import { createError } from '../../../shared/error';
 import type { PixelData } from '../../../types';
 import type { BrowserInput, BrowserOptions } from '../../types';
+import { BITMAP_OPTIONS, CANVAS_OPTIONS } from './options';
 
 let sharedCanvas: OffscreenCanvas | undefined;
 let sharedCtx: OffscreenCanvasRenderingContext2D | undefined;
@@ -11,6 +13,26 @@ export async function isSupported(_type: string = ''): Promise<boolean> {
     typeof OffscreenCanvas === 'function' &&
     typeof createImageBitmap === 'function'
   );
+}
+
+function getCanvasContext(
+  width: number,
+  height: number
+): OffscreenCanvasRenderingContext2D {
+  if (!sharedCanvas || !sharedCtx) {
+    sharedCanvas = new OffscreenCanvas(width, height);
+    sharedCtx = sharedCanvas.getContext(
+      '2d',
+      CANVAS_OPTIONS
+    ) as OffscreenCanvasRenderingContext2D;
+    sharedCtx.imageSmoothingEnabled = false;
+    sharedCtx.imageSmoothingQuality = 'low';
+  }
+  if (sharedCanvas.width !== width || sharedCanvas.height !== height) {
+    sharedCanvas.width = width;
+    sharedCanvas.height = height;
+  }
+  return sharedCtx;
 }
 
 export async function decode(
@@ -26,62 +48,39 @@ export async function decode(
   return { data, width, height };
 }
 
-function getCanvasContext(
-  width: number,
-  height: number
-): OffscreenCanvasRenderingContext2D {
-  if (!sharedCanvas || !sharedCtx) {
-    sharedCanvas = new OffscreenCanvas(width, height);
-    const ctx = sharedCanvas.getContext('2d', {
-      alpha: true,
-      colorSpace: 'srgb',
-      willReadFrequently: true
-    });
-    if (ctx === null) throw new Error('Failed to get OffscreenCanvas context');
-    sharedCtx = ctx;
-    sharedCtx.imageSmoothingEnabled = false;
-    sharedCtx.imageSmoothingQuality = 'low';
-  }
-  if (sharedCanvas.width !== width || sharedCanvas.height !== height) {
-    sharedCanvas.width = width;
-    sharedCanvas.height = height;
-  }
-  return sharedCtx;
-}
-
 async function createImageFromSource(
-  source: BrowserInput,
-  options: BrowserOptions = {}
+  input: BrowserInput,
+  options?: BrowserOptions
 ): Promise<ImageBitmap> {
-  if (isStringOrURL(source)) {
-    const { headers, signal } = options;
-    const url = new URL(source.toString(), location.origin).toString();
+  if (isStringOrURL(input)) {
+    const { headers, signal } = options || {};
+    const url = new URL(input.toString(), location.origin).toString();
     const response = await fetch(url, { mode: 'cors', headers, signal });
-    return ensureBitmap(response);
+    if (!response.ok) {
+      throw createError.fetchFailed(url, response.status, response.statusText);
+    }
+    const blob = await response.blob();
+    return createBitmap(blob);
   }
-  return ensureBitmap(source);
+
+  return createBitmap(input);
 }
 
-async function ensureBitmap(blob: Response | ImageBitmapSource): Promise<ImageBitmap> {
-  if (blob instanceof Response) {
-    const res = await blob.blob();
-
-    if (res.type === 'image/svg+xml') {
-      const svgText = await res.text();
-      const svgBlob = new Blob([svgText], { type: 'image/svg+xml' });
-      return createImageBitmap(svgBlob);
-    }
-
-    return ensureBitmap(res);
+async function createBitmap(input: ImageBitmapSource): Promise<ImageBitmap> {
+  if (input instanceof ImageBitmap) {
+    return input;
   }
 
-  if (blob instanceof ImageBitmap) {
-    return blob;
+  if (input instanceof Blob && input.type === 'image/svg+xml') {
+    const svgBlob = new Blob([input], { type: 'image/svg+xml' });
+    const svgUrl = URL.createObjectURL(svgBlob);
+    const image = new Image();
+    image.src = svgUrl;
+    await image.decode();
+    const bitmap = await createBitmap(image);
+    URL.revokeObjectURL(svgUrl);
+    return bitmap;
   }
 
-  return createImageBitmap(blob, {
-    premultiplyAlpha: 'none',
-    colorSpaceConversion: 'none',
-    imageOrientation: 'none'
-  });
+  return createImageBitmap(input, BITMAP_OPTIONS);
 }

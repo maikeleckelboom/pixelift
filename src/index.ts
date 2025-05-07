@@ -60,3 +60,5 @@ export async function pixelift(
 export { argbFromRgbaBytes, rgbaBytesFromArgb } from './shared/conversion';
 
 export type { PixeliftInput, PixeliftOptions, PixelData } from './types';
+
+export { ErrorCode, PixeliftError } from './shared/error';

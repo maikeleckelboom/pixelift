@@ -29,7 +29,7 @@
 * ⚡️ **High performance**: Leverages WebCodecs/OffscreenCanvas in browser and Sharp on server
 * 🔄 **Consistent output**: Pixel-perfect identical RGBA for lossless formats; near-identical for lossy formats
 * 🔍 **Format-agnostic**: JPEG, PNG, GIF, WebP, AVIF, SVG, etc.
-* 🔧 **Fully typed**: Built in TypeScript with rich type definitions
+* 🔧 **Fully typed**: Built in TypeScript
 
 ---
 
