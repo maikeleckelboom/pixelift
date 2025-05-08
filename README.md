@@ -90,12 +90,12 @@ run();
 
 * Defaults to WebCodecs
 * Falls back to OffscreenCanvas
-* Fully runs in standard browsers (no native modules)
+* No native bindings required
 
 ### Server
 
 * Requires `sharp`
-* Leverages native bindings for blazing speed
+* Leverages native bindings for performance
 
 ---
 
@@ -186,13 +186,13 @@ const resultData = rgbaBytesFromArgb(inverted);
 
 ---
 
+## License
+
+This project is licensed under the MIT License.
+
+---
+
 ## Contributing
 
 Contributions welcome! Please check out the [issue tracker](https://github.com/maikeleckelboom/pixelift/issues) or open
 a pull request.
-
----
-
-## License
-
-This project is licensed under the MIT License.

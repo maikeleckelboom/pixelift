@@ -48,15 +48,14 @@
   "scripts": {
     "dev": "vitest --watch",
     "test": "vitest",
-
     "bench": "vitest --run bench --reporter verbose",
     "bench:browser": "vitest --project browser --run bench --reporter verbose",
     "bench:server": "vitest --project server --run bench --reporter verbose",
-
     "test:browser": "vitest --project browser",
     "test:server": "vitest --project server",
-    "test:update": "bun test/__fixtures__/update-snapshots.ts",
-    "test:ci": "VITEST_UPDATE_SNAPSHOT=false vitest --run",
+    "test:update": "bun test/__fixtures__/update.ts",
+    "test:clean": "rm -r test/**/__snapshots__",
+    "test:ci": "vitest --reporter dot",
     "lint": "eslint 'src/**/*.ts' --max-warnings=0",
     "lint:fix": "eslint 'src/**/*.ts' --fix",
     "format": "prettier --write .",
@@ -86,20 +85,22 @@
     "url": "https://github.com/maikeleckelboom/pixelift/issues"
   },
   "devDependencies": {
-    "typescript": "^5",
-    "vitest": "3.1.2",
-    "@types/node": "22.15.3",
     "@eslint/js": "^9.25.1",
-    "eslint": "^9.25.1",
-    "eslint-config-prettier": "^10.1.2",
-    "typescript-eslint": "^8.31.1",
+    "@playwright/test": "^1.52.0",
+    "@types/node": "22.15.3",
     "@typescript-eslint/eslint-plugin": "^8.31.1",
     "@typescript-eslint/parser": "^8.31.1",
     "@vitest/browser": "^3.1.2",
+    "e": "^0.2.33",
+    "eslint": "^9.25.1",
+    "eslint-config-prettier": "^10.1.2",
     "playwright": "^1.52.0",
     "prettier": "^3.5.3",
     "tsup": "^8.4.0",
-    "type-fest": "^4.40.0"
+    "type-fest": "^4.40.0",
+    "typescript": "^5",
+    "typescript-eslint": "^8.31.1",
+    "vitest": "3.1.2"
   },
   "optionalDependencies": {
     "sharp": "^0.34.1"

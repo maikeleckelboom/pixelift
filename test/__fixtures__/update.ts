@@ -15,7 +15,7 @@ const RED = '\x1b[31m';
 const CYAN = '\x1b[36m';
 const BOLD = '\x1b[1m';
 
-async function updateSnapshots(formats: readonly string[] = FORMATS): Promise<void> {
+async function update(formats: readonly string[] = FORMATS): Promise<void> {
   if (!fs.existsSync(SNAPSHOTS_DIR)) {
     fs.mkdirSync(SNAPSHOTS_DIR);
   }
@@ -54,7 +54,7 @@ async function updateSnapshots(formats: readonly string[] = FORMATS): Promise<vo
   }
 }
 
-updateSnapshots().catch((err) => {
+update().catch((err) => {
   console.error(`${RED}${BOLD}Fatal error:${RESET}`, err);
   process.exit(1);
 });
