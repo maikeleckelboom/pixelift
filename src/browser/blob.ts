@@ -29,9 +29,5 @@ export async function toBlob(
     return source;
   }
 
-  if (source instanceof File) {
-    return new Blob([source], { type: source.type });
-  }
-
   throw createError.invalidInput('"Blob", "File", or a valid URL', typeof source);
 }

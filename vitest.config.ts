@@ -6,5 +6,11 @@ export default defineConfig({
     pool: 'threads',
     testTimeout: 60_000,
     teardownTimeout: 30_000
+  },
+  server: {
+    fs: {
+      strict: false,
+      allow: ['./test/browser/unit', './test/__fixtures__', './node_modules/ws']
+    }
   }
 });

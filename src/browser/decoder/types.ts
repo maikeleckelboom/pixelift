@@ -9,10 +9,8 @@ export interface Decoder<Input extends PixeliftInput, Options extends DecoderOpt
   decode: (input: Input, options?: Options) => Promise<PixelData>;
 }
 
-export interface DecoderStrategy<
-  Input extends PixeliftInput,
-  Options extends PixeliftOptions
-> extends Decoder<Input, Options> {
+export interface DecoderStrategy<Input extends Blob, Options extends PixeliftOptions>
+  extends Decoder<Input, Options> {
   id: string;
   isSupported: (type: string) => Promise<boolean>;
 }
