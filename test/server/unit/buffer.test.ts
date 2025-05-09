@@ -3,7 +3,7 @@ import { getBuffer } from '../../../src/server/buffer';
 import path from 'node:path';
 
 describe('Buffer Security', () => {
-  const SAFE_IMAGE_BUFFER = new URL('../../assets/pixelift.png', import.meta.url);
+  const SAFE_IMAGE_BUFFER = new URL('../../fixtures/assets/pixelift.png', import.meta.url);
   const fixturesDir = path.dirname(SAFE_IMAGE_BUFFER.pathname);
 
   describe('Valid Path Handling', () => {

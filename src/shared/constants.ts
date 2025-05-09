@@ -9,14 +9,6 @@ export const PIXELIFT_DECODERS = [
 
 export type PixeliftDecoder = (typeof PIXELIFT_DECODERS)[number];
 
-export const VERIFIED_INPUT_FORMATS = [
-  'jpg',
-  'jpeg',
-  'png',
-  'gif',
-  'webp',
-  'svg',
-  'avif'
-] as const;
+export const VERIFIED_INPUT_FORMATS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'] as const;
 
 export type VerifiedFormat = (typeof VERIFIED_INPUT_FORMATS)[number];

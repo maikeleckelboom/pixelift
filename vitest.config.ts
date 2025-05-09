@@ -3,6 +3,7 @@ import { resolve } from 'path';
 
 export default defineConfig({
   test: {
+    globals: true,
     pool: 'threads',
     sequence: {
       shuffle: false,

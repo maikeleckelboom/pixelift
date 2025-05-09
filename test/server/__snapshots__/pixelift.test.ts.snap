@@ -1,15 +1,13 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Pixelift Server > should decode avif from \`URL\` 1`] = `"bc723c9a0d07d89d8a8a36f7a303251225c45e9adadfcf3183e22ccbfb0e8d6c"`;
+exports[`Server Environment > should decode gif from \`URL\` > gif 1`] = `"722e79bda0e6ff52f3aba4c4881799fc545f4715ad04757339c417101a96f9ba"`;
 
-exports[`Pixelift Server > should decode gif from \`URL\` 1`] = `"722e79bda0e6ff52f3aba4c4881799fc545f4715ad04757339c417101a96f9ba"`;
+exports[`Server Environment > should decode jpeg from \`URL\` > jpeg 1`] = `"d1731f9d4a98e94994c8e6b1605782e3bb4a9f0df6480f7678e90526043a6bdc"`;
 
-exports[`Pixelift Server > should decode jpeg from \`URL\` 1`] = `"d1731f9d4a98e94994c8e6b1605782e3bb4a9f0df6480f7678e90526043a6bdc"`;
+exports[`Server Environment > should decode jpg from \`URL\` > jpg 1`] = `"d1731f9d4a98e94994c8e6b1605782e3bb4a9f0df6480f7678e90526043a6bdc"`;
 
-exports[`Pixelift Server > should decode jpg from \`URL\` 1`] = `"d1731f9d4a98e94994c8e6b1605782e3bb4a9f0df6480f7678e90526043a6bdc"`;
+exports[`Server Environment > should decode png from \`URL\` > png 1`] = `"40feada72f32f46297b97b5aa7ead4fe732564aa6bf8e89fb5ea7f0f976f5ca4"`;
 
-exports[`Pixelift Server > should decode png from \`URL\` 1`] = `"40feada72f32f46297b97b5aa7ead4fe732564aa6bf8e89fb5ea7f0f976f5ca4"`;
+exports[`Server Environment > should decode svg from \`URL\` > svg 1`] = `"3e255b34b5b1f31ba2081ea646de69104e8ee48d49a154ac623191f54d44e849"`;
 
-exports[`Pixelift Server > should decode svg from \`URL\` 1`] = `"3e255b34b5b1f31ba2081ea646de69104e8ee48d49a154ac623191f54d44e849"`;
-
-exports[`Pixelift Server > should decode webp from \`URL\` 1`] = `"40feada72f32f46297b97b5aa7ead4fe732564aa6bf8e89fb5ea7f0f976f5ca4"`;
+exports[`Server Environment > should decode webp from \`URL\` > webp 1`] = `"40feada72f32f46297b97b5aa7ead4fe732564aa6bf8e89fb5ea7f0f976f5ca4"`;
