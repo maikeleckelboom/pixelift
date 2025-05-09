@@ -33,9 +33,10 @@ describe('Browser Environment', () => {
       expect(result.width).toBeDefined();
       expect(result.height).toBeDefined();
       expect(result.data).toBeInstanceOf(Uint8ClampedArray);
+
       const hash = await hashSHA256(result.data);
       expect(hash).toMatchSnapshot(format);
-      // await expect(hash).toMatchFileSnapshot(`__snapshots__/pixelift.${format}.test.ts.snap`);
+      // await expect(hash).toMatchFileSnapshot(`../server/__snapshots__/pixelift.${format}.test.ts.snap`);
     },
     0
   );
