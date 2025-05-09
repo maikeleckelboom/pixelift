@@ -9,7 +9,7 @@ describe('Server Benchmarks', () => {
   for (const decoder of PIXELIFT_SERVER_DECODERS) {
     for (const format of VERIFIED_INPUT_FORMATS) {
       bench(`${decoder} - ${format}`, async () => {
-        await pixelift(`./test/fixtures/pixelift.${format}`, { decoder });
+        await pixelift(`./test/assets/pixelift.${format}`, { decoder });
       });
     }
   }

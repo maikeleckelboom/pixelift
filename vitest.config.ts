@@ -3,20 +3,20 @@ import { resolve } from 'path';
 
 export default defineConfig({
   test: {
-    globals: true,
     pool: 'threads',
-    testTimeout: 60_000,
-    teardownTimeout: 30_000
-  },
-  server: {
-    fs: {
-      strict: false
-      // allow: ['./test/browser/unit', './test/fixtures', './node_modules/ws']
+    sequence: {
+      shuffle: false,
+      concurrent: false
     }
   },
   resolve: {
     alias: {
       '@': resolve(__dirname, './src')
+    }
+  },
+  server: {
+    fs: {
+      strict: false
     }
   }
 });

@@ -17,7 +17,7 @@ describe('Pixelift', () => {
   });
 
   it('should throw an error if the decoder is not supported', async () => {
-    const url = new URL('./fixtures/pixelift.png', import.meta.url);
+    const url = new URL('./assets/pixelift.png', import.meta.url);
     await expect(
       // @ts-expect-error intentionally passing an unsupported decoder
       pixelift(url, { decoder: 'unsupported-decoder' })
@@ -25,7 +25,7 @@ describe('Pixelift', () => {
   });
 
   it('should throw an error if the input format is not supported', async () => {
-    const url = new URL('./fixtures/pixelift.txt', import.meta.url);
+    const url = new URL('./assets/pixelift.txt', import.meta.url);
     await expect(pixelift(url)).rejects.toThrowError();
   });
 });

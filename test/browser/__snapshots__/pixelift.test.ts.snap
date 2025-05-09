@@ -1,0 +1,15 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Pixelift Browser > should decode a avif image from \`URL\` 1`] = `"40a561595782991312ea2f81031bd1cfeefdaf43b3f246e2340774b992cf6f07"`;
+
+exports[`Pixelift Browser > should decode a gif image from \`URL\` 1`] = `"722e79bda0e6ff52f3aba4c4881799fc545f4715ad04757339c417101a96f9ba"`;
+
+exports[`Pixelift Browser > should decode a jpeg image from \`URL\` 1`] = `"d1731f9d4a98e94994c8e6b1605782e3bb4a9f0df6480f7678e90526043a6bdc"`;
+
+exports[`Pixelift Browser > should decode a jpg image from \`URL\` 1`] = `"d1731f9d4a98e94994c8e6b1605782e3bb4a9f0df6480f7678e90526043a6bdc"`;
+
+exports[`Pixelift Browser > should decode a png image from \`URL\` 1`] = `"40feada72f32f46297b97b5aa7ead4fe732564aa6bf8e89fb5ea7f0f976f5ca4"`;
+
+exports[`Pixelift Browser > should decode a svg image from \`URL\` 1`] = `"3e255b34b5b1f31ba2081ea646de69104e8ee48d49a154ac623191f54d44e849"`;
+
+exports[`Pixelift Browser > should decode a webp image from \`URL\` 1`] = `"40feada72f32f46297b97b5aa7ead4fe732564aa6bf8e89fb5ea7f0f976f5ca4"`;

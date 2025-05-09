@@ -12,7 +12,7 @@ beforeAll(() => {
   urls = Object.fromEntries(
     VERIFIED_INPUT_FORMATS.map((format) => [
       format,
-      new URL(`../../fixtures/pixelift.${format}`, import.meta.url)
+      new URL(`../../assets/pixelift.${format}`, import.meta.url)
     ])
   ) as Record<VerifiedFormat, URL>;
 });
