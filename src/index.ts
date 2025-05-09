@@ -1,32 +1,32 @@
-import { validateBrowserInput, validateServerInput } from './shared/validation';
+import {
+  validateBrowserInput,
+  validateDecoder,
+  validateServerInput
+} from './shared/validation';
 import { isServer } from './shared/env';
 import { createError } from './shared/error';
-import {
-  PIXELIFT_BROWSER_DECODERS,
-  PIXELIFT_SERVER_DECODERS,
-  type PixeliftDecoder
-} from './shared/constants';
 import type { PixelData, PixeliftInput, PixeliftOptions } from './types';
-import type { ServerInput, ServerOptions } from './server/types';
-import type { BrowserInput, BrowserOptions } from './browser/types';
+import type { ServerInput, ServerOptions } from './server';
+import type { BrowserInput, BrowserOptions } from './browser';
 import type { Decoder } from './browser/decoder/types';
 
 interface EnvironmentConfig<I extends PixeliftInput, O extends PixeliftOptions> {
   validate: (input: unknown) => input is I;
   importDecoder: () => Promise<Decoder<I, O>>;
-  errorMessage: string;
+  expected: string;
 }
 
 const browserConfig: EnvironmentConfig<BrowserInput, BrowserOptions> = {
   validate: validateBrowserInput,
   importDecoder: () => import('./browser/decoder'),
-  errorMessage: 'Invalid input type for browser-side decoding.'
+  expected:
+    'string | URL | HTMLImageElement | SVGImageElement | HTMLVideoElement | HTMLCanvasElement | ImageBitmap | OffscreenCanvas | VideoFrame | Blob | ImageData'
 };
 
 const serverConfig: EnvironmentConfig<ServerInput, ServerOptions> = {
   validate: validateServerInput,
   importDecoder: () => import('./server/decoder'),
-  errorMessage: 'Invalid input type for server-side decoding.'
+  expected: 'string | URL | Buffer | BufferSource'
 };
 
 /**
@@ -52,10 +52,11 @@ export async function pixelift(
   const config = isNode ? serverConfig : browserConfig;
 
   if (!config.validate(input)) {
-    throw createError.invalidInput(config.errorMessage, typeof input);
+    throw createError.invalidInput(config.expected, typeof input);
   }
 
-  if (options?.decoder && !validateDecoderOption(options.decoder, isNode)) {
+  // todo: create new func validateOptions and move this logic there
+  if (options?.decoder && !validateDecoder(options.decoder, isNode)) {
     throw createError.decoderUnsupported(options.decoder);
   }
 
@@ -67,20 +68,8 @@ export async function pixelift(
   }
 }
 
-function validateDecoderOption(
-  decoder: string | undefined,
-  isServer: boolean
-): decoder is PixeliftDecoder {
-  if (!decoder) return true;
-
-  const decoderList = Array.from(
-    isServer ? PIXELIFT_SERVER_DECODERS : PIXELIFT_BROWSER_DECODERS
-  );
-  return decoderList.includes(decoder as PixeliftDecoder);
-}
-
 export { argbFromRgbaBytes, rgbaBytesFromArgb } from './shared/conversion';
 
-export type { PixeliftInput, PixeliftOptions, PixelData } from './types';
-
 export { ErrorCode, PixeliftError } from './shared/error';
+
+export type { PixeliftInput, PixeliftOptions, PixelData } from './types';

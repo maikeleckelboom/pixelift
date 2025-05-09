@@ -1,22 +1,20 @@
-import type { ServerInput } from '../server/types';
-import type { BrowserInput } from '../browser/types';
+import type { ServerInput } from '../server';
+import type { BrowserInput } from '../browser';
+import {
+  PIXELIFT_BROWSER_DECODERS,
+  PIXELIFT_SERVER_DECODERS,
+  type PixeliftDecoder
+} from './constants';
 
-export function isString(input: unknown): input is string {
-  return typeof input === 'string' || input instanceof String;
-}
-
-export function isStringOrURL(src: unknown): src is string | URL {
-  return isString(src) || src instanceof URL;
+export function isStringOrURL(input: unknown): input is string | URL {
+  return typeof input === 'string' || input instanceof URL;
 }
 
 export function validateServerInput(input: unknown): input is ServerInput {
   if (isStringOrURL(input)) return true;
   if (Buffer.isBuffer(input)) return true;
   if (input instanceof ArrayBuffer) return true;
-  if (typeof SharedArrayBuffer !== 'undefined' && input instanceof SharedArrayBuffer) {
-    return true;
-  }
-  return ArrayBuffer.isView(input) && 'BYTES_PER_ELEMENT' in input.constructor;
+  return ArrayBuffer.isView(input);
 }
 
 export function validateBrowserInput(input: unknown): input is BrowserInput {
@@ -29,9 +27,24 @@ export function validateBrowserInput(input: unknown): input is BrowserInput {
     input instanceof SVGImageElement ||
     input instanceof HTMLVideoElement ||
     input instanceof HTMLCanvasElement ||
-    (typeof OffscreenCanvas !== 'undefined' && input instanceof OffscreenCanvas) ||
+    input instanceof OffscreenCanvas ||
     input instanceof ImageBitmap ||
     input instanceof VideoFrame ||
-    input instanceof ImageData
+    input instanceof ImageData ||
+    (typeof SharedArrayBuffer !== 'undefined' && input instanceof SharedArrayBuffer) ||
+    (ArrayBuffer.isView(input) && 'BYTES_PER_ELEMENT' in input.constructor)
   );
+}
+
+export function validateDecoder(
+  decoder: string | undefined,
+  isServer: boolean
+): decoder is PixeliftDecoder {
+  if (!decoder) return true;
+
+  const decoderList = Array.from(
+    isServer ? PIXELIFT_SERVER_DECODERS : PIXELIFT_BROWSER_DECODERS
+  );
+
+  return decoderList.includes(decoder as PixeliftDecoder);
 }

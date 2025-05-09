@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { pixelift } from 'pixelift/browser';
+import { pixelift } from '../../../src/browser';
 
 import PIXELIFT_PNG_URL from '../../__fixtures__/pixelift.png?url';
 import PIXELIFT_JPG_URL from '../../__fixtures__/pixelift.jpg?url';
@@ -45,8 +45,7 @@ test.each`
   'decodes $format and has identical pixel data to snapshot',
   async ({ format, expected }) => {
     const url = PIXELIFT_IMAGES[format as keyof typeof PIXELIFT_IMAGES];
-    const blob = await fetch(url).then((r) => r.blob());
-    const { data } = await pixelift(blob, { decoder: 'offscreenCanvas' });
+    const { data } = await pixelift(url);
 
     const pixelDataString = data.toString();
     const expectedPixelDataString = await fetch(expected).then((r) => r.text());

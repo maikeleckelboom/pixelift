@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pixelift } from 'pixelift';
+import { pixelift } from '../../../src';
 
 describe('Pixelift', () => {
   it('should be a function', () => {

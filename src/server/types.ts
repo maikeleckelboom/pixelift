@@ -4,4 +4,4 @@ export interface ServerOptions extends DecoderOptions {
   decoder?: 'sharp';
 }
 
-export type ServerInput = string | URL | File | Buffer | BufferSource;
+export type ServerInput = string | URL | Buffer | BufferSource;

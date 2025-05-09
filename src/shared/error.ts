@@ -3,7 +3,6 @@ export const ErrorCode = {
   decodingFailed: 'decoding-failed',
   invalidInput: 'invalid-input',
   dependencyMissing: 'dependency-missing',
-  environmentUnsupported: 'environment-unsupported',
   fetchFailed: 'fetch-failed',
   networkError: 'network-error',
   pathTraversal: 'path-traversal',
@@ -18,7 +17,6 @@ const MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.decodingFailed]: 'Failed to decode {type}: {detail}',
   [ErrorCode.invalidInput]: 'Invalid input: expected {expected}, got {received}',
   [ErrorCode.dependencyMissing]: 'Required dependency missing: {dependency}',
-  [ErrorCode.environmentUnsupported]: 'Current environment does not support {feature}',
   [ErrorCode.fetchFailed]: 'Failed to fetch from {url}: {status} {statusText}',
   [ErrorCode.networkError]: 'Network error: {detail}',
   [ErrorCode.pathTraversal]: 'Path traversal attempt detected: {path}',
@@ -64,9 +62,6 @@ export const createError = {
 
   dependencyMissing: (dependency: string, cause?: unknown): PixeliftError =>
     new PixeliftError(ErrorCode.dependencyMissing, { dependency }, { cause }),
-
-  environmentUnsupported: (feature: string): PixeliftError =>
-    new PixeliftError(ErrorCode.environmentUnsupported, { feature }),
 
   fetchFailed: (url: string, status: number, statusText: string): PixeliftError =>
     new PixeliftError(ErrorCode.fetchFailed, { url, status, statusText }),

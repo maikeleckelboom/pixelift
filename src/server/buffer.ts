@@ -42,7 +42,7 @@ export async function getBuffer(
   }
 
   // 3) Blob/File
-  if (typeof Blob !== 'undefined' && (input instanceof Blob || input instanceof File)) {
+  if (typeof Blob !== 'undefined' && input instanceof Blob) {
     signal?.throwIfAborted();
     const arr = await input.arrayBuffer();
     return Buffer.from(arr);

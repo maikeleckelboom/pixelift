@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import { resolve } from 'path';
 
 export default defineConfig({
   test: {
@@ -9,8 +10,13 @@ export default defineConfig({
   },
   server: {
     fs: {
-      strict: false,
-      allow: ['./test/browser/unit', './test/__fixtures__', './node_modules/ws']
+      strict: false
+      // allow: ['./test/browser/unit', './test/__fixtures__', './node_modules/ws']
+    }
+  },
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, './src')
     }
   }
 });

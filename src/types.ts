@@ -1,5 +1,5 @@
-import type { ServerOptions, ServerInput } from './server/types';
-import type { BrowserOptions, BrowserInput } from './browser/types';
+import type { ServerOptions, ServerInput } from './server';
+import type { BrowserOptions, BrowserInput } from './browser';
 
 export interface PixelData {
   data: Uint8ClampedArray;

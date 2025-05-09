@@ -4,8 +4,7 @@ import type { DecoderStrategy } from './types';
 import type { PixelData } from '../../types';
 import type { BrowserInput, BrowserOptions } from '../types';
 
-const webCodecsModule: Promise<typeof import('./webcodecs')> = import('./webcodecs');
-let canvasDecoderModule: Promise<typeof import('./canvas')> | null = null;
+let canvasDecoderModule: Promise<typeof import('./canvas')>;
 
 async function loadCanvasDecoder(): Promise<typeof import('./canvas')> {
   if (!canvasDecoderModule) {
@@ -14,14 +13,16 @@ async function loadCanvasDecoder(): Promise<typeof import('./canvas')> {
   return canvasDecoderModule;
 }
 
+let webCodecsModule: Promise<typeof import('./webcodecs')>;
+
+async function loadWebCodecsDecoder(): Promise<typeof import('./webcodecs')> {
+  if (!webCodecsModule) {
+    webCodecsModule = import('./webcodecs');
+  }
+  return webCodecsModule;
+}
+
 const DECODER_STRATEGIES: DecoderStrategy<Blob, BrowserOptions>[] = [
-  {
-    id: 'webCodecs',
-    isSupported: (type: string) =>
-      webCodecsModule.then(({ isSupported }) => isSupported(type)),
-    decode: (input: Blob, options?: BrowserOptions): Promise<PixelData> =>
-      webCodecsModule.then(({ decode }) => decode(input, options))
-  },
   {
     id: 'offscreenCanvas',
     isSupported: async (type: string): Promise<boolean> => {
@@ -32,20 +33,31 @@ const DECODER_STRATEGIES: DecoderStrategy<Blob, BrowserOptions>[] = [
       const { decode } = await loadCanvasDecoder();
       return decode(input, options);
     }
+  },
+  {
+    id: 'webCodecs',
+    isSupported: async (type: string) => {
+      const { isSupported } = await loadWebCodecsDecoder();
+      return isSupported(type);
+    },
+    decode: async (input: Blob, options?: BrowserOptions): Promise<PixelData> => {
+      const { decode } = await loadWebCodecsDecoder();
+      return decode(input, options);
+    }
   }
 ];
 
 async function findSupportedStrategy(
   blob: Blob,
-  decoder: BrowserOptions['decoder']
+  options?: BrowserOptions
 ): Promise<DecoderStrategy<Blob, BrowserOptions>> {
-  if (decoder) {
-    const strategy = DECODER_STRATEGIES.find((s) => s.id === decoder);
+  if (options?.decoder) {
+    const strategy = DECODER_STRATEGIES.find((s) => s.id === options?.decoder);
 
     if (!strategy) {
       throw createError.decoderUnsupported(
-        decoder,
-        `Unknown decoder strategy "${decoder.toString()}"`
+        options?.decoder,
+        `Unknown decoder strategy "${options?.decoder.toString()}"`
       );
     }
 
@@ -75,9 +87,9 @@ async function findSupportedStrategy(
 
 export async function decode(
   source: BrowserInput,
-  options: BrowserOptions = {}
+  options?: BrowserOptions
 ): Promise<PixelData> {
   const blob = await toBlob(source, options);
-  const strategy = await findSupportedStrategy(blob, options.decoder);
+  const strategy = await findSupportedStrategy(blob, options);
   return strategy.decode(blob, options);
 }

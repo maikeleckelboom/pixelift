@@ -1,7 +1,8 @@
 import type { DecoderOptions } from '../types';
 
 export interface BrowserOptions extends DecoderOptions {
-  decoder?: 'webCodecs' | 'offscreenCanvas';
+  decoder?: 'offscreenCanvas' | 'webCodecs';
 }
 
-export type BrowserInput = string | URL | File | ImageBitmapSource;
+// string | URL | HTMLOrSVGImageElement | HTMLVideoElement | HTMLCanvasElement | ImageBitmap | OffscreenCanvas | VideoFrame | Blob | ImageData
+export type BrowserInput = string | URL | ImageBitmapSource;

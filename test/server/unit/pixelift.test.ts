@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { beforeAll, describe, expect, test } from 'vitest';
-import { type PixelData, pixelift } from 'pixelift';
+import { pixelift } from '../../../src/server';
 import { VERIFIED_INPUT_FORMATS } from '../../../src/shared/constants';
+import type { PixelData } from '../../../src';
 
 type Format = (typeof VERIFIED_INPUT_FORMATS)[number];
 
@@ -37,12 +38,8 @@ describe('Pixelift Server', () => {
     0
   );
 
-  test.each(VERIFIED_INPUT_FORMATS)(
-    'should decode %s from url',
-    async (format) => {
-      const result = await pixelift(urls[format]);
-      assertValidResult(result);
-    },
-    0
-  );
-}, 0);
+  test.each(VERIFIED_INPUT_FORMATS)('should decode %s from url', async (format) => {
+    const result = await pixelift(urls[format]);
+    assertValidResult(result);
+  });
+});
