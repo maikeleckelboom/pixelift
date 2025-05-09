@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { beforeAll, describe, expect, test } from 'vitest';
 import { pixelift } from '../../src/server';
 import { VERIFIED_INPUT_FORMATS, type VerifiedFormat } from '../../src/shared/constants';
-import { hashSHA256 } from '../fixtures/hasher';
+import { hashSHA256 } from '../fixtures/hash-sha256';
 
 const buffers: Partial<Record<VerifiedFormat, Buffer>> = {};
 const urls: Partial<Record<VerifiedFormat, URL>> = {};
@@ -14,6 +14,7 @@ beforeAll(() => {
     buffers[format] = readFileSync(resourceUrl);
   }
 });
+
 describe('Server Environment', () => {
   test.each(VERIFIED_INPUT_FORMATS)(
     'should decode %s from `Buffer`',
@@ -33,9 +34,18 @@ describe('Server Environment', () => {
       expect(result.width).toBeDefined();
       expect(result.height).toBeDefined();
       expect(result.data).toBeInstanceOf(Uint8ClampedArray);
+    },
+    0
+  );
+});
+
+describe('cross-platform validity', () => {
+  test.each(VERIFIED_INPUT_FORMATS)(
+    'should generate a unique hash for %s and save it as a snapshot`',
+    async (format) => {
+      const result = await pixelift(urls[format] as URL);
       const hash = await hashSHA256(result.data);
       expect(hash).toMatchSnapshot(format);
-      // await expect(hash).toMatchFileSnapshot(`__snapshots__/pixelift.${format}.test.ts.snap`);
     },
     0
   );

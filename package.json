@@ -48,13 +48,19 @@
   "scripts": {
     "dev": "vitest --watch",
     "test": "vitest",
-    "bench": "vitest --run bench --reporter verbose",
-    "bench:browser": "vitest --project browser --run bench --reporter verbose",
-    "bench:server": "vitest --project server --run bench --reporter verbose",
-    "test:browser": "vitest --project browser",
-    "test:server": "vitest --project server",
     "test:update": "vitest -u",
+    "test:all": "vitest run --project=server && vitest run --project=browser && vitest run --project=cross-platform-validity",
+
+    "test:server": "vitest --project server",
+    "test:browser": "vitest --project browser",
+    "test:validity": "vitest run test/cross-platform-validity.test.ts",
+
     "test:ci": "vitest --reporter dot",
+
+    "bench": "vitest --run bench --reporter verbose",
+    "bench:server": "vitest --project server --run bench --reporter verbose",
+    "bench:browser": "vitest --project browser --run bench --reporter verbose",
+
     "lint": "eslint 'src/**/*.ts' --max-warnings=0",
     "lint:fix": "eslint 'src/**/*.ts' --fix",
     "format": "prettier --write .",

@@ -1,13 +1,13 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Server Environment > should decode gif from \`URL\` > gif 1`] = `"722e79bda0e6ff52f3aba4c4881799fc545f4715ad04757339c417101a96f9ba"`;
+exports[`cross-platform validity > should generate a unique hash for gif and save it as a snapshot\` > gif 1`] = `"722e79bda0e6ff52f3aba4c4881799fc545f4715ad04757339c417101a96f9ba"`;
 
-exports[`Server Environment > should decode jpeg from \`URL\` > jpeg 1`] = `"d1731f9d4a98e94994c8e6b1605782e3bb4a9f0df6480f7678e90526043a6bdc"`;
+exports[`cross-platform validity > should generate a unique hash for jpeg and save it as a snapshot\` > jpeg 1`] = `"d1731f9d4a98e94994c8e6b1605782e3bb4a9f0df6480f7678e90526043a6bdc"`;
 
-exports[`Server Environment > should decode jpg from \`URL\` > jpg 1`] = `"d1731f9d4a98e94994c8e6b1605782e3bb4a9f0df6480f7678e90526043a6bdc"`;
+exports[`cross-platform validity > should generate a unique hash for jpg and save it as a snapshot\` > jpg 1`] = `"d1731f9d4a98e94994c8e6b1605782e3bb4a9f0df6480f7678e90526043a6bdc"`;
 
-exports[`Server Environment > should decode png from \`URL\` > png 1`] = `"40feada72f32f46297b97b5aa7ead4fe732564aa6bf8e89fb5ea7f0f976f5ca4"`;
+exports[`cross-platform validity > should generate a unique hash for png and save it as a snapshot\` > png 1`] = `"40feada72f32f46297b97b5aa7ead4fe732564aa6bf8e89fb5ea7f0f976f5ca4"`;
 
-exports[`Server Environment > should decode svg from \`URL\` > svg 1`] = `"3e255b34b5b1f31ba2081ea646de69104e8ee48d49a154ac623191f54d44e849"`;
+exports[`cross-platform validity > should generate a unique hash for svg and save it as a snapshot\` > svg 1`] = `"3e255b34b5b1f31ba2081ea646de69104e8ee48d49a154ac623191f54d44e849"`;
 
-exports[`Server Environment > should decode webp from \`URL\` > webp 1`] = `"40feada72f32f46297b97b5aa7ead4fe732564aa6bf8e89fb5ea7f0f976f5ca4"`;
+exports[`cross-platform validity > should generate a unique hash for webp and save it as a snapshot\` > webp 1`] = `"40feada72f32f46297b97b5aa7ead4fe732564aa6bf8e89fb5ea7f0f976f5ca4"`;

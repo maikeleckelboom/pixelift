@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, test } from 'vitest';
 import { pixelift } from '../../src';
 import { VERIFIED_INPUT_FORMATS, type VerifiedFormat } from '../../src/shared/constants';
-import { hashSHA256 } from '../fixtures/hasher';
+import { hashSHA256 } from '../fixtures/hash-sha256';
 
 const blobs: Partial<Record<VerifiedFormat, Blob>> = {};
 const urls: Partial<Record<VerifiedFormat, URL>> = {};
@@ -10,7 +10,8 @@ beforeAll(async () => {
   for (const format of VERIFIED_INPUT_FORMATS) {
     const resourceUrl = new URL(`../fixtures/assets/pixelift.${format}`, import.meta.url);
     urls[format] = resourceUrl;
-    blobs[format] = await (await fetch(resourceUrl)).blob();
+    const response = await fetch(resourceUrl);
+    blobs[format] = await response.blob();
   }
 }, 0);
 
@@ -33,11 +34,19 @@ describe('Browser Environment', () => {
       expect(result.width).toBeDefined();
       expect(result.height).toBeDefined();
       expect(result.data).toBeInstanceOf(Uint8ClampedArray);
-
-      const hash = await hashSHA256(result.data);
-      expect(hash).toMatchSnapshot(format);
-      // await expect(hash).toMatchFileSnapshot(`../server/__snapshots__/pixelift.${format}.test.ts.snap`);
     },
     0
   );
 }, 0);
+
+describe('cross-platform validity', () => {
+  test.each(VERIFIED_INPUT_FORMATS)(
+    'should generate a unique hash for %s and save it as a snapshot`',
+    async (format) => {
+      const result = await pixelift(urls[format] as URL);
+      const hash = await hashSHA256(result.data);
+      expect(hash).toMatchSnapshot(format);
+    },
+    0
+  );
+});
