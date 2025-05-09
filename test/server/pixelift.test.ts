@@ -39,9 +39,9 @@ describe('Server Environment', () => {
   );
 });
 
-describe('cross-platform validity', () => {
+describe('decode-consistency', () => {
   test.each(VERIFIED_INPUT_FORMATS)(
-    'should generate a unique hash for %s and save it as a snapshot`',
+    'should decode %s identically across environments',
     async (format) => {
       const result = await pixelift(urls[format] as URL);
       const hash = await hashSHA256(result.data);

@@ -30,8 +30,8 @@ function lazyLoadSnapshot(path: string): Record<string, string> {
   return Object.fromEntries(lines);
 }
 
-describe('Snapshot Consistency Across Environments', () => {
-  it('should have identical hashes in server vs browser snapshots', async () => {
+describe('Decode Consistency Between Node and Browser', () => {
+  it('should have identical decoded pixel data in server vs browser', async () => {
     await waitForSnapshots([
       './browser/__snapshots__/pixelift.test.ts.snap',
       './server/__snapshots__/pixelift.test.ts.snap'
@@ -41,7 +41,7 @@ describe('Snapshot Consistency Across Environments', () => {
     const serverSnaps = lazyLoadSnapshot('./server/__snapshots__/pixelift.test.ts.snap');
 
     for (const format of VERIFIED_INPUT_FORMATS) {
-      const key = `cross-platform validity > should generate a unique hash for ${format} and save it as a snapshot\` > ${format} 1`;
+      const key = `decode-consistency > should decode ${format} identically across environments`;
 
       const browserHash = browserSnaps[key];
       const serverHash = serverSnaps[key];

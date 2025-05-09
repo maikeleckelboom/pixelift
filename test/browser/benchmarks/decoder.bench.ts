@@ -20,9 +20,16 @@ beforeAll(() => {
 describe('Browser Benchmarks', () => {
   for (const decoder of PIXELIFT_BROWSER_DECODERS) {
     for (const format of VERIFIED_INPUT_FORMATS) {
-      bench(`${decoder} - ${format}`, async () => {
-        await pixelift(urls[format], { decoder });
-      });
+      bench(
+        `${decoder} - ${format}`,
+        async () => {
+          await pixelift(urls[format], { decoder });
+        },
+        {
+          iterations: 50,
+          warmupTime: 0.5
+        }
+      );
     }
   }
 });

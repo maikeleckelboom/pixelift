@@ -15,9 +15,10 @@ export default defineConfig({
           name: 'server',
           environment: 'node',
           include: ['**/*.test.ts', '**/server/**/*.test.ts'],
-          exclude: ['**/browser/**/*.test.ts', '**/cross-platform-validity.test.ts'],
+          exclude: ['**/browser/**/*.test.ts', '**/decode-consistency.test.ts'],
           benchmark: {
-            exclude: ['**/browser/**/*.bench.ts']
+            exclude: ['**/browser/**/*.bench.ts'],
+            include: ['**/server/**/*.bench.ts']
           }
         }
       },
@@ -25,13 +26,9 @@ export default defineConfig({
         test: {
           name: 'browser',
           include: ['**/browser/**/*.test.ts'],
-          exclude: [
-            '**/*.server.test.ts',
-            '**/server/**/*.test.ts',
-            '**/cross-platform-validity.test.ts'
-          ],
           benchmark: {
-            include: ['**/browser/**/*.bench.ts']
+            include: ['**/browser/**/*.bench.ts'],
+            exclude: ['**/server/**/*.bench.ts', '**/decode-consistency.test.ts']
           },
           browser: {
             provider: 'playwright',
@@ -39,17 +36,17 @@ export default defineConfig({
             headless: true,
             screenshotFailures: false,
             instances: [
-              { browser: 'chromium' }
-              // { browser: 'firefox' },
-              // { browser: 'webkit' }
+              { browser: 'chromium' },
+              { browser: 'firefox' },
+              { browser: 'webkit' }
             ]
           }
         }
       },
       {
         test: {
-          name: 'cross-platform-validity',
-          include: ['**/cross-platform-validity.test.ts'],
+          name: 'snapshot-consistency',
+          include: ['**/decode-consistency.test.ts'],
           environment: 'node'
         }
       }

@@ -15,38 +15,43 @@ beforeAll(async () => {
   }
 }, 0);
 
-describe('Browser Environment', () => {
-  test.each(VERIFIED_INPUT_FORMATS)(
-    'should decode a %s image from `Blob`',
-    async (format) => {
-      const result = await pixelift(blobs[format] as Blob);
-      expect(result.data).toBeInstanceOf(Uint8ClampedArray);
-      expect(result.width).toBeDefined();
-      expect(result.height).toBeDefined();
-    },
-    0
-  );
+describe('Pixelift (Browser)', () => {
+  describe('Decoding from Blob', () => {
+    test.each(VERIFIED_INPUT_FORMATS)(
+      '%s → decodes successfully from Blob',
+      async (format) => {
+        const result = await pixelift(blobs[format] as Blob);
+        expect(result.data).toBeInstanceOf(Uint8ClampedArray);
+        expect(result.width).toBeDefined();
+        expect(result.height).toBeDefined();
+      },
+      0
+    );
+  });
 
-  test.each(VERIFIED_INPUT_FORMATS)(
-    'should decode %s from `URL`',
-    async (format) => {
-      const result = await pixelift(urls[format] as URL);
-      expect(result.width).toBeDefined();
-      expect(result.height).toBeDefined();
-      expect(result.data).toBeInstanceOf(Uint8ClampedArray);
-    },
-    0
-  );
-}, 0);
+  describe('Decoding from URL', () => {
+    test.each(VERIFIED_INPUT_FORMATS)(
+      '%s → decodes successfully from URL',
+      async (format) => {
+        const result = await pixelift(urls[format] as URL);
+        expect(result.width).toBeDefined();
+        expect(result.height).toBeDefined();
+        expect(result.data).toBeInstanceOf(Uint8ClampedArray);
+      },
+      0
+    );
+  });
 
-describe('cross-platform validity', () => {
-  test.each(VERIFIED_INPUT_FORMATS)(
-    'should generate a unique hash for %s and save it as a snapshot`',
-    async (format) => {
-      const result = await pixelift(urls[format] as URL);
-      const hash = await hashSHA256(result.data);
-      expect(hash).toMatchSnapshot(format);
-    },
-    0
-  );
+  describe('decode-consistency', () => {
+    test.each(VERIFIED_INPUT_FORMATS)(
+      // decode-consistency > should decode {format} identically across environments
+      'should decode %s identically across environments',
+      async (format) => {
+        const result = await pixelift(urls[format] as URL);
+        const hash = await hashSHA256(result.data);
+        expect(hash).toMatchSnapshot(`${format} via URL`);
+      },
+      0
+    );
+  });
 });

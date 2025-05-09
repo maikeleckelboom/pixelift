@@ -49,11 +49,11 @@
     "dev": "vitest --watch",
     "test": "vitest",
     "test:update": "vitest -u",
-    "test:all": "vitest run --project=server && vitest run --project=browser && vitest run --project=cross-platform-validity",
+    "test:sequential": "vitest run --project=server && vitest run --project=browser && vitest run --project=snapshot-consistency",
 
     "test:server": "vitest --project server",
     "test:browser": "vitest --project browser",
-    "test:validity": "vitest run test/cross-platform-validity.test.ts",
+    "test:consistency": "vitest run test/decode-consistency.test.ts",
 
     "test:ci": "vitest --reporter dot",
 
