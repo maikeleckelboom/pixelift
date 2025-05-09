@@ -18,10 +18,8 @@ export function validateServerInput(input: unknown): input is ServerInput {
 }
 
 export function validateBrowserInput(input: unknown): input is BrowserInput {
-  return (
-    typeof input === 'string' ||
-    input instanceof URL ||
-    input instanceof File ||
+  if (isStringOrURL(input)) return true;
+  if (
     input instanceof Blob ||
     input instanceof HTMLImageElement ||
     input instanceof SVGImageElement ||
@@ -29,11 +27,12 @@ export function validateBrowserInput(input: unknown): input is BrowserInput {
     input instanceof HTMLCanvasElement ||
     input instanceof OffscreenCanvas ||
     input instanceof ImageBitmap ||
-    input instanceof VideoFrame ||
-    input instanceof ImageData ||
-    (typeof SharedArrayBuffer !== 'undefined' && input instanceof SharedArrayBuffer) ||
-    (ArrayBuffer.isView(input) && 'BYTES_PER_ELEMENT' in input.constructor)
-  );
+    input instanceof ImageData
+  ) {
+    return true;
+  }
+
+  return typeof VideoFrame !== 'undefined' && input instanceof VideoFrame;
 }
 
 export function validateDecoder(

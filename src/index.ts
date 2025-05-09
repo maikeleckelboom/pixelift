@@ -55,9 +55,8 @@ export async function pixelift(
     throw createError.invalidInput(config.expected, typeof input);
   }
 
-  // todo: create new func validateOptions and move this logic there
-  if (options?.decoder && !validateDecoder(options.decoder, isNode)) {
-    throw createError.decoderUnsupported(options.decoder);
+  if (!validateDecoder(options?.decoder, isNode)) {
+    throw createError.decoderUnsupported(options?.decoder);
   }
 
   try {

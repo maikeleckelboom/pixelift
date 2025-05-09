@@ -1,15 +1,24 @@
 import { isStringOrURL } from '../shared/validation';
 import type { BrowserInput, BrowserOptions } from './types';
 import { createError } from '../shared/error';
+import { getOffscreenCanvasContext, rasterizeToBlob } from './decoder/canvas';
 
 async function blobFromString(input: string | URL, options?: BrowserOptions) {
   const url = new URL(input.toString(), location.origin).toString();
+
   let res: Response;
 
   try {
-    res = await fetch(url, { mode: 'cors', headers: options?.headers });
+    res = await fetch(url, {
+      mode: 'cors',
+      headers: options?.headers,
+      signal: options?.signal
+    });
   } catch (error: unknown) {
-    throw createError.networkError(`Network error: Unable to fetch from "${url}".`, {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw createError.aborted();
+    }
+    throw createError.networkError(`Unable to fetch from "${url}".`, {
       cause: error
     });
   }
@@ -44,10 +53,25 @@ export async function toBlob(input: BrowserInput, options?: BrowserOptions): Pro
     return input.convertToBlob();
   }
 
-  // todo: handle VideoFrame, HTMLVideoElement, ImageBitmap, ImageData
+  if (input instanceof ImageBitmap) {
+    const ctx = getOffscreenCanvasContext(input.width, input.height);
+    ctx.drawImage(input, 0, 0);
+    return ctx.canvas.convertToBlob();
+  }
+
+  if (
+    input instanceof ImageBitmap ||
+    input instanceof ImageData ||
+    input instanceof HTMLImageElement ||
+    input instanceof SVGImageElement ||
+    input instanceof HTMLVideoElement ||
+    input instanceof VideoFrame
+  ) {
+    return rasterizeToBlob(input, options);
+  }
 
   throw createError.invalidInput(
-    'string | URL | HTMLImageElement | SVGImageElement | HTMLVideoElement | HTMLCanvasElement | ImageBitmap | OffscreenCanvas | VideoFrame | Blob | ImageData',
+    'Valid image source (URL, Blob, Canvas, ImageBitmap, ImageData, VideoFrame, or MediaElement)',
     typeof input
   );
 }

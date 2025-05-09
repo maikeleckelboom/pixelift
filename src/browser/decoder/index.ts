@@ -5,44 +5,40 @@ import type { PixelData } from '../../types';
 import type { BrowserInput, BrowserOptions } from '../types';
 
 let canvasDecoderModule: Promise<typeof import('./canvas')>;
-
-async function loadCanvasDecoder(): Promise<typeof import('./canvas')> {
-  if (!canvasDecoderModule) {
-    canvasDecoderModule = import('./canvas');
-  }
-  return canvasDecoderModule;
-}
-
 let webCodecsModule: Promise<typeof import('./webcodecs')>;
 
+async function loadCanvasDecoder(): Promise<typeof import('./canvas')> {
+  return (canvasDecoderModule ||= import('./canvas'));
+}
+
 async function loadWebCodecsDecoder(): Promise<typeof import('./webcodecs')> {
-  if (!webCodecsModule) {
-    webCodecsModule = import('./webcodecs');
-  }
-  return webCodecsModule;
+  return (webCodecsModule ||= import('./webcodecs'));
 }
 
 const DECODER_STRATEGIES: DecoderStrategy<Blob, BrowserOptions>[] = [
   {
-    id: 'offscreenCanvas',
+    id: 'canvas',
     isSupported: async (type: string): Promise<boolean> => {
-      const { isSupported } = await loadCanvasDecoder();
-      return isSupported(type);
+      const canvasDecoder = await loadCanvasDecoder();
+      return canvasDecoder.isSupported(type);
     },
-    decode: async (input: Blob, options?: BrowserOptions): Promise<PixelData> => {
-      const { decode } = await loadCanvasDecoder();
-      return decode(input, options);
+    decode: async (
+      blob: Blob | ImageBitmap,
+      options?: BrowserOptions
+    ): Promise<PixelData> => {
+      const canvasDecoder = await loadCanvasDecoder();
+      return canvasDecoder.decode(blob, options);
     }
   },
   {
-    id: 'webCodecs',
-    isSupported: async (type: string) => {
-      const { isSupported } = await loadWebCodecsDecoder();
-      return isSupported(type);
+    id: 'webcodecs',
+    isSupported: async (type: string): Promise<boolean> => {
+      const webcodecs = await loadWebCodecsDecoder();
+      return webcodecs.isSupported(type);
     },
-    decode: async (input: Blob, options?: BrowserOptions): Promise<PixelData> => {
-      const { decode } = await loadWebCodecsDecoder();
-      return decode(input, options);
+    decode: async (blob: Blob, options?: BrowserOptions): Promise<PixelData> => {
+      const webcodecs = await loadWebCodecsDecoder();
+      return webcodecs.decode(blob, options);
     }
   }
 ];
@@ -51,28 +47,21 @@ async function findSupportedStrategy(
   blob: Blob,
   options?: BrowserOptions
 ): Promise<DecoderStrategy<Blob, BrowserOptions>> {
+  // Forced decoder selection
   if (options?.decoder) {
-    const strategy = DECODER_STRATEGIES.find((s) => s.id === options?.decoder);
+    const strategy = DECODER_STRATEGIES.find((s) => s.id === options.decoder);
+    if (!strategy)
+      throw createError.decoderUnsupported(options.decoder, 'Explicit decoder not found');
 
-    if (!strategy) {
-      throw createError.decoderUnsupported(
-        options?.decoder,
-        `Unknown decoder strategy "${options?.decoder.toString()}"`
-      );
-    }
-
-    const isSupported = await strategy.isSupported(blob.type);
-
-    if (!isSupported) {
-      throw createError.decoderUnsupported(
-        strategy.id,
-        `MIME type "${blob.type}" is not supported by "${strategy.id}" decoder`
-      );
-    }
-
-    return strategy;
+    const supported = await strategy.isSupported(blob.type);
+    if (supported) return strategy;
+    throw createError.decoderUnsupported(
+      strategy.id,
+      `Unsupported MIME type ${blob.type} for forced decoder`
+    );
   }
 
+  // Auto-detection flow
   for (const strategy of DECODER_STRATEGIES) {
     if (await strategy.isSupported(blob.type)) {
       return strategy;
@@ -89,7 +78,14 @@ export async function decode(
   source: BrowserInput,
   options?: BrowserOptions
 ): Promise<PixelData> {
-  const blob = await toBlob(source, options);
-  const strategy = await findSupportedStrategy(blob, options);
-  return strategy.decode(blob, options);
+  try {
+    const blob = await toBlob(source, options);
+    const strategy = await findSupportedStrategy(blob, options);
+    return strategy.decode(blob, options);
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw createError.aborted();
+    }
+    throw error;
+  }
 }

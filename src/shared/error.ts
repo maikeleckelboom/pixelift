@@ -54,7 +54,7 @@ export class PixeliftError extends Error {
 export const createError = {
   aborted: (): PixeliftError => new PixeliftError(ErrorCode.aborted),
 
-  decoderUnsupported: (decoder: string, detail?: string): PixeliftError =>
+  decoderUnsupported: (decoder: string = 'unknown', detail?: string): PixeliftError =>
     new PixeliftError(ErrorCode.decoderUnsupported, { decoder, detail }),
 
   decodingFailed: (type: string, detail: string, cause?: unknown): PixeliftError =>
