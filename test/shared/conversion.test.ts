@@ -1,4 +1,4 @@
-import { rgbaBytesFromArgb, argbFromRgbaBytes } from '../../../src';
+import { rgbaBytesFromArgb, argbFromRgbaBytes } from '../../src';
 import { describe, expect, it } from 'vitest';
 
 describe('rgbaBytesFromArgb', () => {

@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'vitest';
-import { getBuffer } from '../../../src/server/buffer';
+import { getBuffer } from '../../src/server/buffer';
 import path from 'node:path';
 
 describe('Server Buffer Security', () => {
-  const SAFE_IMAGE_BUFFER = new URL('../../__fixtures__/pixelift.png', import.meta.url);
+  const SAFE_IMAGE_BUFFER = new URL('../fixtures/pixelift.png', import.meta.url);
   const fixturesDir = path.dirname(SAFE_IMAGE_BUFFER.pathname);
 
   describe('Valid Path Handling', () => {

@@ -11,7 +11,7 @@ export default defineConfig({
   server: {
     fs: {
       strict: false
-      // allow: ['./test/browser/unit', './test/__fixtures__', './node_modules/ws']
+      // allow: ['./test/browser/unit', './test/fixtures', './node_modules/ws']
     }
   },
   resolve: {

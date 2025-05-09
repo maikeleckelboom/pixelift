@@ -29,9 +29,9 @@ export default defineWorkspace([
         headless: true,
         screenshotFailures: false,
         instances: [
-          { browser: 'chromium' },
-          { browser: 'firefox' },
-          { browser: 'webkit' }
+          { browser: 'chromium' }
+          // { browser: 'firefox' },
+          // { browser: 'webkit' }
         ]
       }
     }

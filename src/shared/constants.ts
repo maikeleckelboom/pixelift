@@ -18,3 +18,5 @@ export const VERIFIED_INPUT_FORMATS = [
   'svg',
   'avif'
 ] as const;
+
+export type VerifiedFormat = (typeof VERIFIED_INPUT_FORMATS)[number];
