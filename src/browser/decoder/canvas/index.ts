@@ -1,173 +1,187 @@
 import type { PixelData } from '../../../types';
-import type { BrowserOptions } from '../../types';
+import type { BrowserInput, BrowserOptions } from '../../types';
 import { BITMAP_OPTIONS, CANVAS_OPTIONS } from './options';
 import { createError } from '../../../shared/error';
 
-let sharedCanvas: OffscreenCanvas | undefined;
-let sharedCtx: OffscreenCanvasRenderingContext2D | undefined;
-
-export async function isSupported(type: string): Promise<boolean> {
+export async function isSupported(_type?: unknown): Promise<boolean> {
   return (
-    !!type &&
     'OffscreenCanvas' in window &&
     typeof OffscreenCanvas === 'function' &&
     typeof createImageBitmap === 'function'
   );
 }
 
-export function getOffscreenCanvasContext(
-  width: number,
-  height: number
-): OffscreenCanvasRenderingContext2D {
-  if (!sharedCanvas || !sharedCtx) {
-    sharedCanvas = new OffscreenCanvas(width, height);
-    sharedCtx = sharedCanvas.getContext(
-      '2d',
-      CANVAS_OPTIONS
-    ) as OffscreenCanvasRenderingContext2D;
-    sharedCtx.imageSmoothingEnabled = false;
-    sharedCtx.imageSmoothingQuality = 'low';
-  }
-  if (sharedCanvas.width !== width || sharedCanvas.height !== height) {
-    sharedCanvas.width = width;
-    sharedCanvas.height = height;
-  }
-  return sharedCtx;
-}
-
 async function createImageFromBlob(input: Blob): Promise<ImageBitmap> {
   if (input.type === 'image/svg+xml') {
     const svgUrl = URL.createObjectURL(input);
-    const image = new Image();
-    image.src = svgUrl;
-    await image.decode();
-    const bitmap = await createImageBitmap(image, BITMAP_OPTIONS);
-    URL.revokeObjectURL(svgUrl);
-    return bitmap;
+    try {
+      const image = new Image();
+      image.src = svgUrl;
+      await image.decode();
+      return createImageBitmap(image, BITMAP_OPTIONS);
+    } finally {
+      URL.revokeObjectURL(svgUrl);
+    }
   }
-
   return createImageBitmap(input, BITMAP_OPTIONS);
+}
+
+function setupContext(context: OffscreenCanvasRenderingContext2D): void {
+  context.imageSmoothingEnabled = false;
+  context.imageSmoothingQuality = 'low';
 }
 
 export async function decode(
   input: Blob | ImageBitmap,
-  _options?: BrowserOptions
+  _?: BrowserOptions
 ): Promise<PixelData> {
-  let bitmapToProcess: ImageBitmap;
-  let shouldCloseBitmapInternally: boolean;
+  const { bitmap, shouldClose } =
+    input instanceof ImageBitmap
+      ? { bitmap: input, shouldClose: false }
+      : { bitmap: await createImageFromBlob(input), shouldClose: true };
 
-  if (input instanceof ImageBitmap) {
-    bitmapToProcess = input;
-    // Input ImageBitmap is owned by the caller (the orchestrator in this case).
-    // DO NOT CLOSE IT HERE.
-    shouldCloseBitmapInternally = false;
-  } else {
-    bitmapToProcess = await createImageFromBlob(input);
-    shouldCloseBitmapInternally = true;
+  const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+  const context = canvas.getContext('2d', CANVAS_OPTIONS);
+
+  if (!context) {
+    if (shouldClose) bitmap.close();
+    throw createError.runtimeError('Failed to obtain 2D context for decoding');
   }
 
-  const { width, height } = bitmapToProcess;
-  const ctx = getOffscreenCanvasContext(width, height);
-  ctx.clearRect(0, 0, width, height);
-  ctx.drawImage(bitmapToProcess, 0, 0, width, height);
-  const imageData = ctx.getImageData(0, 0, width, height, { colorSpace: 'srgb' });
+  setupContext(context);
+  context.drawImage(bitmap, 0, 0);
+  const imageData = context.getImageData(0, 0, bitmap.width, bitmap.height, {
+    colorSpace: 'srgb'
+  });
 
-  if (shouldCloseBitmapInternally) {
-    bitmapToProcess.close();
-  }
-
-  return { data: imageData.data, width, height };
+  if (shouldClose) bitmap.close();
+  return {
+    data: imageData.data,
+    width: imageData.width,
+    height: imageData.height
+  };
 }
 
-async function canvasToBlob(
-  canvas: HTMLCanvasElement | OffscreenCanvas,
-  mimeType?: string,
-  quality?: number
-): Promise<Blob> {
-  if (canvas instanceof HTMLCanvasElement) {
-    return new Promise((resolve, reject) => {
-      canvas.toBlob(
-        (blob) =>
-          blob
-            ? resolve(blob)
-            : reject(createError.runtimeError('Canvas conversion failed')),
-        mimeType || 'image/png',
-        quality
+async function seekVideoToTime(video: HTMLVideoElement, time: number): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const cleanUp = () => {
+      video.removeEventListener('seeked', onSeeked);
+      video.removeEventListener('error', onError);
+    };
+
+    const onSeeked = () => {
+      cleanUp();
+      resolve();
+    };
+
+    const onError = (event: Event) => {
+      cleanUp();
+      const error = (event.target as HTMLVideoElement)?.error;
+      reject(
+        createError.runtimeError(
+          `Video seek error (${time}s): [${error?.code}] ${error?.message}`
+        )
       );
-    });
-  }
-  return canvas.convertToBlob({ type: mimeType, quality });
+    };
+
+    video.addEventListener('seeked', onSeeked);
+    video.addEventListener('error', onError);
+    video.currentTime = time;
+  });
 }
 
-export async function rasterizeToBlob(
-  source:
-    | ImageBitmap
-    | ImageData
-    | HTMLImageElement
-    | SVGImageElement
-    | HTMLVideoElement
-    | VideoFrame,
-  _options?: BrowserOptions
-): Promise<Blob> {
-  let width: number, height: number;
-  let rasterSource:
-    | ImageBitmap
-    | VideoFrame
-    | ImageData
-    | HTMLVideoElement
-    | HTMLImageElement
-    | SVGImageElement = source;
-  let shouldCleanup = false;
+async function createVideoFrameBitmap(
+  source: HTMLVideoElement,
+  frameAt: number
+): Promise<ImageBitmap> {
+  const wasPaused = source.paused;
+  const originalTime = source.currentTime;
 
-  if (source instanceof HTMLImageElement || source instanceof SVGImageElement) {
-    rasterSource = await createImageBitmap(source);
-    shouldCleanup = true;
-    width = rasterSource.width;
-    height = rasterSource.height;
-  } else if (source instanceof ImageData) {
-    width = source.width;
-    height = source.height;
-  } else if (source instanceof HTMLVideoElement) {
-    width = source.videoWidth;
-    height = source.videoHeight;
-  } else {
-    width = 'displayWidth' in source ? source.displayWidth : source.width;
-    height = 'displayHeight' in source ? source.displayHeight : source.height;
-  }
-
-  if (source instanceof VideoFrame && typeof OffscreenCanvas === 'undefined') {
-    source.close();
-    throw createError.runtimeError('OffscreenCanvas required for VideoFrame processing');
-  }
-
-  const canvas = new OffscreenCanvas(width, height);
-
-  canvas.width = width;
-  canvas.height = height;
-
-  const ctx = canvas.getContext('2d');
-
-  if (!ctx) {
-    throw createError.runtimeError('Canvas context acquisition failed');
-  }
-
-  ctx.imageSmoothingEnabled = false;
-  ctx.imageSmoothingQuality = 'low';
+  if (!wasPaused) source.pause();
 
   try {
-    if (rasterSource instanceof ImageData) {
-      ctx.putImageData(rasterSource, 0, 0);
-    } else if (rasterSource instanceof VideoFrame) {
-      ctx.drawImage(rasterSource, 0, 0, width, height);
-      rasterSource.close();
-    } else {
-      ctx.drawImage(rasterSource as CanvasImageSource, 0, 0, width, height);
+    if (source.readyState < HTMLMediaElement.HAVE_METADATA) {
+      await new Promise<void>((resolve, reject) => {
+        const cleanup = () => {
+          source.removeEventListener('loadedmetadata', onLoad);
+          source.removeEventListener('error', onError);
+        };
+        const onLoad = () => {
+          cleanup();
+          resolve();
+        };
+        const onError = () => {
+          cleanup();
+          reject(createError.runtimeError('Video metadata load failed'));
+        };
+        source.addEventListener('loadedmetadata', onLoad);
+        source.addEventListener('error', onError);
+      });
     }
 
-    return await canvasToBlob(canvas);
+    await seekVideoToTime(source, frameAt);
+    return await createImageBitmap(source, BITMAP_OPTIONS);
   } finally {
-    if (shouldCleanup && rasterSource instanceof ImageBitmap) {
-      rasterSource.close();
+    try {
+      source.currentTime = originalTime;
+      if (!wasPaused) await source.play();
+    } catch (e) {
+      console.warn('Video state restoration failed:', e);
     }
+  }
+}
+
+export async function convertToBlobUsingCanvas(
+  source: Exclude<BrowserInput, string | URL | Blob | HTMLCanvasElement | OffscreenCanvas>,
+  options?: BrowserOptions
+): Promise<Blob> {
+  let createdBitmap: ImageBitmap | undefined;
+  let inputVideoFrame: VideoFrame | undefined;
+
+  try {
+    if (source instanceof ImageData) {
+      const canvas = new OffscreenCanvas(source.width, source.height);
+      const ctx = canvas.getContext('2d', CANVAS_OPTIONS);
+      if (!ctx) throw createError.runtimeError('Canvas context acquisition failed');
+
+      setupContext(ctx);
+      ctx.putImageData(source, 0, 0);
+      return canvas.convertToBlob({
+        type: options?.type,
+        quality: options?.quality
+      });
+    }
+
+    let bitmapToDraw: ImageBitmap;
+    if (source instanceof ImageBitmap) {
+      bitmapToDraw = source;
+    } else {
+      if (typeof VideoFrame !== 'undefined' && source instanceof VideoFrame) {
+        inputVideoFrame = source;
+        createdBitmap = await createImageBitmap(inputVideoFrame, BITMAP_OPTIONS);
+      } else if (
+        source instanceof HTMLVideoElement &&
+        typeof options?.frameAt === 'number'
+      ) {
+        createdBitmap = await createVideoFrameBitmap(source, options.frameAt);
+      } else {
+        createdBitmap = await createImageBitmap(source, BITMAP_OPTIONS);
+      }
+      bitmapToDraw = createdBitmap;
+    }
+
+    const canvas = new OffscreenCanvas(bitmapToDraw.width, bitmapToDraw.height);
+    const ctx = canvas.getContext('2d', CANVAS_OPTIONS);
+    if (!ctx) throw createError.runtimeError('Canvas context acquisition failed');
+
+    setupContext(ctx);
+    ctx.drawImage(bitmapToDraw, 0, 0);
+    return canvas.convertToBlob({
+      type: options?.type,
+      quality: options?.quality
+    });
+  } finally {
+    createdBitmap?.close();
+    inputVideoFrame?.close();
   }
 }

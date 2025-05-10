@@ -26,9 +26,10 @@ export default defineConfig({
         test: {
           name: 'browser',
           include: ['**/browser/**/*.test.ts'],
+          exclude: ['**/server/**/*.test.ts', '**/decode-consistency.test.ts'],
           benchmark: {
             include: ['**/browser/**/*.bench.ts'],
-            exclude: ['**/server/**/*.bench.ts', '**/decode-consistency.test.ts']
+            exclude: ['**/server/**/*.bench.ts']
           },
           browser: {
             provider: 'playwright',

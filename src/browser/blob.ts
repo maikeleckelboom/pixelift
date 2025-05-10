@@ -1,7 +1,7 @@
 import { isStringOrURL } from '../shared/validation';
 import type { BrowserInput, BrowserOptions } from './types';
 import { createError } from '../shared/error';
-import { getOffscreenCanvasContext, rasterizeToBlob } from './decoder/canvas';
+import { convertToBlobUsingCanvas } from './decoder/canvas';
 
 async function blobFromString(input: string | URL, options?: BrowserOptions) {
   const url = new URL(input.toString(), location.origin).toString();
@@ -40,38 +40,25 @@ export async function toBlob(input: BrowserInput, options?: BrowserOptions): Pro
   }
 
   if (input instanceof HTMLCanvasElement) {
-    return new Promise((resolve, reject) =>
-      input.toBlob((blob) =>
-        blob
-          ? resolve(blob)
-          : reject(createError.invalidInput('valid URL or Blob', input.constructor.name))
-      )
-    );
+    return new Promise((resolve, reject) => {
+      input.toBlob((blob) => {
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject(createError.runtimeError('HTMLCanvasElement.toBlob() failed.'));
+        }
+      });
+    });
   }
 
   if (input instanceof OffscreenCanvas) {
-    return input.convertToBlob();
+    return new Promise((resolve, reject) => {
+      input.convertToBlob().then(
+        (blob) => resolve(blob),
+        () => reject(createError.runtimeError('OffscreenCanvas.convertToBlob() failed.'))
+      );
+    });
   }
 
-  if (input instanceof ImageBitmap) {
-    const ctx = getOffscreenCanvasContext(input.width, input.height);
-    ctx.drawImage(input, 0, 0);
-    return ctx.canvas.convertToBlob();
-  }
-
-  if (
-    input instanceof ImageBitmap ||
-    input instanceof ImageData ||
-    input instanceof HTMLImageElement ||
-    input instanceof SVGImageElement ||
-    input instanceof HTMLVideoElement ||
-    input instanceof VideoFrame
-  ) {
-    return rasterizeToBlob(input, options);
-  }
-
-  throw createError.invalidInput(
-    'Valid image source (URL, Blob, Canvas, ImageBitmap, ImageData, VideoFrame, or MediaElement)',
-    typeof input
-  );
+  return await convertToBlobUsingCanvas(input);
 }
