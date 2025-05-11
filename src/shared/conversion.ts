@@ -51,7 +51,7 @@ export interface UnpackOptions<T extends boolean> {
  * @return {T extends true ? Uint32Array : number[]} An array of ARGB values representing the unpacked pixel data.
  *                                                   Returns a `Uint32Array` if `useTArray` is `true`, otherwise returns a standard array of numbers.
  */
-export function argbFromRgbaBytes<T extends boolean = true>(
+export function argbFromRgbaBytes<T extends boolean = false>(
   rgbaByteBuffer: BufferSource | Buffer,
   options: UnpackOptions<T> = {}
 ): T extends true ? Uint32Array : number[] {

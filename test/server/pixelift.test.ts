@@ -39,14 +39,12 @@ describe('Server Environment', () => {
   );
 });
 
-describe('decode-consistency', () => {
-  test.each(VERIFIED_INPUT_FORMATS)(
-    'should decode %s identically across environments',
-    async (format) => {
-      const result = await pixelift(urls[format] as URL);
-      const hash = await hashSHA256(result.data);
-      expect(hash).toMatchSnapshot(format);
-    },
-    0
-  );
-});
+test.each(VERIFIED_INPUT_FORMATS)(
+  '%s: consistent hash from URL across runs and environments',
+  async (format) => {
+    const result = await pixelift(urls[format] as URL, { decoder: 'sharp' });
+    const hash = await hashSHA256(result.data);
+    expect(hash).toMatchSnapshot();
+  },
+  0
+);

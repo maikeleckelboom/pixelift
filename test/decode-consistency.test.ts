@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { VERIFIED_INPUT_FORMATS } from '../src/shared/constants';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { resolve } from 'path';
 
 async function waitForSnapshots(paths: string[], seconds: number = 60) {
@@ -15,19 +15,15 @@ async function waitForSnapshots(paths: string[], seconds: number = 60) {
   throw new Error(`Snapshots not available after ${retries} retries`);
 }
 
-function lazyLoadSnapshot(path: string): Record<string, string> {
-  const content = readFileSync(resolve(__dirname, path), 'utf-8');
-  const lines = content
-    .split('\n')
-    .filter((l) => l.startsWith('exports[`'))
-    .map((l) => {
-      const match = l.match(/exports\[`(.+?)`] = (.+)/);
-      if (!match) return null;
-      const [, key, val] = match;
-      return [key, eval(val as string)];
-    })
-    .filter(Boolean) as [string, string][];
-  return Object.fromEntries(lines);
+export async function loadVitestSnapshot(
+  relativePath: string
+): Promise<Record<string, string>> {
+  const fullPath = resolve(__dirname, relativePath);
+  const mod = await import(fullPath);
+  const exportsObj = mod.default ? mod.default : mod;
+  return Object.fromEntries(
+    Object.entries(exportsObj).map(([key, val]) => [key, String(val)])
+  );
 }
 
 describe('Decode Consistency Between Node and Browser', () => {
@@ -37,14 +33,21 @@ describe('Decode Consistency Between Node and Browser', () => {
       './server/__snapshots__/pixelift.test.ts.snap'
     ]);
 
-    const browserSnaps = lazyLoadSnapshot('./browser/__snapshots__/pixelift.test.ts.snap');
-    const serverSnaps = lazyLoadSnapshot('./server/__snapshots__/pixelift.test.ts.snap');
+    const browserSnaps = await loadVitestSnapshot(
+      './browser/__snapshots__/pixelift.test.ts.snap'
+    );
+    const serverSnaps = await loadVitestSnapshot(
+      './server/__snapshots__/pixelift.test.ts.snap'
+    );
 
     for (const format of VERIFIED_INPUT_FORMATS) {
-      const key = `decode-consistency > should decode ${format} identically across environments`;
+      const key = `${format}: consistent hash from URL across runs and environments 1`;
 
       const browserHash = browserSnaps[key];
       const serverHash = serverSnaps[key];
+
+      expect(browserHash).toBeDefined();
+      expect(serverHash).toBeDefined();
 
       expect(browserHash).toEqual(serverHash);
     }

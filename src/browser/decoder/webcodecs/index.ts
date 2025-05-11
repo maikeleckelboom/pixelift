@@ -10,13 +10,15 @@ export async function isSupported(type: string): Promise<boolean> {
   );
 }
 
-export async function decode(input: Blob, _options?: BrowserOptions): Promise<PixelData> {
-  const buffer = await input.arrayBuffer();
-  const decoder = new ImageDecoder(imageDecoderOptions(buffer, input));
+export async function decode(blob: Blob, _options?: BrowserOptions): Promise<PixelData> {
+  const arrayBuffer = await blob.arrayBuffer();
+  const decoder = new ImageDecoder(imageDecoderOptions(arrayBuffer, blob.type));
 
   await decoder.completed;
 
-  const { image: frame } = await decoder.decode();
+  const { image: frame } = await decoder.decode({
+    frameIndex: 0
+  });
 
   const byteLength = frame.allocationSize({ format: 'RGBA' });
 

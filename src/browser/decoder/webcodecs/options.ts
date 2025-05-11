@@ -1,14 +1,17 @@
 /**
  * Creates configuration options for the WebCodecs ImageDecoder API.
  *
- * @param {ArrayBuffer} buffer - The raw binary data of the image.
- * @param {Blob | File} input - The original Blob or File object representing the image.
+ * @param {ArrayBuffer} data - The raw binary data of the image.
+ * @param type
  * @returns {ImageDecoderInit} Configuration object for initializing an ImageDecoder instance.
  */
-export function imageDecoderOptions(buffer: ArrayBuffer, input: Blob): ImageDecoderInit {
+export function imageDecoderOptions(
+  data: ImageBufferSource,
+  type: string
+): ImageDecoderInit {
   return {
-    type: input.type,
-    data: buffer,
+    data: data,
+    type: type,
     colorSpaceConversion: 'none'
   };
 }

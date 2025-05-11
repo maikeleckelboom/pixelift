@@ -14,18 +14,18 @@ export default defineConfig({
         test: {
           name: 'server',
           environment: 'node',
-          include: ['**/*.test.ts', '**/server/**/*.test.ts'],
+          include: ['**/*.test.ts', '**/*.universal.test.ts'],
           exclude: ['**/browser/**/*.test.ts', '**/decode-consistency.test.ts'],
           benchmark: {
-            exclude: ['**/browser/**/*.bench.ts'],
-            include: ['**/server/**/*.bench.ts']
+            include: ['**/server/**/*.bench.ts'],
+            exclude: ['**/browser/**/*.bench.ts']
           }
         }
       },
       {
         test: {
           name: 'browser',
-          include: ['**/browser/**/*.test.ts'],
+          include: ['**/browser/**/*.test.ts', '**/*.universal.test.ts'],
           exclude: ['**/server/**/*.test.ts', '**/decode-consistency.test.ts'],
           benchmark: {
             include: ['**/browser/**/*.bench.ts'],

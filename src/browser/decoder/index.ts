@@ -17,20 +17,6 @@ async function loadWebCodecsDecoder(): Promise<typeof import('./webcodecs')> {
 
 const DECODER_STRATEGIES: DecoderStrategy<Blob, BrowserOptions>[] = [
   {
-    id: 'offscreenCanvas',
-    isSupported: async (type: string): Promise<boolean> => {
-      const canvasDecoder = await loadCanvasDecoder();
-      return canvasDecoder.isSupported(type);
-    },
-    decode: async (
-      blob: Blob | ImageBitmap,
-      options?: BrowserOptions
-    ): Promise<PixelData> => {
-      const canvasDecoder = await loadCanvasDecoder();
-      return canvasDecoder.decode(blob, options);
-    }
-  },
-  {
     id: 'webCodecs',
     isSupported: async (type: string): Promise<boolean> => {
       const webcodecs = await loadWebCodecsDecoder();
@@ -40,6 +26,17 @@ const DECODER_STRATEGIES: DecoderStrategy<Blob, BrowserOptions>[] = [
       const webcodecs = await loadWebCodecsDecoder();
       return webcodecs.decode(blob, options);
     }
+  },
+  {
+    id: 'offscreenCanvas',
+    isSupported: async (type: string): Promise<boolean> => {
+      const canvasDecoder = await loadCanvasDecoder();
+      return canvasDecoder.isSupported(type);
+    },
+    decode: async (blob: Blob, options?: BrowserOptions): Promise<PixelData> => {
+      const canvasDecoder = await loadCanvasDecoder();
+      return canvasDecoder.decode(blob, options);
+    }
   }
 ];
 
@@ -47,14 +44,17 @@ async function findSupportedStrategy(
   blob: Blob,
   options?: BrowserOptions
 ): Promise<DecoderStrategy<Blob, BrowserOptions>> {
-  // Forced decoder selection
   if (options?.decoder) {
-    const strategy = DECODER_STRATEGIES.find((s) => s.id === options.decoder);
+    const strategy = DECODER_STRATEGIES.find((s) => s.id === options?.decoder);
+
     if (!strategy) {
       throw createError.decoderUnsupported(options.decoder, 'Explicit decoder not found');
     }
-    const supported = await strategy.isSupported(blob.type);
-    if (supported) return strategy;
+
+    if (await strategy.isSupported(blob.type)) {
+      return strategy;
+    }
+
     throw createError.decoderUnsupported(
       strategy.id,
       `Unsupported MIME type ${blob.type} for forced decoder`
@@ -74,10 +74,18 @@ async function findSupportedStrategy(
 }
 
 export async function decode(
-  source: BrowserInput,
+  input: BrowserInput,
   options?: BrowserOptions
 ): Promise<PixelData> {
-  const blob = await toBlob(source, options);
+  if (input instanceof ImageData) {
+    return {
+      data: input.data,
+      width: input.width,
+      height: input.height
+    };
+  }
+
+  const blob = input instanceof Blob ? input : await toBlob(input);
   const strategy = await findSupportedStrategy(blob, options);
   return strategy.decode(blob, options);
 }

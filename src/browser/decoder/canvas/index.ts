@@ -3,7 +3,7 @@ import type { BrowserInput, BrowserOptions } from '../../types';
 import { BITMAP_OPTIONS, CANVAS_OPTIONS } from './options';
 import { createError } from '../../../shared/error';
 
-export async function isSupported(_type?: unknown): Promise<boolean> {
+export function isSupported(_type?: unknown): boolean {
   return (
     'OffscreenCanvas' in window &&
     typeof OffscreenCanvas === 'function' &&
@@ -30,36 +30,38 @@ function setupContext(context: OffscreenCanvasRenderingContext2D): void {
   context.imageSmoothingEnabled = false;
   context.imageSmoothingQuality = 'low';
 }
-
 export async function decode(
   input: Blob | ImageBitmap,
   _?: BrowserOptions
 ): Promise<PixelData> {
-  const { bitmap, shouldClose } =
-    input instanceof ImageBitmap
-      ? { bitmap: input, shouldClose: false }
-      : { bitmap: await createImageFromBlob(input), shouldClose: true };
+  let bitmapToProcess: ImageBitmap;
+  let shouldCloseBitmapInternally = false;
 
-  const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
-  const context = canvas.getContext('2d', CANVAS_OPTIONS);
-
-  if (!context) {
-    if (shouldClose) bitmap.close();
-    throw createError.runtimeError('Failed to obtain 2D context for decoding');
+  if (input instanceof ImageBitmap) {
+    bitmapToProcess = input;
+  } else {
+    bitmapToProcess = await createImageFromBlob(input);
+    shouldCloseBitmapInternally = true;
   }
 
-  setupContext(context);
-  context.drawImage(bitmap, 0, 0);
-  const imageData = context.getImageData(0, 0, bitmap.width, bitmap.height, {
-    colorSpace: 'srgb'
-  });
+  try {
+    const canvas = new OffscreenCanvas(bitmapToProcess.width, bitmapToProcess.height);
+    const context = canvas.getContext('2d', CANVAS_OPTIONS);
 
-  if (shouldClose) bitmap.close();
-  return {
-    data: imageData.data,
-    width: imageData.width,
-    height: imageData.height
-  };
+    if (!context) {
+      throw createError.runtimeError('Failed to obtain 2D context for decoding');
+    }
+
+    setupContext(context);
+    context.drawImage(bitmapToProcess, 0, 0);
+    return context.getImageData(0, 0, bitmapToProcess.width, bitmapToProcess.height, {
+      colorSpace: 'srgb'
+    });
+  } finally {
+    if (shouldCloseBitmapInternally) {
+      bitmapToProcess.close();
+    }
+  }
 }
 
 async function seekVideoToTime(video: HTMLVideoElement, time: number): Promise<void> {
@@ -131,21 +133,27 @@ async function createVideoFrameBitmap(
   }
 }
 
+/**
+ *
+ * @param input - HTMLVideoElement | HTMLOrSVGImageElement | ImageBitmap | VideoFrame | ImageData
+ * @param options
+ */
 export async function convertToBlobUsingCanvas(
-  source: Exclude<BrowserInput, string | URL | Blob | HTMLCanvasElement | OffscreenCanvas>,
+  input: Exclude<BrowserInput, string | URL | Blob | HTMLCanvasElement | OffscreenCanvas>,
   options?: BrowserOptions
 ): Promise<Blob> {
   let createdBitmap: ImageBitmap | undefined;
   let inputVideoFrame: VideoFrame | undefined;
 
   try {
-    if (source instanceof ImageData) {
-      const canvas = new OffscreenCanvas(source.width, source.height);
-      const ctx = canvas.getContext('2d', CANVAS_OPTIONS);
-      if (!ctx) throw createError.runtimeError('Canvas context acquisition failed');
-
-      setupContext(ctx);
-      ctx.putImageData(source, 0, 0);
+    if (input instanceof ImageData) {
+      const canvas = new OffscreenCanvas(input.width, input.height);
+      const context = canvas.getContext(
+        '2d',
+        CANVAS_OPTIONS
+      ) as OffscreenCanvasRenderingContext2D;
+      setupContext(context);
+      context.putImageData(input, 0, 0);
       return canvas.convertToBlob({
         type: options?.type,
         quality: options?.quality
@@ -153,29 +161,30 @@ export async function convertToBlobUsingCanvas(
     }
 
     let bitmapToDraw: ImageBitmap;
-    if (source instanceof ImageBitmap) {
-      bitmapToDraw = source;
+    if (input instanceof ImageBitmap) {
+      bitmapToDraw = input;
     } else {
-      if (typeof VideoFrame !== 'undefined' && source instanceof VideoFrame) {
-        inputVideoFrame = source;
+      if (input instanceof VideoFrame) {
+        inputVideoFrame = input;
         createdBitmap = await createImageBitmap(inputVideoFrame, BITMAP_OPTIONS);
       } else if (
-        source instanceof HTMLVideoElement &&
+        input instanceof HTMLVideoElement &&
         typeof options?.frameAt === 'number'
       ) {
-        createdBitmap = await createVideoFrameBitmap(source, options.frameAt);
+        createdBitmap = await createVideoFrameBitmap(input, options.frameAt);
       } else {
-        createdBitmap = await createImageBitmap(source, BITMAP_OPTIONS);
+        createdBitmap = await createImageBitmap(input, BITMAP_OPTIONS);
       }
       bitmapToDraw = createdBitmap;
     }
 
     const canvas = new OffscreenCanvas(bitmapToDraw.width, bitmapToDraw.height);
-    const ctx = canvas.getContext('2d', CANVAS_OPTIONS);
-    if (!ctx) throw createError.runtimeError('Canvas context acquisition failed');
-
-    setupContext(ctx);
-    ctx.drawImage(bitmapToDraw, 0, 0);
+    const context = canvas.getContext(
+      '2d',
+      CANVAS_OPTIONS
+    ) as OffscreenCanvasRenderingContext2D;
+    setupContext(context);
+    context.drawImage(bitmapToDraw, 0, 0);
     return canvas.convertToBlob({
       type: options?.type,
       quality: options?.quality

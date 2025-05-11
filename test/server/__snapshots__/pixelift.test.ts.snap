@@ -1,13 +1,13 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`decode-consistency > should decode gif identically across environments > gif 1`] = `"722e79bda0e6ff52f3aba4c4881799fc545f4715ad04757339c417101a96f9ba"`;
+exports[`gif: consistent hash from URL across runs and environments 1`] = `"722e79bda0e6ff52f3aba4c4881799fc545f4715ad04757339c417101a96f9ba"`;
 
-exports[`decode-consistency > should decode jpeg identically across environments > jpeg 1`] = `"d1731f9d4a98e94994c8e6b1605782e3bb4a9f0df6480f7678e90526043a6bdc"`;
+exports[`jpeg: consistent hash from URL across runs and environments 1`] = `"d1731f9d4a98e94994c8e6b1605782e3bb4a9f0df6480f7678e90526043a6bdc"`;
 
-exports[`decode-consistency > should decode jpg identically across environments > jpg 1`] = `"d1731f9d4a98e94994c8e6b1605782e3bb4a9f0df6480f7678e90526043a6bdc"`;
+exports[`jpg: consistent hash from URL across runs and environments 1`] = `"d1731f9d4a98e94994c8e6b1605782e3bb4a9f0df6480f7678e90526043a6bdc"`;
 
-exports[`decode-consistency > should decode png identically across environments > png 1`] = `"40feada72f32f46297b97b5aa7ead4fe732564aa6bf8e89fb5ea7f0f976f5ca4"`;
+exports[`png: consistent hash from URL across runs and environments 1`] = `"40feada72f32f46297b97b5aa7ead4fe732564aa6bf8e89fb5ea7f0f976f5ca4"`;
 
-exports[`decode-consistency > should decode svg identically across environments > svg 1`] = `"3e255b34b5b1f31ba2081ea646de69104e8ee48d49a154ac623191f54d44e849"`;
+exports[`svg: consistent hash from URL across runs and environments 1`] = `"3e255b34b5b1f31ba2081ea646de69104e8ee48d49a154ac623191f54d44e849"`;
 
-exports[`decode-consistency > should decode webp identically across environments > webp 1`] = `"40feada72f32f46297b97b5aa7ead4fe732564aa6bf8e89fb5ea7f0f976f5ca4"`;
+exports[`webp: consistent hash from URL across runs and environments 1`] = `"40feada72f32f46297b97b5aa7ead4fe732564aa6bf8e89fb5ea7f0f976f5ca4"`;

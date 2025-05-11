@@ -14,7 +14,7 @@ describe('Server Benchmarks', () => {
           await pixelift(`./test/fixtures/assets/pixelift.${format}`, { decoder });
         },
         {
-          iterations: 50,
+          iterations: 100,
           warmupTime: 0.5
         }
       );

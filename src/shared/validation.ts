@@ -6,10 +6,6 @@ import {
   type PixeliftDecoder
 } from './constants';
 
-export function isStringOrURL(input: unknown): input is string | URL {
-  return typeof input === 'string' || input instanceof URL;
-}
-
 export function validateServerInput(input: unknown): input is ServerInput {
   if (isStringOrURL(input)) return true;
   if (Buffer.isBuffer(input)) return true;
@@ -17,9 +13,13 @@ export function validateServerInput(input: unknown): input is ServerInput {
   return ArrayBuffer.isView(input);
 }
 
+export function isStringOrURL(input: unknown): input is string | URL {
+  return typeof input === 'string' || input instanceof URL;
+}
+
 export function validateBrowserInput(input: unknown): input is BrowserInput {
-  if (isStringOrURL(input)) return true;
-  if (
+  return (
+    isStringOrURL(input) ||
     input instanceof Blob ||
     input instanceof HTMLImageElement ||
     input instanceof SVGImageElement ||
@@ -27,12 +27,9 @@ export function validateBrowserInput(input: unknown): input is BrowserInput {
     input instanceof HTMLCanvasElement ||
     input instanceof OffscreenCanvas ||
     input instanceof ImageBitmap ||
-    input instanceof ImageData
-  ) {
-    return true;
-  }
-
-  return typeof VideoFrame !== 'undefined' && input instanceof VideoFrame;
+    input instanceof ImageData ||
+    input instanceof VideoFrame
+  );
 }
 
 export function validateDecoder(

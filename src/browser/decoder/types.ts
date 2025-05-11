@@ -10,9 +10,9 @@ export interface Decoder<Input extends PixeliftInput, Options extends DecoderOpt
 }
 
 export interface DecoderStrategy<
-  Input extends Blob | (ImageBitmap | Blob),
+  Input extends Blob | ArrayBuffer | ImageData | CanvasImageSource,
   Options extends PixeliftOptions
 > extends Decoder<Input, Options> {
   id: string;
-  isSupported: (type: string) => Promise<boolean>;
+  isSupported: (type: string) => Promise<boolean> | boolean;
 }

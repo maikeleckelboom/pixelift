@@ -1,8 +1,4 @@
-import {
-  validateBrowserInput,
-  validateDecoder,
-  validateServerInput
-} from './shared/validation';
+import { validateBrowserInput, validateServerInput } from './shared/validation';
 import { isServer } from './shared/env';
 import { createError } from './shared/error';
 import type { PixelData, PixeliftInput, PixeliftOptions } from './types';
@@ -19,8 +15,7 @@ interface EnvironmentConfig<I extends PixeliftInput, O extends PixeliftOptions> 
 const browserConfig: EnvironmentConfig<BrowserInput, BrowserOptions> = {
   validate: validateBrowserInput,
   importDecoder: () => import('./browser/decoder'),
-  expected:
-    'string | URL | HTMLImageElement | SVGImageElement | HTMLVideoElement | HTMLCanvasElement | ImageBitmap | OffscreenCanvas | VideoFrame | Blob | ImageData'
+  expected: 'string | URL | Blob | ImageData | CanvasImageSource'
 };
 
 const serverConfig: EnvironmentConfig<ServerInput, ServerOptions> = {
@@ -48,15 +43,10 @@ export async function pixelift(
   input: PixeliftInput,
   options?: PixeliftOptions
 ): Promise<PixelData> {
-  const isNode = isServer();
-  const config = isNode ? serverConfig : browserConfig;
+  const config = isServer() ? serverConfig : browserConfig;
 
   if (!config.validate(input)) {
     throw createError.invalidInput(config.expected, typeof input);
-  }
-
-  if (!validateDecoder(options?.decoder, isNode)) {
-    throw createError.decoderUnsupported(options?.decoder);
   }
 
   try {
@@ -69,6 +59,6 @@ export async function pixelift(
 
 export { argbFromRgbaBytes, rgbaBytesFromArgb } from './shared/conversion';
 
-export { ErrorCode, PixeliftError } from './shared/error';
+export { type ErrorCode, PixeliftError } from './shared/error';
 
 export type { PixeliftInput, PixeliftOptions, PixelData } from './types';
