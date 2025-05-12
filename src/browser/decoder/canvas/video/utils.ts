@@ -7,10 +7,10 @@ import { imageBitmapOptions } from '../options';
 
 export async function createVideoFrameBitmap(
   source: HTMLVideoElement | string,
-  targetTime?: number,
   options?: BrowserOptions
 ): Promise<ImageBitmap> {
   const video = document.createElement('video');
+  const targetTime: number | undefined = options?.targetTime;
   let effectiveTargetTime: number;
 
   try {

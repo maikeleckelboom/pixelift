@@ -97,18 +97,3 @@ export async function decode(
   const strategy = await findSupportedStrategy(blob, options);
   return strategy.decode(blob, options);
 }
-
-export function needsBlobConversion(
-  input: BrowserInput,
-  options?: BrowserOptions
-): boolean {
-  const decoder = options?.decoder ?? 'webCodecs';
-
-  // WebCodecs requires Blob for all non-Blob inputs
-  if (decoder === 'webCodecs') {
-    return !(input instanceof Blob);
-  }
-
-  // OffscreenCanvas can handle all input types directly
-  return false;
-}

@@ -139,8 +139,8 @@ async function getSourceBitmap(
   if (existingBitmap) return existingBitmap;
   if (input instanceof ImageBitmap) return input;
 
-  if (input instanceof HTMLVideoElement && options?.targetTime) {
-    return createVideoFrameBitmap(input, options.targetTime, options);
+  if (input instanceof HTMLVideoElement) {
+    return createVideoFrameBitmap(input, options);
   }
 
   if (input instanceof SVGElement || input instanceof HTMLImageElement) {
