@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 
-export function setupBrowserEnvironment() {
+export function mockBrowserEnvironment() {
   class MockHTMLVideoElement {
     currentSrc: string;
 

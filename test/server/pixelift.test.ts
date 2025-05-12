@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, test } from 'vitest';
 import { pixelift } from '../../src';
 import { VERIFIED_INPUT_FORMATS, type VerifiedFormat } from '../../src/shared/constants';
 import { hashSHA256 } from '../fixtures/hash-sha256';
+import { createSnapshotTestCaseKey } from '../fixtures/hash-snapshot-key';
 
 const buffers: Partial<Record<VerifiedFormat, Buffer>> = {};
 const urls: Partial<Record<VerifiedFormat, URL>> = {};
@@ -40,7 +41,7 @@ describe('Server Environment', () => {
 });
 
 test.each(VERIFIED_INPUT_FORMATS)(
-  '%s: consistent hash from URL across runs and environments',
+  `%s: ${createSnapshotTestCaseKey()}`,
   async (format) => {
     const result = await pixelift(urls[format] as URL, { decoder: 'sharp' });
     const hash = await hashSHA256(result.data);

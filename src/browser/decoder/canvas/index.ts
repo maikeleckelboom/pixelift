@@ -15,37 +15,23 @@ export function isSupported(): boolean {
 }
 
 async function createImageBitmapFromBlob(
-  inputBlob: Blob,
+  blob: Blob,
   options?: BrowserOptions
 ): Promise<ImageBitmap> {
-  // Attempt direct createImageBitmap for non-SVG types first.
-  if (inputBlob.type !== 'image/svg+xml') {
-    try {
-      return await createImageBitmap(inputBlob, imageBitmapOptions(options));
-    } catch (e) {
-      // Non-SVG direct creation failed, log and proceed to common fallback.
-      console.warn(
-        `Direct createImageBitmap(Blob) failed for non-SVG type. Using fallback.`,
-        e
-      );
-    }
-  }
-
-  // Common fallback path for:
-  // 1. All SVGs (due to observed inconsistencies with direct createImageBitmap(Blob)).
-  // 2. Non-SVG types if their direct createImageBitmap(Blob) attempt failed.
-  // This HTMLImageElement path is generally more robust for rendering complex images/SVGs.
-  // console.log(`Using HTMLImageElement fallback for a Blob type: ${inputBlob.type}`);
-  const url = URL.createObjectURL(inputBlob);
   try {
-    const image = new Image();
-    image.src = url;
-    await image.decode();
-    return await createImageBitmap(image, imageBitmapOptions(options));
-  } catch (e) {
-    throw createError.decodingFailed(inputBlob.type, `Image creation from Blob failed.`, e);
-  } finally {
-    URL.revokeObjectURL(url);
+    return await createImageBitmap(blob, imageBitmapOptions(options));
+  } catch {
+    const url = URL.createObjectURL(blob);
+    try {
+      const image = new Image();
+      image.src = url;
+      await image.decode();
+      return await createImageBitmap(image, imageBitmapOptions(options));
+    } catch (cause) {
+      throw createError.decodingFailed(blob.type, '', cause);
+    } finally {
+      URL.revokeObjectURL(url);
+    }
   }
 }
 
@@ -81,7 +67,7 @@ export async function decode(
   }
 }
 export async function convertToBlobUsingCanvas(
-  input: string | URL | CanvasImageSource,
+  input: string | URL | CanvasImageSource | ImageData,
   options?: BrowserOptions
 ): Promise<Blob> {
   let tempBitmap: ImageBitmap | undefined; // For VideoFrame path
@@ -128,10 +114,9 @@ export async function convertToBlobUsingCanvas(
       }
     }
 
-    // --- The rest of the logic for other types ---
     if (input instanceof VideoFrame) {
       videoFrame = input;
-      // imageBitmapOptions will attempt resize based on options.width/height
+      // imageBitmapOptions will attempt to resize based on options.width/height
       tempBitmap = await createImageBitmap(input, imageBitmapOptions(options));
     }
 
@@ -166,17 +151,6 @@ async function getSourceBitmap(
   return createImageBitmapFromBlob(blob, options);
 }
 
-// Current Implementation:
-// The current code in createResizedBlob always creates a new canvas at targetWidth and targetHeight
-// and then draws the input bitmap into it,
-// scaled to these dimensions: ctx.drawImage(bitmap, 0, 0, targetWidth, targetHeight)
-// This is a clear, robust,
-// and correct way to ensure the output Blob comes from a canvas of the exact desired dimensions.
-// While it might involve an "unnecessary" draw,
-// if the bitmap is already the correct size, this is generally a safe and
-// reliable approach.
-// The performance impact of drawing an already-correctly sized bitmap to a same-sized canvas is usually minimal.
-// The current approach is simpler and less prone to edge-case bugs related to when a redraw is skipped.
 async function createResizedBlob(
   bitmap: ImageBitmap,
   options?: BrowserOptions

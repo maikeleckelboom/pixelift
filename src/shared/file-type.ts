@@ -1,6 +1,6 @@
 import type { BrowserInput, BrowserOptions } from '../browser';
 import { isStringOrURL } from './validation';
-import { MIME_MAP } from './constants';
+import { SUPPORTED_MIME_MAP } from './constants';
 
 const DATA_URI_EXT_REGEX = /^data:[^/]+\/([^;,]+)/;
 const DATA_URI_MIME_REGEX = /^data:([^;,]+)/;
@@ -69,7 +69,7 @@ export function getFileType(input: BrowserInput, options?: BrowserOptions): stri
       typeof HTMLVideoElement !== 'undefined' && input instanceof HTMLVideoElement;
 
     if (ext) {
-      return MIME_MAP[ext] || (isVideo ? 'video/mp4' : 'image/png');
+      return SUPPORTED_MIME_MAP[ext] || (isVideo ? 'video/mp4' : 'image/png');
     }
 
     if (isVideo) {

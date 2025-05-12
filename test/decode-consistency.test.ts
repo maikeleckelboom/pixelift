@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { VERIFIED_INPUT_FORMATS } from '../src/shared/constants';
 import { existsSync } from 'node:fs';
 import { resolve } from 'path';
+import { createSnapshotTestCaseKey } from './fixtures/hash-snapshot-key';
 
 async function waitForSnapshots(paths: string[], seconds: number = 60) {
   const retries = Math.floor((seconds * 1000) / 200);
@@ -41,7 +42,7 @@ describe('Decode Consistency Between Node and Browser', () => {
     );
 
     for (const format of VERIFIED_INPUT_FORMATS) {
-      const key = `${format}: consistent hash from URL across runs and environments 1`;
+      const key = `${createSnapshotTestCaseKey(format)} 1`;
 
       const browserHash = browserSnaps[key];
       const serverHash = serverSnaps[key];

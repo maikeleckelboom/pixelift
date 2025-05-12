@@ -10,6 +10,15 @@ export interface PixelData {
 export interface DecoderOptions {
   headers?: HeadersInit;
   signal?: AbortSignal;
+  fit?: 'fill' | 'contain' | 'cover' | 'none' | 'scale-down';
+  crop?: CropOptions;
+}
+
+export interface CropOptions {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 export type PixeliftInput = BrowserInput | ServerInput;

@@ -1,11 +1,11 @@
 import { describe, test, expect, beforeAll } from 'vitest';
 import { getFileType, getFileExtension } from '../../../src/shared/file-type';
-import { MIME_MAP } from '../../../src/shared/constants';
-import { setupBrowserEnvironment } from '../../fixtures/setup-browser-environment';
+import { SUPPORTED_MIME_MAP } from '../../../src/shared/constants';
+import { mockBrowserEnvironment } from '../../fixtures/mock-browser-environment';
 
 describe('File Type Utilities', () => {
   beforeAll(() => {
-    setupBrowserEnvironment();
+    mockBrowserEnvironment();
   });
 
   describe('getFileExtension', () => {
@@ -71,7 +71,9 @@ describe('File Type Utilities', () => {
     test('determines type from URL, string, and data URIs', () => {
       // URL/string inputs
       expect(getFileType('https://x.test/a.WEBP?cache=false')).toBe('image/webp');
-      expect(getFileType(new URL('https://x.test/b.MOV#t=10'))).toBe(MIME_MAP.mov);
+      expect(getFileType(new URL('https://x.test/b.MOV#t=10'))).toBe(
+        SUPPORTED_MIME_MAP.mov
+      );
       expect(getFileType('my.photo.final.jpeg')).toBe('image/jpeg');
 
       // Data URIs

@@ -1,6 +1,6 @@
 import { beforeAll, bench, describe } from 'vitest';
 import { getFileType } from '../../../src/shared/file-type';
-import { setupBrowserEnvironment } from '../../fixtures/setup-browser-environment';
+import { mockBrowserEnvironment } from '../../fixtures/mock-browser-environment';
 
 const BENCH_CONFIG = {
   iterations: 1000,
@@ -10,7 +10,7 @@ const BENCH_CONFIG = {
 
 describe('File Type Inference Benchmarks', () => {
   beforeAll(() => {
-    setupBrowserEnvironment();
+    mockBrowserEnvironment();
   });
 
   describe('Core Operations', () => {
