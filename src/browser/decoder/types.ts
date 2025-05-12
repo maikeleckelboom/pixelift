@@ -10,7 +10,7 @@ export interface Decoder<Input extends PixeliftInput, Options extends DecoderOpt
 }
 
 export interface DecoderStrategy<
-  Input extends Blob | ArrayBuffer | ImageData | CanvasImageSource,
+  Input extends PixeliftInput,
   Options extends PixeliftOptions
 > extends Decoder<Input, Options> {
   id: string;

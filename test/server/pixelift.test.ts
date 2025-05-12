@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { beforeAll, describe, expect, test } from 'vitest';
-import { pixelift } from '../../src/server';
+import { pixelift } from '../../src';
 import { VERIFIED_INPUT_FORMATS, type VerifiedFormat } from '../../src/shared/constants';
 import { hashSHA256 } from '../fixtures/hash-sha256';
 

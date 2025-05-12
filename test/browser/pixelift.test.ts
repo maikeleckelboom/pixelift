@@ -28,6 +28,7 @@ describe('Decoding from URL', () => {
   );
 });
 
+// todo: differentiate between lossy and non-lossy formats so we can
 test.each(VERIFIED_INPUT_FORMATS)(
   '%s: consistent hash from URL across runs and environments',
   async (format) => {

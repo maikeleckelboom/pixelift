@@ -1,24 +1,25 @@
 import type { PixelData } from '../../../types';
 import type { BrowserOptions } from '../../types';
-import { imageDecoderOptions } from './options';
+import { imageDecoderInitOptions, imageDecoderOptions } from './options';
 
-export async function isSupported(type: string): Promise<boolean> {
-  return (
-    'ImageDecoder' in window &&
-    typeof ImageDecoder.isTypeSupported === 'function' &&
-    (await ImageDecoder.isTypeSupported(type))
-  );
+async function isTypeSupported(type: string): Promise<boolean> {
+  return await ImageDecoder.isTypeSupported(type);
 }
 
-export async function decode(blob: Blob, _options?: BrowserOptions): Promise<PixelData> {
-  const arrayBuffer = await blob.arrayBuffer();
-  const decoder = new ImageDecoder(imageDecoderOptions(arrayBuffer, blob.type));
+export async function isSupported(type: string): Promise<boolean> {
+  return 'webcodecs' in window && (await isTypeSupported(type));
+}
+
+export async function decode(input: Blob, options?: BrowserOptions): Promise<PixelData> {
+  const arrayBuffer = await input.arrayBuffer();
+
+  const decoder = new ImageDecoder(
+    imageDecoderInitOptions(arrayBuffer, input.type, options)
+  );
 
   await decoder.completed;
 
-  const { image: frame } = await decoder.decode({
-    frameIndex: 0
-  });
+  const { image: frame } = await decoder.decode(imageDecoderOptions(options));
 
   const byteLength = frame.allocationSize({ format: 'RGBA' });
 

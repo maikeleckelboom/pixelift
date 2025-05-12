@@ -1,3 +1,5 @@
+import { createError } from './error';
+
 /**
  * Converts an array-like structure of integer pixels into a Uint8ClampedArray with RGBA components.
  * Each input pixel is expected to represent a 32-bit ARGB value packed into a single integer.
@@ -30,7 +32,7 @@ export function rgbaBytesFromArgb(argbPixels: ArrayLike<number>): Uint8ClampedAr
 
 export interface UnpackOptions<T extends boolean> {
   /** If true, returns a typed array (Uint32Array), otherwise returns a standard array */
-  useTArray?: T;
+  useTypedArray?: T;
   /** Required for dimension validation */
   width?: number;
   /** Required for dimension validation */
@@ -39,17 +41,17 @@ export interface UnpackOptions<T extends boolean> {
 
 /**
  * Unpacks RGBA pixel data from a buffer into an array of ARGB values.
- * Depending on the `useTArray` option, the method will return either a `Uint32Array` or a standard array of numbers.
+ * Depending on the `useTypedArray` option, the method will return either a `Uint32Array` or a standard array of numbers.
  *
  * @param {BufferSource | Buffer} rgbaByteBuffer - The input buffer containing RGBA pixel data.
  *                                              Can be an `ArrayBuffer`, a typed array view, or an instance of `Buffer`.
  * @param {UnpackOptions<T extends boolean>} [options] - Optional parameters for unpacking.
  * @param {number} [options.width] - The width of the image in pixels. Required if buffer size is ambiguous.
  * @param {number} [options.height] - The height of the image in pixels. Required if buffer size is ambiguous.
- * @param {T extends boolean} [options.useTArray=true] - Indicates whether to return a typed array (`Uint32Array`) or a standard array (`Array<number>`).
+ * @param {T extends boolean} [options.useTypedArray=true] - Indicates whether to return a typed array (`Uint32Array`) or a standard array (`Array<number>`).
  *                                        Defaults to `true` (returns `Uint32Array`).
  * @return {T extends true ? Uint32Array : number[]} An array of ARGB values representing the unpacked pixel data.
- *                                                   Returns a `Uint32Array` if `useTArray` is `true`, otherwise returns a standard array of numbers.
+ *                                                   Returns a `Uint32Array` if `useTypedArray` is `true`, otherwise returns a standard array of numbers.
  */
 export function argbFromRgbaBytes<T extends boolean = false>(
   rgbaByteBuffer: BufferSource | Buffer,
@@ -65,17 +67,23 @@ export function argbFromRgbaBytes<T extends boolean = false>(
       rgbaByteBuffer.byteLength
     );
   } else {
-    throw new Error('Input must be ArrayBuffer, TypedArray, or Node.js Buffer');
+    throw createError.invalidInput(
+      'ArrayBuffer, TypedArray, or Buffer',
+      `Buffer type ${typeof rgbaByteBuffer}`
+    );
   }
 
-  const { width, height, useTArray } = options || {};
+  const { width, height, useTypedArray } = options || {};
 
   const bytesPerPixel = 4 as const;
   const pixelCount =
     width && height ? width * height : Math.floor(data.length / bytesPerPixel);
 
   if (width && height && data.length < width * height * bytesPerPixel) {
-    throw new Error('Buffer is too small for the specified dimensions');
+    throw createError.invalidInput(
+      `${width * height * bytesPerPixel} bytes`,
+      `Buffer length ${data.length}`
+    );
   }
 
   const readRgbaComponents = (
@@ -89,14 +97,10 @@ export function argbFromRgbaBytes<T extends boolean = false>(
       data[byteOffset + 3]
     ] as [number, number, number, number];
 
-  const pixels = useTArray ? new Uint32Array(pixelCount) : new Array(pixelCount);
+  const pixels = useTypedArray ? new Uint32Array(pixelCount) : new Array(pixelCount);
 
   for (let i = 0; i < pixelCount; i++) {
     const byteOffset = i * bytesPerPixel;
-
-    if (byteOffset + 3 >= data.length) {
-      break;
-    }
 
     const [red, green, blue, alpha] = readRgbaComponents(data, byteOffset);
 

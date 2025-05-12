@@ -1,10 +1,5 @@
 import type { ServerInput } from '../server';
 import type { BrowserInput } from '../browser';
-import {
-  PIXELIFT_BROWSER_DECODERS,
-  PIXELIFT_SERVER_DECODERS,
-  type PixeliftDecoder
-} from './constants';
 
 export function validateServerInput(input: unknown): input is ServerInput {
   if (isStringOrURL(input)) return true;
@@ -30,17 +25,4 @@ export function validateBrowserInput(input: unknown): input is BrowserInput {
     input instanceof ImageData ||
     input instanceof VideoFrame
   );
-}
-
-export function validateDecoder(
-  decoder: string | undefined,
-  isServer: boolean
-): decoder is PixeliftDecoder {
-  if (!decoder) return true;
-
-  const decoderList = Array.from(
-    isServer ? PIXELIFT_SERVER_DECODERS : PIXELIFT_BROWSER_DECODERS
-  );
-
-  return decoderList.includes(decoder as PixeliftDecoder);
 }

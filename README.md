@@ -137,7 +137,7 @@ controller.abort();
 ### `argbFromRgbaBytes(buffer, options?) → number[] | Uint32Array`
 
 * Converts RGBA bytes to ARGB ints
-* **options**: `{ useTArray?: boolean }`
+* **options**: `{ useTypedArray?: boolean }`
 
 ### `rgbaBytesFromArgb(pixels) → Uint8ClampedArray`
 

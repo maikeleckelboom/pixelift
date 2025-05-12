@@ -2,6 +2,7 @@ import { isStringOrURL } from '../shared/validation';
 import type { BrowserInput, BrowserOptions } from './types';
 import { createError } from '../shared/error';
 import { convertToBlobUsingCanvas } from './decoder/canvas';
+import { imageBitmapOptions, convertToBlobOptions } from './decoder/canvas/options';
 
 async function blobFromImageBitmap(
   bitmap: ImageBitmap,
@@ -11,14 +12,14 @@ async function blobFromImageBitmap(
   const ctx = canvas.getContext('2d');
   if (!ctx) throw createError.runtimeError('Canvas context creation failed');
   ctx.drawImage(bitmap, 0, 0);
-  return canvas.convertToBlob(options);
+  return canvas.convertToBlob(convertToBlobOptions(options));
 }
 
 async function blobFromVideoFrame(
   frame: VideoFrame,
   options?: BrowserOptions
 ): Promise<Blob> {
-  const bitmap = await createImageBitmap(frame);
+  const bitmap = await createImageBitmap(frame, imageBitmapOptions(options));
   try {
     return await blobFromImageBitmap(bitmap, options);
   } finally {
@@ -59,10 +60,11 @@ async function htmlCanvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   });
 }
 
-export async function toBlob(
-  input: Exclude<BrowserInput, Blob>,
-  options?: BrowserOptions
-): Promise<Blob> {
+export async function toBlob(input: BrowserInput, options?: BrowserOptions): Promise<Blob> {
+  if (input instanceof Blob) {
+    return input;
+  }
+
   if (isStringOrURL(input)) {
     return blobFromString(input, options);
   }

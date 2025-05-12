@@ -1,28 +1,9 @@
-import { validateBrowserInput, validateServerInput } from './shared/validation';
 import { isServer } from './shared/env';
 import { createError } from './shared/error';
+import { browserConfig, serverConfig } from './shared/config';
 import type { PixelData, PixeliftInput, PixeliftOptions } from './types';
 import type { ServerInput, ServerOptions } from './server';
 import type { BrowserInput, BrowserOptions } from './browser';
-import type { Decoder } from './browser/decoder/types';
-
-interface EnvironmentConfig<I extends PixeliftInput, O extends PixeliftOptions> {
-  validate: (input: unknown) => input is I;
-  importDecoder: () => Promise<Decoder<I, O>>;
-  expected: string;
-}
-
-const browserConfig: EnvironmentConfig<BrowserInput, BrowserOptions> = {
-  validate: validateBrowserInput,
-  importDecoder: () => import('./browser/decoder'),
-  expected: 'string | URL | Blob | ImageData | CanvasImageSource'
-};
-
-const serverConfig: EnvironmentConfig<ServerInput, ServerOptions> = {
-  validate: validateServerInput,
-  importDecoder: () => import('./server/decoder'),
-  expected: 'string | URL | Buffer | BufferSource'
-};
 
 /**
  * Processes pixel-based input data using a specific decoder and returns the resulting pixel data.

@@ -32,18 +32,18 @@ describe('argbFromRgbaBytes', () => {
   it('converts 4-byte RGBA buffers to ARGB integers', () => {
     const input = new Uint8Array([0x11, 0x22, 0x33, 0x44]);
     const expected = new Uint32Array([0x44112233]);
-    expect(argbFromRgbaBytes(input, { useTArray: true })).toEqual(expected);
+    expect(argbFromRgbaBytes(input, { useTypedArray: true })).toEqual(expected);
   });
 
   it('accepts ArrayBuffer and other TypedArray types', () => {
     const bytes = [0x11, 0x22, 0x33, 0x44];
     const buffer1 = new Uint8Array(bytes).buffer;
-    expect(argbFromRgbaBytes(buffer1, { useTArray: true })).toEqual(
+    expect(argbFromRgbaBytes(buffer1, { useTypedArray: true })).toEqual(
       new Uint32Array([0x44112233])
     );
 
     const buffer2 = new Uint8ClampedArray(bytes);
-    expect(argbFromRgbaBytes(buffer2, { useTArray: true })).toEqual(
+    expect(argbFromRgbaBytes(buffer2, { useTypedArray: true })).toEqual(
       new Uint32Array([0x44112233])
     );
   });
@@ -58,13 +58,13 @@ describe('Round-trip conversions', () => {
   it('rgbaBytesFromArgb → argbFromRgbaBytes returns original ARGB data', () => {
     const original = new Uint32Array([0x12345678, 0x9abcdef0]);
     const packed = rgbaBytesFromArgb(original);
-    const unpacked = argbFromRgbaBytes(packed, { useTArray: true });
+    const unpacked = argbFromRgbaBytes(packed, { useTypedArray: true });
     expect(unpacked).toEqual(original);
   });
 
   it('argbFromRgbaBytes → rgbaBytesFromArgb returns original RGBA data', () => {
     const original = new Uint8ClampedArray([0x11, 0x22, 0x33, 0x44]);
-    const unpacked = argbFromRgbaBytes(original, { useTArray: true });
+    const unpacked = argbFromRgbaBytes(original, { useTypedArray: true });
     const packed = rgbaBytesFromArgb(unpacked);
     expect(packed).toEqual(original);
   });
@@ -83,7 +83,7 @@ describe('Round-trip conversions', () => {
   it('correctly inverts colors while preserving alpha', () => {
     const originalColor = 0xff112233;
     const pixelBuffer = rgbaBytesFromArgb([originalColor]);
-    const colors = argbFromRgbaBytes(pixelBuffer, { useTArray: true });
+    const colors = argbFromRgbaBytes(pixelBuffer, { useTypedArray: true });
 
     const invertedColors = colors.map((color) => {
       const a = (color >>> 24) & 0xff;

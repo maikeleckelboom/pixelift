@@ -7,13 +7,14 @@ export const ErrorCode = {
   networkError: 'network-error',
   pathTraversal: 'path-traversal',
   runtimeError: 'runtime-error',
+  fileReadError: 'file-read-error',
   aborted: 'aborted'
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
 
 const MESSAGES: Record<ErrorCode, string> = {
-  [ErrorCode.decoderUnsupported]: 'Decoder {decoder} is not supported for {detail}',
+  [ErrorCode.decoderUnsupported]: 'Decoder {decoder} is not supported: {detail}',
   [ErrorCode.decodingFailed]: 'Failed to decode {type}: {detail}',
   [ErrorCode.invalidInput]: 'Invalid input: expected {expected}, got {received}',
   [ErrorCode.dependencyMissing]: 'Required dependency missing: {dependency}',
@@ -21,7 +22,8 @@ const MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.networkError]: 'Network error: {detail}',
   [ErrorCode.pathTraversal]: 'Path traversal attempt detected: {path}',
   [ErrorCode.aborted]: 'Operation aborted',
-  [ErrorCode.runtimeError]: 'Runtime error: {detail}'
+  [ErrorCode.runtimeError]: 'Runtime error: {detail}',
+  [ErrorCode.fileReadError]: 'Failed to read file: {path}'
 };
 
 function formatMessage(template: string, context: Record<string, unknown> = {}): string {
@@ -60,8 +62,12 @@ export const createError = {
   decodingFailed: (type: string, detail: string, cause?: unknown): PixeliftError =>
     new PixeliftError(ErrorCode.decodingFailed, { type, detail }, { cause }),
 
-  dependencyMissing: (dependency: string, cause?: unknown): PixeliftError =>
-    new PixeliftError(ErrorCode.dependencyMissing, { dependency }, { cause }),
+  dependencyMissing: (
+    dependency: string,
+    detail?: string,
+    cause?: unknown
+  ): PixeliftError =>
+    new PixeliftError(ErrorCode.dependencyMissing, { dependency, detail }, { cause }),
 
   fetchFailed: (url: string, status: number, statusText: string): PixeliftError =>
     new PixeliftError(ErrorCode.fetchFailed, { url, status, statusText }),
@@ -74,6 +80,9 @@ export const createError = {
 
   pathTraversal: (path: string): PixeliftError =>
     new PixeliftError(ErrorCode.pathTraversal, { path }),
+
+  fileReadError: (path: string, cause?: unknown): PixeliftError =>
+    new PixeliftError(ErrorCode.runtimeError, { path }, { cause }),
 
   runtimeError: (detail: string, cause?: unknown): PixeliftError =>
     new PixeliftError(ErrorCode.runtimeError, { detail }, { cause }),

@@ -5,9 +5,7 @@ export default defineConfig({
   test: {
     globals: true,
     sequence: {
-      sequencer: SnapshotLastSequencer,
-      shuffle: false,
-      concurrent: false
+      sequencer: SnapshotLastSequencer
     },
     workspace: [
       {

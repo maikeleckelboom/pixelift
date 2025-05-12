@@ -13,21 +13,24 @@ export async function getSharp(): Promise<typeof SharpNS> {
   if (!sharpPromise) {
     try {
       sharpPromise = import('sharp');
-    } catch {
+    } catch (importError) {
+      sharpPromise = null;
+      const errorMessageLines = [
+        '❌ Failed to load the required `sharp` package for server-side image processing.',
+        '',
+        '💡 To fix this, install `sharp` with one of the following commands:',
+        '   - `npm install sharp`',
+        '   - `yarn add sharp`',
+        '   - `bun add sharp`',
+        '',
+        '⚠️ Pixelift server features depend on `sharp`.',
+        '   It looks like it was not installed or could not be found.',
+        '   This may happen if it was skipped during Pixelift installation (it’s optional).'
+      ];
       throw createError.dependencyMissing(
         'sharp',
-        [
-          '❌ Failed to load the required `sharp` package for server-side image processing.',
-          '💡 You can install it using one of the following commands:\n' +
-            ' - `npm install sharp`\n' +
-            ' - `yarn add sharp`\n' +
-            ' - `bun add sharp`',
-          [
-            '⚠️ Pixelift server features depend on the `sharp` package.',
-            'It looks like `sharp` is not installed or could not be found.',
-            'This can happen if it was skipped during the installation of Pixelift (it’s an optional dependency).'
-          ].join('\n')
-        ].join('\n')
+        errorMessageLines.join('\n'),
+        importError
       );
     }
   }

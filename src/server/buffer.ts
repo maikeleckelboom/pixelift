@@ -67,9 +67,15 @@ export async function getBuffer(
     signal?.throwIfAborted();
     switch (url.protocol) {
       case 'file:': {
-        const safe = sanitizeFilePath(url);
-        // Let fs errors bubble naturally
-        return fs.readFile(safe);
+        const filePath = sanitizeFilePath(url);
+        try {
+          return fs.readFile(filePath, { signal });
+        } catch (e) {
+          if (signal?.aborted) {
+            throw createError.aborted();
+          }
+          throw createError.fileReadError(filePath, e);
+        }
       }
       case 'http:':
       case 'https:': {
@@ -93,6 +99,14 @@ export async function getBuffer(
   signal?.throwIfAborted();
   const local = resolveLocalPath(str);
 
-  // Let fs errors bubble
-  return fs.readFile(local);
+  try {
+    // Pass the signal to fs.readFile as well
+    return fs.readFile(local, { signal }); // Added await for clarity
+  } catch (e) {
+    if (signal?.aborted) {
+      throw createError.aborted();
+    }
+    // Use the resolved 'local' path for the error message
+    throw createError.fileReadError(local, e);
+  }
 }
