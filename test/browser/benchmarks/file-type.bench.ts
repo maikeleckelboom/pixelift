@@ -2,190 +2,85 @@ import { beforeAll, bench, describe } from 'vitest';
 import { getFileType } from '../../../src/shared/file-type';
 import { setupBrowserEnvironment } from '../../fixtures/setup-browser-environment';
 
+const BENCH_CONFIG = {
+  iterations: 1000,
+  warmupIterations: 20,
+  time: 10
+};
+
 describe('File Type Inference Benchmarks', () => {
   beforeAll(() => {
     setupBrowserEnvironment();
   });
 
-  describe('String and URL inputs', () => {
-    const simpleUrl = 'https://example.com/image.jpg';
-    const urlWithQuery = 'https://cdn.site.com/images/large/photo.png?version=2&cache=true';
-    const urlObject = new URL('https://example.com/video.mp4');
+  describe('Core Operations', () => {
+    const complexUrl =
+      'https://cdn.example.com/images/2023/final.prod.v2.export-1.tar.gz?cache=v3';
+    const dataUri =
+      'data:image/webp;base64,UklGRh4AAABXRUJQVlA4TBEAAAAvAAAAAAfQ//73v/+BiOh/AAA=';
+    const typedFile = new File([], 'data.bin', { type: 'application/x-custom' });
 
     bench(
-      'Simple string URL',
+      'URL parsing',
       () => {
-        getFileType(simpleUrl);
+        getFileType(complexUrl);
       },
-      { iterations: 10 }
+      BENCH_CONFIG
     );
 
     bench(
-      'URL with query parameters',
+      'Data URI parsing',
       () => {
-        getFileType(urlWithQuery);
+        getFileType(dataUri);
       },
-      { iterations: 10 }
+      BENCH_CONFIG
     );
 
     bench(
-      'URL object',
+      'Pre-typed files',
       () => {
-        getFileType(urlObject);
+        getFileType(typedFile);
       },
-      { iterations: 10 }
-    );
-  });
-
-  describe('Data URIs', () => {
-    const pngDataUri =
-      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
-    const textDataUri = 'data:text/plain;charset=utf-8,Hello%20World!';
-
-    bench(
-      'PNG data URI',
-      () => {
-        getFileType(pngDataUri);
-      },
-      { iterations: 10 }
-    );
-
-    bench(
-      'Text data URI',
-      () => {
-        getFileType(textDataUri);
-      },
-      { iterations: 10 }
+      BENCH_CONFIG
     );
   });
 
-  describe('Blob inputs', () => {
-    const pngBlob = new Blob(['<png-content>'], { type: 'image/png' });
-    const textBlob = new Blob(['text content'], { type: 'text/plain' });
-    const emptyBlob = new Blob([]);
+  describe('Browser Elements', () => {
+    let videoElement: HTMLVideoElement;
+    let canvas: HTMLCanvasElement;
+
+    beforeAll(() => {
+      videoElement = document.createElement('video');
+      videoElement.src = 'https://example.com/video.ogv';
+      canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+      ctx.fillRect(0, 0, 100, 100);
+    });
 
     bench(
-      'Blob with image/png type',
-      () => {
-        getFileType(pngBlob);
-      },
-      { iterations: 10 }
-    );
-
-    bench(
-      'Blob with text/plain type',
-      () => {
-        getFileType(textBlob);
-      },
-      { iterations: 10 }
-    );
-
-    bench(
-      'Empty Blob (no type)',
-      () => {
-        getFileType(emptyBlob);
-      },
-      { iterations: 10 }
-    );
-  });
-
-  describe('HTML Elements', () => {
-    const createElements = () => {
-      let videoElement: HTMLVideoElement;
-      let imageElement: HTMLImageElement;
-      let canvasElement: HTMLCanvasElement;
-      if (typeof document !== 'undefined') {
-        videoElement = document.createElement('video');
-        videoElement.src = 'https://videos.test/sample.webm';
-        imageElement = document.createElement('img');
-        imageElement.src = 'https://images.test/sample.avif';
-        canvasElement = document.createElement('canvas');
-      } else {
-        videoElement = new globalThis.HTMLVideoElement();
-        imageElement = new globalThis.HTMLImageElement();
-        imageElement.src = 'https://images.test/sample.avif';
-        canvasElement = new globalThis.HTMLCanvasElement();
-      }
-      return { videoElement, imageElement, canvasElement };
-    };
-    const { videoElement, imageElement, canvasElement } = createElements();
-
-    bench(
-      'HTMLVideoElement',
+      'Video element analysis',
       () => {
         getFileType(videoElement);
       },
-      { iterations: 10 }
+      BENCH_CONFIG
     );
 
     bench(
-      'HTMLImageElement',
+      'Canvas conversion',
       () => {
-        getFileType(imageElement);
+        getFileType(canvas);
       },
-      { iterations: 10 }
-    );
-
-    bench(
-      'HTMLCanvasElement',
-      () => {
-        getFileType(canvasElement);
-      },
-      { iterations: 10 }
+      BENCH_CONFIG
     );
   });
 
-  describe('Type option override', () => {
-    const imageUrl = 'https://example.com/image.jpg';
-
+  describe('Edge Cases', () => {
     bench(
-      'With type option',
-      () => {
-        getFileType(imageUrl, { type: 'application/x-custom' });
-      },
-      { iterations: 10 }
-    );
-
-    bench(
-      'Without type option (baseline)',
-      () => {
-        getFileType(imageUrl);
-      },
-      { iterations: 10 }
-    );
-  });
-
-  describe('Edge cases', () => {
-    bench(
-      'Empty string',
-      () => {
-        getFileType('');
-      },
-      { iterations: 10 }
-    );
-
-    bench(
-      'Object fallback',
+      'Fallback handling',
       () => {
         getFileType({} as never);
       },
-      { iterations: 10 }
-    );
-
-    bench(
-      'No extension',
-      () => {
-        getFileType('filename-without-extension');
-      },
-      { iterations: 10 }
-    );
-
-    bench(
-      'Multiple dots',
-      () => {
-        getFileType('file.with.multiple.dots.jpeg');
-      },
-      { iterations: 10 }
+      BENCH_CONFIG
     );
   });
 });

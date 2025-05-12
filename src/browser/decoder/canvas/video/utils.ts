@@ -1,29 +1,32 @@
+// In src/browser/decoder/canvas/video/utils.ts
+
 import { createError } from '../../../../shared/error';
-import { IMAGE_BITMAP_OPTIONS } from '../options';
+// Import BrowserOptions and imageBitmapOptions
+import type { BrowserOptions } from '../../../types';
+import { imageBitmapOptions } from '../options';
 
 export async function createVideoFrameBitmap(
   source: HTMLVideoElement | string,
-  targetTime?: number
+  targetTime?: number,
+  options?: BrowserOptions
 ): Promise<ImageBitmap> {
   const video = document.createElement('video');
   let effectiveTargetTime: number;
 
   try {
-    // Configure video element based on input type
     if (typeof source === 'string') {
       video.src = source;
       video.crossOrigin = 'anonymous';
       effectiveTargetTime = targetTime ?? 0;
     } else {
       video.src = source.currentSrc;
-      video.crossOrigin = source.crossOrigin;
+      video.crossOrigin = source.crossOrigin || 'anonymous';
       effectiveTargetTime = targetTime ?? source.currentTime;
     }
 
     video.muted = true;
     video.preload = 'auto';
 
-    // Load metadata if needed
     if (video.readyState < HTMLMediaElement.HAVE_METADATA) {
       await new Promise<void>((resolve, reject) => {
         video.addEventListener('loadedmetadata', () => resolve(), { once: true });
@@ -37,29 +40,46 @@ export async function createVideoFrameBitmap(
       });
     }
 
-    // Seek to target time
     await seekVideoToTime(video, effectiveTargetTime);
 
-    // Debug logs (remove in production)
-    console.log(`Seeking video to time: ${effectiveTargetTime}`);
-    console.log(`Actual video time: ${video.currentTime}`);
-
-    return await createImageBitmap(video, IMAGE_BITMAP_OPTIONS);
+    // **Enhancement**: Use imageBitmapOptions to allow resizing directly from video frame
+    return await createImageBitmap(video, imageBitmapOptions(options));
   } catch (e) {
     if (e instanceof DOMException && e.name === 'AbortError') {
       throw createError.aborted();
     }
     throw createError.runtimeError('Failed to create ImageBitmap from video', e);
   } finally {
+    // Consider if video.src = '' or video.removeAttribute('src') is needed before remove()
+    // for complete resource cleanup, though remove() usually suffices.
     video.remove();
   }
 }
 
 async function seekVideoToTime(video: HTMLVideoElement, time: number): Promise<void> {
-  if (time === video.currentTime) return;
+  if (video.currentTime === time) return;
+  return new Promise<void>((resolve, reject) => {
+    const onSeeked = () => {
+      video.removeEventListener('error', onError);
+      resolve();
+    };
+    const onError = (event: Event | string) => {
+      video.removeEventListener('seeked', onSeeked);
+      reject(
+        createError.runtimeError(
+          'Video seek operation failed',
+          event instanceof Event ? (event.target as HTMLVideoElement)?.error : event
+        )
+      );
+    };
 
-  video.currentTime = time;
-  await new Promise<void>((resolve) => {
-    video.addEventListener('seeked', () => resolve(), { once: true });
+    video.addEventListener('seeked', onSeeked, { once: true });
+    video.addEventListener('error', onError, { once: true });
+
+    video.currentTime = time;
+    // Some browsers might not fire 'seeked' if currentTime is set to the same value
+    // or if the video isn't fully ready. The initial check helps.
+    // If video.readyState is low, seeking might be problematic.
+    // Consider adding a timeout or further checks if seek issues persist.
   });
 }

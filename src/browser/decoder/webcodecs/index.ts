@@ -11,10 +11,8 @@ export async function isSupported(type: string): Promise<boolean> {
 }
 
 export async function decode(input: Blob, options?: BrowserOptions): Promise<PixelData> {
-  const arrayBuffer = await input.arrayBuffer();
-
   const decoder = new ImageDecoder(
-    imageDecoderInitOptions(arrayBuffer, input.type, options)
+    imageDecoderInitOptions(new Response(input).body as ReadableStream, input.type, options)
   );
 
   await decoder.completed;

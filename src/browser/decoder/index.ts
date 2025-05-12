@@ -30,9 +30,9 @@ const DECODER_STRATEGIES: DecoderStrategy<Blob, BrowserOptions>[] = [
   },
   {
     id: 'offscreenCanvas',
-    isSupported: async (type: string): Promise<boolean> => {
+    isSupported: async (): Promise<boolean> => {
       const canvasDecoder = await loadCanvasDecoder();
-      return canvasDecoder.isSupported(type);
+      return canvasDecoder.isSupported();
     },
     decode: async (blob: Blob, options?: BrowserOptions): Promise<PixelData> => {
       const canvasDecoder = await loadCanvasDecoder();
@@ -86,6 +86,11 @@ export async function decode(
       width: input.width,
       height: input.height
     };
+  }
+
+  if (input instanceof ImageBitmap) {
+    const canvasDecoder = await loadCanvasDecoder();
+    return canvasDecoder.decode(input, options);
   }
 
   const blob = await toBlob(input, options);

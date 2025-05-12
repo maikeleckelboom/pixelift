@@ -3,15 +3,13 @@ import type { BrowserInput, BrowserOptions } from './types';
 import { createError } from '../shared/error';
 import { convertToBlobUsingCanvas } from './decoder/canvas';
 import { imageBitmapOptions, convertToBlobOptions } from './decoder/canvas/options';
+import { createCanvasContext } from './decoder/canvas/utils';
 
 async function blobFromImageBitmap(
   bitmap: ImageBitmap,
   options?: BrowserOptions
 ): Promise<Blob> {
-  const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw createError.runtimeError('Canvas context creation failed');
-  ctx.drawImage(bitmap, 0, 0);
+  const [canvas] = createCanvasContext(bitmap.width, bitmap.height);
   return canvas.convertToBlob(convertToBlobOptions(options));
 }
 
