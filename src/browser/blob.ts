@@ -2,14 +2,17 @@ import { isStringOrURL } from '../shared/validation';
 import type { BrowserInput, BrowserOptions } from './types';
 import { createError } from '../shared/error';
 import { convertToBlobUsingCanvas } from './decoder/canvas';
-import { imageBitmapOptions, convertToBlobOptions } from './decoder/canvas/options';
+import { convertToBlobOptions, imageBitmapOptions } from './decoder/canvas/options';
 import { createCanvasContext } from './decoder/canvas/utils';
 
 async function blobFromImageBitmap(
   bitmap: ImageBitmap,
   options?: BrowserOptions
 ): Promise<Blob> {
-  const [canvas] = createCanvasContext(bitmap.width, bitmap.height);
+  const targetWidth = options?.width ?? bitmap.width;
+  const targetHeight = options?.height ?? bitmap.height;
+  const [canvas, ctx] = createCanvasContext(targetWidth, targetHeight);
+  ctx.drawImage(bitmap, 0, 0, targetWidth, targetHeight);
   return canvas.convertToBlob(convertToBlobOptions(options));
 }
 
@@ -17,11 +20,13 @@ async function blobFromVideoFrame(
   frame: VideoFrame,
   options?: BrowserOptions
 ): Promise<Blob> {
-  const bitmap = await createImageBitmap(frame, imageBitmapOptions(options));
+  let bitmap: ImageBitmap | undefined;
   try {
+    bitmap = await createImageBitmap(frame, imageBitmapOptions(options));
     return await blobFromImageBitmap(bitmap, options);
   } finally {
-    bitmap.close();
+    if (bitmap) bitmap.close();
+    frame.close();
   }
 }
 

@@ -21,7 +21,9 @@ export async function decode(
   input: BrowserInput,
   options?: BrowserOptions
 ): Promise<PixelData> {
-  // console.log('🌐 🎨 Invoking canvas decoder (debug)', { input, options }); // Keep for debugging if needed
+  if (options?.debug) {
+    console.log('🌐 🎨 Invoking canvas decoder (debug)');
+  }
 
   let sourceBitmap: ImageBitmap | undefined = undefined; // Initialize as undefined
   let imageDataToReturn: PixelData | undefined = undefined; // For ImageData fast path

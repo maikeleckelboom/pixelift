@@ -73,7 +73,9 @@ export async function decode(
   input: BrowserInput,
   options?: BrowserOptions
 ): Promise<PixelData> {
-  console.log('🌐 Invoking browser decoder (debug)');
+  if (options?.debug) {
+    console.log('🌐 Invoking browser decoder (debug)');
+  }
 
   if (input instanceof ImageData && !(options?.width || options?.height)) {
     return {

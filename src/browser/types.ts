@@ -8,6 +8,7 @@ export interface BrowserOptions
   width?: number;
   height?: number;
   targetTime?: number;
+  debug?: boolean;
 }
 
 export type BrowserInput =

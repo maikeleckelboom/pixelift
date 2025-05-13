@@ -16,7 +16,9 @@ export async function decode(
   input: BrowserInput,
   options?: BrowserOptions
 ): Promise<PixelData> {
-  console.log('🌐 🎞️ Invoking WebCodecs decode', { input, options });
+  if (options?.debug) {
+    console.log('🌐 🎞️ Invoking WebCodecs decode');
+  }
 
   let blobInput: Blob;
 
@@ -36,7 +38,7 @@ export async function decode(
   }
 
   const blobStream = blobInput.stream();
-  const type = blobInput.type;
+  const type = blobInput.type ?? blobInput.type;
 
   if (!type) {
     throw createError.decodingFailed(
