@@ -3,7 +3,7 @@ import { createVideoFrameBitmap } from './video/utils';
 import { createCanvasAndContext, setImageSmoothingSettings } from './utils';
 import { toBlob } from '../../blob';
 import { createError } from '../../../shared/error';
-import { isBrowser, isWebWorker } from '../../../shared/env';
+import { isWebWorker } from '../../../shared/env';
 import { isImageData, isStringOrURL } from '../../../shared/validation';
 
 import type { PixelData } from '../../../types';
@@ -21,18 +21,10 @@ class BitmapResource {
       try {
         bmp.close();
       } catch {
-        // Ignore errors when closing bitmaps
+        /* */
       }
     });
     this.bitmaps = [];
-  }
-}
-
-function ensureBrowser() {
-  if (!isBrowser()) {
-    throw createError.runtimeError(
-      'Canvas decoder is not available in non-browser environments'
-    );
   }
 }
 
@@ -127,22 +119,38 @@ async function getBitmap(
     return input;
   }
 
-  let bmp: ImageBitmap;
   if (input instanceof VideoFrame) {
-    bmp = await createImageBitmap(input, resizeOpts);
-  } else if (input instanceof Blob) {
-    bmp = await loadBitmapFromBlob(input, opts, resources);
+    try {
+      const bitmap = await createImageBitmap(input, resizeOpts);
+      resources.track(bitmap);
+      return bitmap;
+    } finally {
+      input.close();
+    }
+  }
+
+  if (isWebWorker()) {
+    if (input instanceof OffscreenCanvas) {
+      const bitmap = await createImageBitmap(input, resizeOpts);
+      resources.track(bitmap);
+      return bitmap;
+    }
+  }
+
+  let bitmap: ImageBitmap;
+  if (input instanceof Blob) {
+    bitmap = await loadBitmapFromBlob(input, opts, resources);
   } else if (isStringOrURL(input)) {
     const blob = await toBlob(input, opts);
-    bmp = await loadBitmapFromBlob(blob, opts, resources);
+    bitmap = await loadBitmapFromBlob(blob, opts, resources);
   } else if (
     input instanceof HTMLImageElement ||
     input instanceof HTMLCanvasElement ||
     input instanceof OffscreenCanvas
   ) {
-    bmp = await createImageBitmap(input, resizeOpts);
+    bitmap = await createImageBitmap(input, resizeOpts);
   } else if (input instanceof HTMLVideoElement) {
-    bmp = await createVideoFrameBitmap(input, opts);
+    bitmap = await createVideoFrameBitmap(input, opts);
   } else {
     throw createError.invalidInput(
       'Unsupported input type for canvas decoder',
@@ -150,8 +158,8 @@ async function getBitmap(
     );
   }
 
-  resources.track(bmp);
-  return bmp;
+  resources.track(bitmap);
+  return bitmap;
 }
 
 async function loadBitmapFromBlob(
@@ -167,7 +175,7 @@ async function loadBitmapFromBlob(
     if (isWebWorker()) {
       throw createError.decodingFailed(
         blob.type,
-        'Blob → ImageBitmap failed in Web Worker',
+        'WebWorker Blob decoding requires createImageBitmap support',
         err
       );
     }
@@ -195,14 +203,15 @@ export async function decode(
   input: BrowserInput,
   options?: BrowserOptions
 ): Promise<PixelData> {
-  ensureBrowser();
   const resources = new BitmapResource();
   try {
     if (options?.debug) console.log('Canvas decoder debug');
-
     if (isImageData(input)) {
       const w = options?.width ?? input.width;
       const h = options?.height ?? input.height;
+      if (w === input.width && h === input.height) {
+        return { data: input.data, width: w, height: h };
+      }
       const { ctx } = drawToCanvas(input, w, h, options);
       const img = ctx.getImageData(0, 0, w, h, { colorSpace: 'srgb' });
       return { data: img.data, width: w, height: h };
@@ -229,7 +238,6 @@ export async function convertToBlobUsingCanvas(
   input: BrowserInput,
   options?: BrowserOptions
 ): Promise<Blob> {
-  ensureBrowser();
   const resources = new BitmapResource();
   try {
     let canvas;

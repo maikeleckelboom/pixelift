@@ -35,11 +35,14 @@ export function getFileExtension(input: string | URL): string {
 export function getFileType(input: BrowserInput, options?: BrowserOptions): string {
   if (options?.type) return options.type;
 
+  if (typeof VideoFrame !== 'undefined' && input instanceof VideoFrame) return 'video/mp4';
+  if (typeof HTMLVideoElement !== 'undefined' && input instanceof HTMLVideoElement)
+    return 'video/mp4';
+
   if (input instanceof Blob && input.type) {
     return input.type;
   }
-
-  if (input instanceof HTMLCanvasElement) {
+  if (typeof HTMLCanvasElement !== 'undefined' && input instanceof HTMLCanvasElement) {
     return 'image/png';
   }
 
@@ -65,14 +68,14 @@ export function getFileType(input: BrowserInput, options?: BrowserOptions): stri
     }
 
     const ext = getFileExtension(sourceUrl);
-    const isVideo =
+    const isVideoInput =
       typeof HTMLVideoElement !== 'undefined' && input instanceof HTMLVideoElement;
 
     if (ext) {
-      return SUPPORTED_MIME_MAP[ext] || (isVideo ? 'video/mp4' : 'image/png');
+      return SUPPORTED_MIME_MAP[ext] || (isVideoInput ? 'video/mp4' : 'image/png');
     }
 
-    if (isVideo) {
+    if (isVideoInput) {
       return 'video/mp4';
     }
   }

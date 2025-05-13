@@ -3,6 +3,9 @@ import type { BrowserOptions } from '../../../types';
 import { imageBitmapOptions } from '../options';
 import { isAbortError } from '../../../../shared/validation';
 
+const VIDEO_SEEK_TIMEOUT = 15000; // 15 seconds
+const MIN_BUFFERED_DURATION = 0.1; // 100ms
+
 export async function createVideoFrameBitmap(
   source: HTMLVideoElement | string,
   options?: BrowserOptions
@@ -12,6 +15,7 @@ export async function createVideoFrameBitmap(
   let effectiveTargetTime: number;
 
   try {
+    // Configure video element
     if (typeof source === 'string') {
       video.src = source;
       video.crossOrigin = 'anonymous';
@@ -22,39 +26,12 @@ export async function createVideoFrameBitmap(
       effectiveTargetTime = targetTime ?? source.currentTime ?? 0;
     }
 
-    // Required for automatic playback in modern browsers
     video.muted = true;
     video.preload = 'auto';
 
-    // Wait for basic metadata if not already loaded
-    if (video.readyState < HTMLMediaElement.HAVE_METADATA) {
-      await waitForVideoMetadata(video);
-    }
-
-    // Ensure we have the correct frame at target time
-    await seekVideoToTime(video, effectiveTargetTime);
-
-    // Generate the final image bitmap
-    return await createImageBitmap(video, imageBitmapOptions(options));
-  } catch (error) {
-    if (isAbortError(error)) throw createError.aborted();
-    throw createError.runtimeError('Failed to create ImageBitmap from video', error);
-  } finally {
-    video.remove();
-  }
-}
-
-/** Handles video seeking with proper error handling and event cleanup */
-async function seekVideoToTime(video: HTMLVideoElement, targetTime: number): Promise<void> {
-  if (video.currentTime === targetTime) {
-    // Already at correct time - check data availability
-    if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-      return;
-    }
-
-    // Wait for data at current time position
-    return new Promise((resolve, reject) => {
-      const handleLoadedData = () => {
+    // Metadata load with safety checks
+    await new Promise<void>((resolve, reject) => {
+      const handleSuccess = () => {
         cleanup();
         resolve();
       };
@@ -63,57 +40,105 @@ async function seekVideoToTime(video: HTMLVideoElement, targetTime: number): Pro
         cleanup();
         reject(
           createError.runtimeError(
-            'Video data load failed',
+            'Video metadata load failed',
             (event.target as HTMLVideoElement)?.error
           )
         );
       };
 
       const cleanup = () => {
-        video.removeEventListener('loadeddata', handleLoadedData);
+        video.removeEventListener('loadedmetadata', handleSuccess);
         video.removeEventListener('error', handleError);
       };
 
-      video.addEventListener('loadeddata', handleLoadedData, { once: true });
+      video.addEventListener('loadedmetadata', handleSuccess, { once: true });
       video.addEventListener('error', handleError, { once: true });
     });
+
+    // Playback attempt with improved safety
+    let played = false;
+    try {
+      if (video.paused) {
+        await video.play();
+        played = true;
+      }
+    } catch (playError) {
+      console.warn('Video autoplay blocked, attempting seek anyway:', playError);
+    }
+
+    // Buffer check for seek safety
+    if (played && video.buffered.length > 0) {
+      const bufferEnd = video.buffered.end(video.buffered.length - 1);
+      if (bufferEnd < effectiveTargetTime + MIN_BUFFERED_DURATION) {
+        throw createError.runtimeError(
+          `Insufficient video buffer for target time ${effectiveTargetTime}`
+        );
+      }
+    }
+
+    // Safer seek with timeout
+    await seekVideoToTime(video, effectiveTargetTime);
+
+    // Final bitmap capture
+    return await createImageBitmap(video, imageBitmapOptions(options));
+  } catch (error) {
+    if (isAbortError(error)) throw createError.aborted();
+    throw createError.runtimeError('Failed to create video frame bitmap', error);
+  } finally {
+    video.removeAttribute('src');
+    video.load();
+    video.remove();
   }
-
-  // Need to perform seek operation
-  return new Promise((resolve, reject) => {
-    const handleSeeked = () => {
-      cleanup();
-      resolve();
-    };
-
-    const handleError = (event: Event) => {
-      cleanup();
-      const error = event instanceof ErrorEvent ? event.error : undefined;
-      reject(createError.runtimeError('Video seek operation failed', error));
-    };
-
-    const cleanup = () => {
-      video.removeEventListener('seeked', handleSeeked);
-      video.removeEventListener('error', handleError);
-    };
-
-    video.addEventListener('seeked', handleSeeked, { once: true });
-    video.addEventListener('error', handleError, { once: true });
-
-    video.currentTime = targetTime;
-  });
 }
 
-/** Wait for basic video metadata to load */
-async function waitForVideoMetadata(video: HTMLVideoElement): Promise<void> {
-  return new Promise((resolve, reject) => {
-    video.addEventListener('loadedmetadata', () => resolve(), { once: true });
-    video.addEventListener(
-      'error',
-      (event) => {
-        reject(createError.runtimeError('Video metadata load failed', event.error));
-      },
-      { once: true }
+async function seekVideoToTime(video: HTMLVideoElement, targetTime: number): Promise<void> {
+  const controller = new AbortController();
+
+  try {
+    const seekPromise = new Promise<void>((resolve, reject) => {
+      if (Math.abs(video.currentTime - targetTime) < 0.001) {
+        if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+          return resolve();
+        }
+      }
+
+      const cleanup = () => {
+        controller.abort();
+        video.removeEventListener('seeked', handleSeek);
+        video.removeEventListener('error', handleError);
+      };
+
+      const handleSeek = () => {
+        cleanup();
+        resolve();
+      };
+
+      const handleError = (event: Event) => {
+        cleanup();
+        reject(
+          createError.runtimeError(
+            'Video seek failed',
+            (event.target as HTMLVideoElement)?.error
+          )
+        );
+      };
+
+      video.addEventListener('seeked', handleSeek, { signal: controller.signal });
+      video.addEventListener('error', handleError, { signal: controller.signal });
+      video.currentTime = targetTime;
+    });
+
+    const timeout = new Promise<void>((_, reject) =>
+      setTimeout(() => {
+        controller.abort();
+        reject(
+          createError.runtimeError(`Video seek timed out after ${VIDEO_SEEK_TIMEOUT}ms`)
+        );
+      }, VIDEO_SEEK_TIMEOUT)
     );
-  });
+
+    await Promise.race([seekPromise, timeout]);
+  } finally {
+    controller.abort();
+  }
 }

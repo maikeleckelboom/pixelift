@@ -2,7 +2,7 @@ import type { BrowserOptions } from '../../types';
 
 export function imageBitmapOptions(options?: BrowserOptions): ImageBitmapOptions {
   return {
-    resizeQuality: options?.imageSmoothingQuality ?? 'low',
+    resizeQuality: options?.resizeQuality ?? 'low',
     resizeWidth: options?.width,
     resizeHeight: options?.height,
     premultiplyAlpha: 'none',

@@ -13,7 +13,9 @@ async function blobFromImageBitmap(
   const targetHeight = options?.height ?? bitmap.height;
   const [canvas, ctx] = createCanvasAndContext(targetWidth, targetHeight);
   ctx.drawImage(bitmap, 0, 0, targetWidth, targetHeight);
-  return canvas.convertToBlob(convertToBlobOptions(options));
+  const blobResult = await canvas.convertToBlob(convertToBlobOptions(options));
+  if (!blobResult) throw createError.runtimeError('Failed to convert ImageBitmap to Blob.');
+  return blobResult;
 }
 
 async function blobFromVideoFrame(
@@ -100,7 +102,10 @@ export async function toBlob(input: BrowserInput, options?: BrowserOptions): Pro
   }
 
   if (input instanceof OffscreenCanvas) {
-    return input.convertToBlob(convertToBlobOptions(options));
+    const blobResult = await input.convertToBlob(convertToBlobOptions(options));
+    if (!blobResult)
+      throw createError.runtimeError('Failed to convert OffscreenCanvas to Blob.');
+    return blobResult;
   }
 
   if (input instanceof ImageBitmap) {

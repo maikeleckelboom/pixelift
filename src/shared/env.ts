@@ -21,3 +21,7 @@ export function isBrowser(): boolean {
 export function isServer(): boolean {
   return isNodeJs();
 }
+
+export function supportsOffscreenCanvas(): boolean {
+  return typeof OffscreenCanvas !== 'undefined';
+}
