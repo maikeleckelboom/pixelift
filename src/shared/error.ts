@@ -59,7 +59,7 @@ export const createError = {
   decoderUnsupported: (decoder: string = 'unknown', detail?: string): PixeliftError =>
     new PixeliftError(ErrorCode.decoderUnsupported, { decoder, detail }),
 
-  decodingFailed: (type: string, detail: string, cause?: unknown): PixeliftError =>
+  decodingFailed: (type: string, detail?: string, cause?: unknown): PixeliftError =>
     new PixeliftError(ErrorCode.decodingFailed, { type, detail }, { cause }),
 
   dependencyMissing: (
@@ -87,10 +87,11 @@ export const createError = {
   runtimeError: (detail: string, cause?: unknown): PixeliftError =>
     new PixeliftError(ErrorCode.runtimeError, { detail }, { cause }),
 
-  rethrow: (error: unknown): PixeliftError => {
+  rethrow: (error: unknown, detail?: string): PixeliftError => {
     if (error instanceof PixeliftError) {
       return error;
     }
+
     if (error instanceof Error) {
       return new PixeliftError(
         ErrorCode.decodingFailed,
@@ -98,6 +99,13 @@ export const createError = {
         { cause: error }
       );
     }
-    return new PixeliftError(ErrorCode.decodingFailed, { detail: String(error) });
+
+    return new PixeliftError(
+      ErrorCode.decodingFailed,
+      { detail },
+      {
+        cause: error
+      }
+    );
   }
 } as const;

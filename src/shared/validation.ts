@@ -8,13 +8,11 @@ export function validateServerInput(input: unknown): input is ServerInput {
   return ArrayBuffer.isView(input);
 }
 
-export function isStringOrURL(input: unknown): input is string | URL {
-  return typeof input === 'string' || input instanceof URL;
-}
-
 export function validateBrowserInput(input: unknown): input is BrowserInput {
   return (
     isStringOrURL(input) ||
+    input instanceof ArrayBuffer ||
+    input instanceof ReadableStream ||
     input instanceof Blob ||
     input instanceof HTMLImageElement ||
     input instanceof SVGImageElement ||
@@ -25,4 +23,12 @@ export function validateBrowserInput(input: unknown): input is BrowserInput {
     input instanceof ImageData ||
     input instanceof VideoFrame
   );
+}
+
+export function isStringOrURL(input: unknown): input is string | URL {
+  return typeof input === 'string' || input instanceof URL;
+}
+
+export function isAbortError(error: unknown): error is DOMException {
+  return error instanceof DOMException && error.name === 'AbortError';
 }

@@ -1,6 +1,19 @@
+export function isNodeJs(): boolean {
+  return typeof process !== 'undefined' && typeof process.versions === 'object';
+}
+
+export function isWebWorker(): boolean {
+  return (
+    typeof importScripts === 'function' &&
+    typeof postMessage === 'function' &&
+    typeof window === 'undefined'
+  );
+}
+
+export function isBrowserMainThread(): boolean {
+  return typeof window !== 'undefined' && typeof document !== 'undefined' && !isWebWorker();
+}
+
 export function isServer(): boolean {
-  if (typeof window !== 'undefined' || typeof self !== 'undefined') {
-    return false;
-  }
-  return typeof process !== 'undefined' && !!process.versions?.node;
+  return isNodeJs();
 }

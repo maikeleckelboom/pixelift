@@ -25,7 +25,10 @@ async function blobFromVideoFrame(
   }
 }
 
-async function blobFromString(input: string | URL, options?: BrowserOptions) {
+async function blobFromString(
+  input: string | URL,
+  options?: BrowserOptions
+): Promise<Blob> {
   const url = new URL(input.toString(), location.origin).toString();
   let res: Response;
   try {
@@ -48,31 +51,51 @@ async function blobFromString(input: string | URL, options?: BrowserOptions) {
   return res.blob();
 }
 
-async function htmlCanvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+async function htmlCanvasToBlob(
+  canvas: HTMLCanvasElement,
+  options?: BrowserOptions
+): Promise<Blob> {
   return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) =>
-      blob
-        ? resolve(blob)
-        : reject(createError.runtimeError('Failed to convert HTMLCanvasElement to Blob.'))
+    canvas.toBlob(
+      (blob) =>
+        blob
+          ? resolve(blob)
+          : reject(
+              createError.runtimeError('Failed to convert HTMLCanvasElement to Blob.')
+            ),
+      options?.type,
+      options?.quality
     );
   });
 }
 
 export async function toBlob(input: BrowserInput, options?: BrowserOptions): Promise<Blob> {
-  if (input instanceof Blob) {
-    return input;
-  }
-
   if (isStringOrURL(input)) {
     return blobFromString(input, options);
   }
 
+  if (input instanceof ArrayBuffer || ArrayBuffer.isView(input)) {
+    return new Blob([input], { type: options?.type });
+  }
+
+  if (input instanceof ReadableStream) {
+    return new Response(input as ReadableStream<Uint8Array>).blob();
+  }
+
+  if (input instanceof Blob) {
+    return input;
+  }
+
+  if (input instanceof Response) {
+    return input.blob();
+  }
+
   if (input instanceof HTMLCanvasElement) {
-    return htmlCanvasToBlob(input);
+    return htmlCanvasToBlob(input, options);
   }
 
   if (input instanceof OffscreenCanvas) {
-    return input.convertToBlob(options);
+    return input.convertToBlob(convertToBlobOptions(options));
   }
 
   if (input instanceof ImageBitmap) {

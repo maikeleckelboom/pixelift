@@ -2,7 +2,8 @@
   "compilerOptions": {
     "lib": [
       "ES2022",
-      "dom"
+      "dom",
+      "WebWorker"
     ],
     "target": "ESNext",
     "module": "ES2022",

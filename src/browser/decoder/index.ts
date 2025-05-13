@@ -1,5 +1,4 @@
 import { createError } from '../../shared/error';
-import { toBlob } from '../blob';
 import type { DecoderStrategy } from './types';
 import type { PixelData } from '../../types';
 import type { BrowserInput, BrowserOptions } from '../types';
@@ -41,11 +40,11 @@ const DECODER_STRATEGIES: DecoderStrategy<Blob, BrowserOptions>[] = [
   }
 ];
 
-async function findSupportedStrategy(
-  blob: BrowserInput,
+async function getDecoderStrategy(
+  input: BrowserInput,
   options?: BrowserOptions
 ): Promise<DecoderStrategy<Blob, BrowserOptions>> {
-  const fileType = getFileType(blob, options);
+  const fileType = getFileType(input, options);
 
   if (options?.decoder) {
     const strategy = DECODER_STRATEGIES.find((s) => s.id === options?.decoder);
@@ -58,10 +57,7 @@ async function findSupportedStrategy(
       return strategy;
     }
 
-    throw createError.decoderUnsupported(
-      strategy.id,
-      `Unsupported MIME type ${fileType} for decoder "${strategy.id}"`
-    );
+    throw createError.decoderUnsupported(strategy.id, `Unsupported MIME type ${fileType}.`);
   }
 
   for (const strategy of DECODER_STRATEGIES) {
@@ -70,16 +66,15 @@ async function findSupportedStrategy(
     }
   }
 
-  throw createError.decoderUnsupported(
-    'webCodecs',
-    `No available decoder supports MIME type "${fileType}"`
-  );
+  throw createError.decoderUnsupported('webCodecs', `Unsupported MIME type ${fileType}.`);
 }
 
 export async function decode(
   input: BrowserInput,
   options?: BrowserOptions
 ): Promise<PixelData> {
+  console.log('🌐 Invoking browser decoder (debug)');
+
   if (input instanceof ImageData && !(options?.width || options?.height)) {
     return {
       data: input.data,
@@ -88,12 +83,17 @@ export async function decode(
     };
   }
 
-  if (input instanceof ImageBitmap) {
+  const decoder = await getDecoderStrategy(input, options);
+
+  if (decoder.id === 'webCodecs') {
+    const webcodecs = await loadWebCodecsDecoder();
+    return webcodecs.decode(input, options);
+  }
+
+  if (decoder.id === 'offscreenCanvas') {
     const canvasDecoder = await loadCanvasDecoder();
     return canvasDecoder.decode(input, options);
   }
 
-  const blob = await toBlob(input, options);
-  const strategy = await findSupportedStrategy(blob, options);
-  return strategy.decode(blob, options);
+  throw createError.decoderUnsupported(decoder.id, 'Strategy could not be executed.');
 }

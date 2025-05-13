@@ -1,34 +1,89 @@
 import type { PixelData } from '../../../types';
-import type { BrowserOptions } from '../../types';
+import type { BrowserInput, BrowserOptions } from '../../types';
 import { imageDecoderInitOptions, imageDecoderOptions } from './options';
+import { toBlob } from '../../blob';
+import { createError } from '../../../shared/error';
 
-async function isTypeSupported(type: string): Promise<boolean> {
-  return await ImageDecoder.isTypeSupported(type);
-}
-
-export async function isSupported(type: string): Promise<boolean> {
-  return 'webcodecs' in window && (await isTypeSupported(type));
-}
-
-export async function decode(input: Blob, options?: BrowserOptions): Promise<PixelData> {
-  const decoder = new ImageDecoder(
-    imageDecoderInitOptions(new Response(input).body as ReadableStream, input.type, options)
+export async function isSupported(mimeType: string): Promise<boolean> {
+  return (
+    'ImageDecoder' in window &&
+    typeof ImageDecoder === 'function' &&
+    (await ImageDecoder.isTypeSupported(mimeType))
   );
+}
 
-  await decoder.completed;
+export async function decode(
+  input: BrowserInput,
+  options?: BrowserOptions
+): Promise<PixelData> {
+  console.log('🌐 🎞️ Invoking WebCodecs decode', { input, options });
 
-  const { image: frame } = await decoder.decode(imageDecoderOptions(options));
+  let blobInput: Blob;
 
-  const byteLength = frame.allocationSize({ format: 'RGBA' });
+  if (input instanceof Blob) {
+    blobInput = input;
+  } else {
+    try {
+      blobInput = await toBlob(input, options);
+    } catch (conversionError) {
+      const inputType = input?.constructor?.name || typeof input;
+      throw createError.decodingFailed(
+        options?.type || 'unknown',
+        `Failed to convert input (${inputType}) to Blob for WebCodecs`,
+        conversionError
+      );
+    }
+  }
 
-  const data = new Uint8ClampedArray(byteLength);
-  await frame.copyTo(data, { format: 'RGBA', colorSpace: 'srgb' });
+  const blobStream = blobInput.stream();
+  const type = blobInput.type;
 
-  const width = frame.codedWidth;
-  const height = frame.codedHeight;
+  if (!type) {
+    throw createError.decodingFailed(
+      blobInput.type,
+      'Input Blob does not have a valid MIME type for WebCodecs processing'
+    );
+  }
 
-  frame.close();
-  decoder.close();
+  const decoderConfig = imageDecoderInitOptions(blobStream, type, options);
 
-  return { data, width, height };
+  let decoder: ImageDecoder | undefined;
+  let frame: VideoFrame | undefined;
+
+  try {
+    decoder = new ImageDecoder(decoderConfig);
+    await decoder.completed;
+
+    const decodeOptions = imageDecoderOptions(options);
+    const { image: frame } = await decoder.decode(decodeOptions);
+
+    const byteLength = frame.allocationSize({ format: 'RGBA' });
+    const data = new Uint8ClampedArray(byteLength);
+
+    await frame.copyTo(data, {
+      format: 'RGBA',
+      colorSpace: 'srgb'
+    });
+
+    return {
+      data,
+      width: frame.codedWidth,
+      height: frame.codedHeight
+    };
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw createError.aborted();
+    }
+    if (error instanceof TypeError) {
+      throw createError.decodingFailed(
+        type,
+        `TypeError during WebCodecs decoding: ${error.message}`,
+        error
+      );
+    }
+    throw createError.rethrow(error);
+  } finally {
+    frame?.close();
+    decoder?.close();
+  }
 }

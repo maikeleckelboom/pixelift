@@ -33,5 +33,21 @@ export default defineConfig([
     outDir: 'dist/server',
     dts: true,
     minify: true
+  },
+  {
+    name: 'debug',
+    entry: {
+      index: 'src/index.ts'
+    },
+    dts: true,
+    clean: true,
+    format: ['esm', 'cjs'],
+    outDir: 'dist/debug',
+    minify: false,
+    sourcemap: true,
+    esbuildOptions(options) {
+      options.keepNames = true;
+    },
+    metafile: true
   }
 ]);

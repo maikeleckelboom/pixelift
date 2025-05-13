@@ -8,6 +8,11 @@ export async function decode(
   input: ServerInput,
   options?: ServerOptions
 ): Promise<PixelData> {
+  console.log('🖥️ Invoking server decoder (debug)', {
+    input,
+    options
+  });
+
   const buffer = await getBuffer(input);
 
   if (options?.signal?.aborted) {

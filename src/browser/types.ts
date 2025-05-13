@@ -1,12 +1,26 @@
 import type { DecoderOptions } from '../types';
 
-type ImageDecoderOptions = ImageEncodeOptions & ImageDecodeOptions;
-
-export interface BrowserOptions extends DecoderOptions, ImageDecoderOptions {
+export interface BrowserOptions
+  extends DecoderOptions,
+    ImageEncodeOptions,
+    ImageDecodeOptions {
   decoder?: 'offscreenCanvas' | 'webCodecs';
   width?: number;
   height?: number;
   targetTime?: number;
 }
 
-export type BrowserInput = string | URL | Blob | ImageData | CanvasImageSource;
+export type BrowserInput =
+  | string
+  | URL
+  | Blob
+  | File
+  | ArrayBuffer
+  | ArrayBufferView
+  | ReadableStream<Uint8Array>
+  | HTMLOrSVGImageElement
+  | HTMLVideoElement
+  | HTMLCanvasElement
+  | ImageBitmap
+  | OffscreenCanvas
+  | VideoFrame;
