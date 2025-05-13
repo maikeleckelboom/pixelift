@@ -1,33 +1,23 @@
 import type { BrowserOptions } from '../../types';
 
-/**
- * Common options for createImageBitmap.
- * These options are used to create a new ImageBitmap.
- */
-export const IMAGE_BITMAP_OPTIONS: ImageBitmapOptions = {
-  premultiplyAlpha: 'none',
-  colorSpaceConversion: 'none',
-  imageOrientation: 'none',
-  resizeQuality: 'low'
-} as const;
-
 export function imageBitmapOptions(options?: BrowserOptions): ImageBitmapOptions {
   return {
-    ...IMAGE_BITMAP_OPTIONS,
+    resizeQuality: options?.imageSmoothingQuality ?? 'low',
     resizeWidth: options?.width,
-    resizeHeight: options?.height
+    resizeHeight: options?.height,
+    premultiplyAlpha: 'none',
+    colorSpaceConversion: 'none',
+    imageOrientation: 'none'
   };
 }
 
-/**
- * Options for OffscreenCanvasRenderingContext2D.
- * These options are used to create a new OffscreenCanvasRenderingContext2D.
- */
-export const CANVAS_2D_OPTIONS = {
-  colorSpace: 'srgb',
-  alpha: true,
-  willReadFrequently: true
-} as const;
+export function canvasContextOptions(_?: BrowserOptions): CanvasRenderingContext2DSettings {
+  return {
+    colorSpace: 'srgb',
+    alpha: true,
+    willReadFrequently: true
+  };
+}
 
 export function convertToBlobOptions(options?: BrowserOptions): ImageEncodeOptions {
   return {

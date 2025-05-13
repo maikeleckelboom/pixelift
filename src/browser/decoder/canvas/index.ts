@@ -1,272 +1,254 @@
-import type { PixelData } from '../../../types';
-import type { BrowserInput, BrowserOptions } from '../../types';
 import { convertToBlobOptions, imageBitmapOptions } from './options';
 import { createVideoFrameBitmap } from './video/utils';
-import { createCanvasContext } from './utils';
+import { createCanvasAndContext, setImageSmoothingSettings } from './utils';
 import { toBlob } from '../../blob';
 import { createError } from '../../../shared/error';
-import { isWebWorker } from '../../../shared/env';
-import { isStringOrURL } from '../../../shared/validation';
+import { isBrowser, isWebWorker } from '../../../shared/env';
+import { isImageData, isStringOrURL } from '../../../shared/validation';
+
+import type { PixelData } from '../../../types';
+import type { BrowserInput, BrowserOptions } from '../../types';
+
+class BitmapResource {
+  private bitmaps: ImageBitmap[] = [];
+
+  track(bmp: ImageBitmap) {
+    this.bitmaps.push(bmp);
+  }
+
+  closeAll() {
+    this.bitmaps.forEach((bmp) => {
+      try {
+        bmp.close();
+      } catch {
+        // Ignore errors when closing bitmaps
+      }
+    });
+    this.bitmaps = [];
+  }
+}
+
+function ensureBrowser() {
+  if (!isBrowser()) {
+    throw createError.runtimeError(
+      'Canvas decoder is not available in non-browser environments'
+    );
+  }
+}
 
 export function isSupported(): boolean {
-  return (
-    !isWebWorker() &&
-    'OffscreenCanvas' in window &&
-    typeof OffscreenCanvas === 'function' &&
-    typeof createImageBitmap === 'function'
-  );
+  return typeof OffscreenCanvas === 'function' && typeof createImageBitmap === 'function';
 }
 
-export async function decode(
+/**
+ * Resize an ImageData object via a temporary canvas to the target dimensions.
+ * @param input The source ImageData.
+ * @param width The target width.
+ * @param height The target height.
+ * @param options Optional BrowserOptions controlling smoothing.
+ * @returns A new ImageData object at the specified dimensions.
+ */
+function resizeImageDataViaCanvas(
+  input: ImageData,
+  width: number,
+  height: number,
+  options?: BrowserOptions
+): ImageData {
+  const [tempCanvas, tempCtx] = createCanvasAndContext(input.width, input.height);
+  tempCtx.putImageData(input, 0, 0);
+
+  const [, targetCtx] = createCanvasAndContext(width, height, options);
+  setImageSmoothingSettings(targetCtx, options);
+  targetCtx.drawImage(tempCanvas, 0, 0, width, height);
+
+  return targetCtx.getImageData(0, 0, width, height, { colorSpace: 'srgb' });
+}
+
+/**
+ * Draws a source ImageData or ImageBitmap into a canvas at the specified size,
+ * performing resize for ImageData via the dedicated helper to ensure correct dimensions.
+ * @param source The ImageData or ImageBitmap to draw.
+ * @param width The target canvas width.
+ * @param height The target canvas height.
+ * @param options Optional BrowserOptions controlling smoothing.
+ * @returns An object containing the canvas and its 2D context.
+ */
+function drawToCanvas(
+  source: ImageBitmap | ImageData,
+  width: number,
+  height: number,
+  options?: BrowserOptions
+) {
+  if (source instanceof ImageData) {
+    // If resizing is needed, use the precise canvas-based resize helper
+    if (source.width !== width || source.height !== height) {
+      const resized = resizeImageDataViaCanvas(source, width, height, options);
+      return createCanvasAndContextFromImageData(resized, options);
+    }
+    return createCanvasAndContextFromImageData(source, options);
+  }
+
+  // For ImageBitmap, draw directly and optionally apply smoothing
+  const [canvas, ctx] = createCanvasAndContext(width, height, options);
+  if (source.width !== width || source.height !== height) {
+    setImageSmoothingSettings(ctx, options);
+  }
+  ctx.drawImage(source, 0, 0, width, height);
+  return { canvas, ctx };
+}
+
+/**
+ * Helper to produce canvas and context from ImageData without extra drawImage calls.
+ */
+function createCanvasAndContextFromImageData(
+  imageData: ImageData,
+  options?: BrowserOptions
+) {
+  const [canvas, ctx] = createCanvasAndContext(imageData.width, imageData.height, options);
+  ctx.putImageData(imageData, 0, 0);
+  return { canvas, ctx };
+}
+
+async function getBitmap(
   input: BrowserInput,
-  options?: BrowserOptions
-): Promise<PixelData> {
-  if (options?.debug) {
-    console.log('🌐 🎨 Invoking canvas decoder (debug)');
-  }
+  opts: BrowserOptions | undefined,
+  resources: BitmapResource
+): Promise<ImageBitmap> {
+  const resizeOpts = imageBitmapOptions(opts);
 
-  let sourceBitmap: ImageBitmap | undefined = undefined; // Initialize as undefined
-  let imageDataToReturn: PixelData | undefined = undefined; // For ImageData fast path
-  let shouldCloseBitmap = false; // Flag to close the bitmap if we created it
-
-  // --- Start: ImageData Handling (including resize) ---
-  if (input instanceof ImageData) {
-    const targetWidthOpt = options?.width;
-    const targetHeightOpt = options?.height;
-    const inputW = input.width;
-    const inputH = input.height;
-
-    const finalWidth = targetWidthOpt ?? inputW;
-    const finalHeight = targetHeightOpt ?? inputH;
-
-    // If no resize is needed, or options match ImageData dimensions
-    if (finalWidth === inputW && finalHeight === inputH) {
-      imageDataToReturn = {
-        data: input.data, // Use original data
-        width: input.width,
-        height: input.height
-      };
-    } else {
-      // Resize IS needed for ImageData
-      const [tempCanvas, tempCtx] = createCanvasContext(inputW, inputH); // Original size
-      tempCtx.putImageData(input, 0, 0);
-
-      const [, targetCtx] = createCanvasContext(finalWidth, finalHeight); // Target size
-      targetCtx.drawImage(tempCanvas, 0, 0, finalWidth, finalHeight); // Draw & scale
-      // Return directly after getting ImageData from the resized canvas
-      return targetCtx.getImageData(0, 0, finalWidth, finalHeight, { colorSpace: 'srgb' });
-    }
-  }
-  // --- End: ImageData Handling ---
-
-  // If ImageData was handled and returned, we're done.
-  if (imageDataToReturn) {
-    return imageDataToReturn;
-  }
-
-  // --- Start: ImageBitmap and other BrowserInput Handling ---
   if (input instanceof ImageBitmap) {
-    sourceBitmap = input;
-    // shouldCloseBitmap remains false because the caller owns this ImageBitmap
-  } else {
-    // For all other BrowserInput types (Blobs, URLs, HTML elements, VideoFrames etc.)
-    // getSourceBitmap will handle the conversion to an ImageBitmap.
-    // It will also apply imageBitmapOptions for potential native resizing.
-    sourceBitmap = await getSourceBitmap(input, options);
-    // If getSourceBitmap created a new bitmap (which it does for non-ImageBitmap inputs),
-    // we are responsible for closing it.
-    shouldCloseBitmap = true;
-  }
-  // --- End: ImageBitmap and other BrowserInput Handling ---
-
-  // At this point, sourceBitmap MUST be defined if imageDataToReturn was not.
-  if (!sourceBitmap) {
-    // This should ideally not be reached if logic above is correct.
-    // It implies input was not ImageData, not ImageBitmap, and getSourceBitmap failed or returned undefined.
-    // getSourceBitmap should throw if it fails.
-    throw createError.runtimeError('Failed to obtain a source ImageBitmap for decoding.');
-  }
-
-  try {
-    // Determine target dimensions for drawing (might be a second resize step if native ImageBitmap resize didn't fully match)
-    const targetDrawWidth = options?.width ?? sourceBitmap.width;
-    const targetDrawHeight = options?.height ?? sourceBitmap.height;
-
-    // Create the canvas with the final target dimensions
-    const [canvas, context] = createCanvasContext(targetDrawWidth, targetDrawHeight);
-
-    // Draw the sourceBitmap to the canvas. This step will perform scaling if
-    // sourceBitmap dimensions differ from targetDrawWidth/Height.
-    context.drawImage(sourceBitmap, 0, 0, canvas.width, canvas.height);
-    return context.getImageData(0, 0, canvas.width, canvas.height, { colorSpace: 'srgb' });
-  } finally {
-    if (shouldCloseBitmap && sourceBitmap) {
-      sourceBitmap.close();
+    const targetW = resizeOpts.resizeWidth ?? input.width;
+    const targetH = resizeOpts.resizeHeight ?? input.height;
+    if (targetW !== input.width || targetH !== input.height) {
+      const bmp = await createImageBitmap(input, resizeOpts);
+      resources.track(bmp);
+      return bmp;
     }
+    return input;
   }
+
+  let bmp: ImageBitmap;
+  if (input instanceof VideoFrame) {
+    bmp = await createImageBitmap(input, resizeOpts);
+  } else if (input instanceof Blob) {
+    bmp = await loadBitmapFromBlob(input, opts, resources);
+  } else if (isStringOrURL(input)) {
+    const blob = await toBlob(input, opts);
+    bmp = await loadBitmapFromBlob(blob, opts, resources);
+  } else if (
+    input instanceof HTMLImageElement ||
+    input instanceof HTMLCanvasElement ||
+    input instanceof OffscreenCanvas
+  ) {
+    bmp = await createImageBitmap(input, resizeOpts);
+  } else if (input instanceof HTMLVideoElement) {
+    bmp = await createVideoFrameBitmap(input, opts);
+  } else {
+    throw createError.invalidInput(
+      'Unsupported input type for canvas decoder',
+      typeof input
+    );
+  }
+
+  resources.track(bmp);
+  return bmp;
 }
 
-async function createImageBitmapFromBlob(
+async function loadBitmapFromBlob(
   blob: Blob,
-  options?: BrowserOptions
+  opts: BrowserOptions | undefined,
+  resources: BitmapResource
 ): Promise<ImageBitmap> {
   try {
-    return await createImageBitmap(blob, imageBitmapOptions(options));
-  } catch (error) {
+    const bmp = await createImageBitmap(blob, imageBitmapOptions(opts));
+    resources.track(bmp);
+    return bmp;
+  } catch (err) {
     if (isWebWorker()) {
       throw createError.decodingFailed(
         blob.type,
-        'ImageBitmap creation failed in Web Worker',
-        error
+        'Blob → ImageBitmap failed in Web Worker',
+        err
       );
     }
     const url = URL.createObjectURL(blob);
     try {
-      const image = new Image();
-      image.src = url;
-      await image.decode();
-      return await createImageBitmap(image, imageBitmapOptions(options));
-    } catch (cause) {
-      throw createError.decodingFailed(blob.type, '', cause);
+      const img = new Image();
+      img.src = url;
+      await img.decode();
+      const bmp = await createImageBitmap(img, imageBitmapOptions(opts));
+      resources.track(bmp);
+      return bmp;
     } finally {
       URL.revokeObjectURL(url);
     }
   }
 }
 
+/**
+ * Decode browser input into standardized RGBA pixel data.
+ * @param input The source: ImageData, Blob, URL, etc.
+ * @param options Processing options including target width/height and smoothing.
+ * @returns Promise resolving to PixelData with .data, .width, .height.
+ */
+export async function decode(
+  input: BrowserInput,
+  options?: BrowserOptions
+): Promise<PixelData> {
+  ensureBrowser();
+  const resources = new BitmapResource();
+  try {
+    if (options?.debug) console.log('Canvas decoder debug');
+
+    if (isImageData(input)) {
+      const w = options?.width ?? input.width;
+      const h = options?.height ?? input.height;
+      const { ctx } = drawToCanvas(input, w, h, options);
+      const img = ctx.getImageData(0, 0, w, h, { colorSpace: 'srgb' });
+      return { data: img.data, width: w, height: h };
+    }
+
+    const bmp = await getBitmap(input, options, resources);
+    const w = options?.width ?? bmp.width;
+    const h = options?.height ?? bmp.height;
+    const { ctx } = drawToCanvas(bmp, w, h, options);
+    const img = ctx.getImageData(0, 0, w, h, { colorSpace: 'srgb' });
+    return { data: img.data, width: w, height: h };
+  } finally {
+    resources.closeAll();
+  }
+}
+
+/**
+ * Convert browser input to a Blob via canvas rendering.
+ * @param input The source: ImageData, Blob, URL, etc.
+ * @param options Options for sizing and Blob format.
+ * @returns Promise resolving to the generated Blob.
+ */
 export async function convertToBlobUsingCanvas(
   input: BrowserInput,
   options?: BrowserOptions
 ): Promise<Blob> {
-  let tempBitmapForVideoFrame: ImageBitmap | undefined;
-  let videoFrameToClose: VideoFrame | undefined;
-
-  const targetWidthOpt = options?.width;
-  const targetHeightOpt = options?.height;
-
+  ensureBrowser();
+  const resources = new BitmapResource();
   try {
-    if (input instanceof ImageData) {
-      const inputW = input.width;
-      const inputH = input.height;
-      const finalWidth = targetWidthOpt ?? inputW;
-      const finalHeight = targetHeightOpt ?? inputH;
+    let canvas;
 
-      if (finalWidth === inputW && finalHeight === inputH) {
-        // No resize needed, just put on canvas and convert
-        const [canvas, ctx] = createCanvasContext(inputW, inputH);
-        ctx.putImageData(input, 0, 0);
-        return await canvas.convertToBlob(convertToBlobOptions(options));
-      } else {
-        // Resize IS needed for ImageData
-        const [tempCanvas, tempCtx] = createCanvasContext(inputW, inputH); // Original size
-        tempCtx.putImageData(input, 0, 0);
-
-        const [targetCanvas, targetCtx] = createCanvasContext(finalWidth, finalHeight); // Target size
-        targetCtx.drawImage(tempCanvas, 0, 0, finalWidth, finalHeight); // Draw & scale
-        return await targetCanvas.convertToBlob(convertToBlobOptions(options));
-      }
+    if (isImageData(input)) {
+      const w = options?.width ?? input.width;
+      const h = options?.height ?? input.height;
+      canvas = drawToCanvas(input, w, h, options).canvas;
+    } else {
+      const bmp = await getBitmap(input, options, resources);
+      const w = options?.width ?? bmp.width;
+      const h = options?.height ?? bmp.height;
+      canvas = drawToCanvas(bmp, w, h, options).canvas;
     }
 
-    if (input instanceof OffscreenCanvas) {
-      const finalWidth = targetWidthOpt ?? input.width;
-      const finalHeight = targetHeightOpt ?? input.height;
-
-      if (finalWidth === input.width && finalHeight === input.height) {
-        // No resize needed
-        return await input.convertToBlob(convertToBlobOptions(options));
-      } else {
-        // Resize IS needed for OffscreenCanvas
-        const [targetCanvas, targetCtx] = createCanvasContext(finalWidth, finalHeight); // Target size
-        targetCtx.drawImage(input, 0, 0, finalWidth, finalHeight); // Draw & scale input OffscreenCanvas
-        return await targetCanvas.convertToBlob(convertToBlobOptions(options));
-      }
-    }
-
-    if (input instanceof VideoFrame) {
-      videoFrameToClose = input;
-      // imageBitmapOptions will attempt to resize based on options.width/height
-      tempBitmapForVideoFrame = await createImageBitmap(input, imageBitmapOptions(options));
-    }
-
-    // getSourceBitmap will handle other types and also attempt resize via imageBitmapOptions
-    const sourceBitmap = await getSourceBitmap(input, options, tempBitmapForVideoFrame);
-
-    // createResizedBlob will ensure the final canvas is at target dimensions
-    // and draw sourceBitmap (scaled if necessary) into it.
-    return await createResizedBlob(sourceBitmap, options);
+    const blob = await canvas.convertToBlob(convertToBlobOptions(options));
+    if (!blob) throw createError.runtimeError('Canvas → Blob conversion failed');
+    return blob;
   } finally {
-    tempBitmapForVideoFrame?.close();
-    videoFrameToClose?.close();
+    resources.closeAll();
   }
-}
-
-async function getSourceBitmap(
-  input: BrowserInput, // Type is already BrowserInput, which is good
-  options?: BrowserOptions,
-  existingBitmap?: ImageBitmap // This is for the VideoFrame path in convertToBlobUsingCanvas
-): Promise<ImageBitmap> {
-  if (existingBitmap) {
-    return existingBitmap; // Used by convertToBlobUsingCanvas for pre-created VideoFrame bitmap
-  }
-
-  if (input instanceof ImageBitmap) {
-    return input; // Caller owns this, no close here
-  }
-
-  // Handle CanvasImageSource types that createImageBitmap can take directly
-  if (
-    input instanceof HTMLImageElement ||
-    input instanceof SVGImageElement || // Add SVGImageElement if you intend to support it this way
-    input instanceof HTMLCanvasElement ||
-    input instanceof OffscreenCanvas
-    // Note: HTMLVideoElement and VideoFrame are handled more specifically below or by callers
-  ) {
-    // imageBitmapOptions will apply resize if width/height are in options
-    return createImageBitmap(input, imageBitmapOptions(options));
-  }
-
-  if (input instanceof HTMLVideoElement) {
-    // createVideoFrameBitmap creates a new ImageBitmap and applies imageBitmapOptions
-    return createVideoFrameBitmap(input, options);
-  }
-
-  if (input instanceof VideoFrame) {
-    // VideoFrame can be directly used with createImageBitmap
-    // imageBitmapOptions will apply resize if width/height are in options
-    // The caller (convertToBlobUsingCanvas) handles closing the original VideoFrame
-    return createImageBitmap(input, imageBitmapOptions(options));
-  }
-
-  if (input instanceof Blob) {
-    return createImageBitmapFromBlob(input, options);
-  }
-
-  // Fallback for string, URL, or other types that toBlob can handle
-  // (ImageData should have been handled by the main `decode` function already if no resize,
-  // or if resize is needed, it's handled there too. If ImageData reaches here,
-  // it means it's being processed for a different purpose, e.g. convertToBlobUsingCanvas)
-  if (
-    isStringOrURL(input) ||
-    input instanceof ImageData /* ImageData here implies it's for blob conversion */
-  ) {
-    const blob = await toBlob(input, options); // toBlob handles string, URL, ImageData -> Blob
-    return createImageBitmapFromBlob(blob, options);
-  }
-
-  // If we've reached here, the input type is unexpected for getSourceBitmap's direct handlers
-  throw createError.invalidInput(
-    'Blob, ImageBitmap, HTMLImageElement, HTMLVideoElement, VideoFrame, HTMLCanvasElement, OffscreenCanvas, string, or URL',
-    typeof input
-  );
-}
-
-async function createResizedBlob(
-  bitmap: ImageBitmap,
-  options?: BrowserOptions
-): Promise<Blob> {
-  const targetWidth = options?.width ?? bitmap.width;
-  const targetHeight = options?.height ?? bitmap.height;
-  const [canvas, ctx] = createCanvasContext(targetWidth, targetHeight);
-  ctx.drawImage(bitmap, 0, 0, targetWidth, targetHeight);
-  return canvas.convertToBlob(convertToBlobOptions(options));
 }

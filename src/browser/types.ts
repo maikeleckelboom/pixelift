@@ -9,6 +9,8 @@ export interface BrowserOptions
   height?: number;
   targetTime?: number;
   debug?: boolean;
+  imageSmoothingEnabled?: boolean;
+  imageSmoothingQuality?: ImageSmoothingQuality;
 }
 
 export type BrowserInput =

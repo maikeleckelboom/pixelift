@@ -1,6 +1,7 @@
 import { createError } from '../../../../shared/error';
 import type { BrowserOptions } from '../../../types';
 import { imageBitmapOptions } from '../options';
+import { isAbortError } from '../../../../shared/validation';
 
 export async function createVideoFrameBitmap(
   source: HTMLVideoElement | string,
@@ -11,7 +12,6 @@ export async function createVideoFrameBitmap(
   let effectiveTargetTime: number;
 
   try {
-    // Configure video source and cross-origin handling
     if (typeof source === 'string') {
       video.src = source;
       video.crossOrigin = 'anonymous';
@@ -37,9 +37,7 @@ export async function createVideoFrameBitmap(
     // Generate the final image bitmap
     return await createImageBitmap(video, imageBitmapOptions(options));
   } catch (error) {
-    if (isAbortError(error)) {
-      throw createError.aborted();
-    }
+    if (isAbortError(error)) throw createError.aborted();
     throw createError.runtimeError('Failed to create ImageBitmap from video', error);
   } finally {
     video.remove();
@@ -118,9 +116,4 @@ async function waitForVideoMetadata(video: HTMLVideoElement): Promise<void> {
       { once: true }
     );
   });
-}
-
-/** Type guard for abort detection */
-function isAbortError(error: unknown): error is DOMException {
-  return error instanceof DOMException && error.name === 'AbortError';
 }

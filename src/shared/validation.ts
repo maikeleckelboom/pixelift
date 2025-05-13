@@ -25,6 +25,16 @@ export function validateBrowserInput(input: unknown): input is BrowserInput {
   );
 }
 
+export function isImageData(input: unknown): input is ImageData {
+  return (
+    typeof input === 'object' &&
+    input !== null &&
+    'data' in input &&
+    'width' in input &&
+    'height' in input
+  );
+}
+
 export function isStringOrURL(input: unknown): input is string | URL {
   return typeof input === 'string' || input instanceof URL;
 }

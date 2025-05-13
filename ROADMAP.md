@@ -32,7 +32,7 @@ This milestone focuses on robust, efficient decoding of all input types into con
     *   [ ] Confirm all supported input types decode correctly with/without resize options.
     *   [ ] Verify error handling.
     *   [ ] Establish v1.0.0 performance baseline with final benchmarks.
-*   [ ] **(Optional) Configurable Canvas Context**: Consider making canvas settings (e.g., `imageSmoothingQuality`) configurable via `BrowserOptions`. If implemented, update `createCanvasContext` and ensure `options` propagation.
+*   [ ] **(Optional) Configurable Canvas Context**: Consider making canvas settings (e.g., `imageSmoothingQuality`) configurable via `BrowserOptions`. If implemented, update `createCanvasAndContext` and ensure `options` propagation.
 
 ---
 

@@ -3,7 +3,7 @@ import type { BrowserInput, BrowserOptions } from './types';
 import { createError } from '../shared/error';
 import { convertToBlobUsingCanvas } from './decoder/canvas';
 import { convertToBlobOptions, imageBitmapOptions } from './decoder/canvas/options';
-import { createCanvasContext } from './decoder/canvas/utils';
+import { createCanvasAndContext } from './decoder/canvas/utils';
 
 async function blobFromImageBitmap(
   bitmap: ImageBitmap,
@@ -11,7 +11,7 @@ async function blobFromImageBitmap(
 ): Promise<Blob> {
   const targetWidth = options?.width ?? bitmap.width;
   const targetHeight = options?.height ?? bitmap.height;
-  const [canvas, ctx] = createCanvasContext(targetWidth, targetHeight);
+  const [canvas, ctx] = createCanvasAndContext(targetWidth, targetHeight);
   ctx.drawImage(bitmap, 0, 0, targetWidth, targetHeight);
   return canvas.convertToBlob(convertToBlobOptions(options));
 }
