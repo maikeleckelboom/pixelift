@@ -22,10 +22,6 @@ export interface CommonDecoderOptions {
    * @default 'cors'
    */
   mode?: RequestMode;
-  /**
-   * The mime `type` of the input data.
-   */
-  type?: string;
 }
 
 export type PixeliftInput = BrowserInput | ServerInput;

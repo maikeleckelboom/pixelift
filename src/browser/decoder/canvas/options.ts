@@ -146,25 +146,3 @@ export function offscreenCanvasContextOptions(
   }
   return DEFAULT_CANVAS_CONTEXT_SETTINGS;
 }
-
-// function getOffscreenCanvasOptions(
-//   options?: BrowserOptions
-// ): CanvasRenderingContext2DSettings | undefined {
-//   if (isImageSmoothingSettings(options)) {
-//     return {
-//       ...(options.options.alpha !== undefined && {
-//         alpha: options.options.alpha
-//       }),
-//       ...(options.options.colorSpace !== undefined && {
-//         colorSpace: options.options.colorSpace
-//       }),
-//       ...(options.options.desynchronized !== undefined && {
-//         desynchronized: options.options.desynchronized
-//       }),
-//       ...(options.options.willReadFrequently !== undefined && {
-//         willReadFrequently: options.options.willReadFrequently
-//       })
-//     };
-//   }
-//   return DEFAULT_CANVAS_CONTEXT_SETTINGS;
-// }

@@ -154,7 +154,10 @@ export interface OffscreenCanvasOptions
  *
  * @property {string} [type] Specifies the type or format of the decoding process.
  */
-export interface BrowserDecoderOptions extends CommonDecoderOptions {}
+export interface BrowserDecoderOptions extends CommonDecoderOptions {
+  /** The mime `type` of the input data. */
+  type?: string;
+}
 
 /**
  * Represents the options for configuring a decoder that uses the WebCodecs API.
@@ -195,7 +198,7 @@ export interface OffscreenCanvasDecoderOptions extends BrowserDecoderOptions {
  * - `WebCodecsDecoderOptions`: Specific configuration options for a decoder
  *   using the WebCodecs API.
  * - `OffscreenCanvasDecoderOptions`: Specific configuration options for a
- *   decoder utilizing the OffscreenCanvas API.
+ *   decoder using the OffscreenCanvas API.
  * - A combination of `BrowserDecoderOptions` with `decoder` and `options`
  *   properties explicitly omitted to avoid conflicts when specifying custom
  *   decoder configurations.
@@ -204,3 +207,5 @@ export type BrowserOptions =
   | WebCodecsDecoderOptions
   | OffscreenCanvasDecoderOptions
   | (BrowserDecoderOptions & { decoder?: never; options?: never });
+
+export type BrowserDecoder = 'webCodecs' | 'offscreenCanvas';

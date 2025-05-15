@@ -1,224 +1,286 @@
 import { isAbortError, isStringOrURL } from '../shared/guards';
-import type { BrowserInput, BrowserOptions, OffscreenCanvasDecoderOptions } from './types';
-import { createError } from '../shared/error';
+import type { BrowserInput, BrowserOptions } from './types';
+import { createError, PixeliftError } from '../shared/error';
 import {
   imageBitmapOptions,
   isOffscreenCanvasDecoderOptions
 } from './decoder/canvas/options';
 import { createCanvasAndContext } from './decoder/canvas/utils';
 
-async function blobFromImageBitmap(
+/**
+ * Converts an ImageBitmap to a Blob using canvas rendering
+ * @param bitmap The ImageBitmap to convert
+ * @param options Conversion options
+ * @returns Promise resolving to the resulting Blob
+ */
+async function convertImageBitmapToBlob(
   bitmap: ImageBitmap,
   options?: BrowserOptions
 ): Promise<Blob> {
   const { width, height } = bitmap;
-  const [canvas, context] = createCanvasAndContext(
-    width,
-    height,
-    options as OffscreenCanvasDecoderOptions
-  );
+  const canvasOptions = isOffscreenCanvasDecoderOptions(options) ? options : undefined;
+  const [canvas, context] = createCanvasAndContext(width, height, canvasOptions);
+
   context.drawImage(bitmap, 0, 0, width, height);
-  return canvas.convertToBlob({
+  return await canvas.convertToBlob({
     type: options?.type,
-    quality: getQualityForBlobConversion(options)
+    quality: getConversionQuality(options)
   });
 }
 
-async function blobFromString(
-  input: string | URL,
+/**
+ * Fetches a remote resource and returns it as a Blob
+ * @param urlInput URL string or URL object to fetch
+ * @param options Conversion options
+ * @returns Promise resolving to the fetched Blob
+ */
+async function fetchResourceAsBlob(
+  urlInput: string | URL,
   options?: BrowserOptions
 ): Promise<Blob> {
-  const base =
-    typeof location !== 'undefined' && location.origin
-      ? location.origin
-      : typeof self.location !== 'undefined'
-        ? self.location.href
-        : undefined;
+  const baseUrl = getExecutionEnvironmentOrigin();
+  const resourceUrl = new URL(urlInput.toString(), baseUrl).toString();
 
-  const url = new URL(input.toString(), base).toString();
-
-  let res: Response;
   try {
-    res = await fetch(url, {
+    const response = await fetch(resourceUrl, {
       mode: options?.mode ?? 'cors',
       headers: options?.headers,
       signal: options?.signal,
       credentials: options?.credentials
     });
-  } catch (err) {
-    if (isAbortError(err)) {
+
+    if (!response.ok) {
+      throw createError.fetchFailed(resourceUrl, response.status, response.statusText);
+    }
+
+    return await response.blob();
+  } catch (error) {
+    if (error instanceof PixeliftError) {
+      throw error;
+    }
+
+    if (isAbortError(error)) {
       throw createError.aborted();
     }
-    throw createError.networkError(`Unable to fetch "${url}"`, { cause: err });
-  }
 
-  if (!res.ok) {
-    throw createError.fetchFailed(url, res.status, res.statusText);
+    throw createError.networkError(`Failed to fetch resource: ${resourceUrl}`, {
+      cause: error
+    });
   }
-
-  return res.blob();
 }
 
-function blobFromArrayBuffer(
-  input: ArrayBuffer | ArrayBufferView,
+/**
+ * Creates a Blob from binary data
+ * @param data ArrayBuffer or ArrayBufferView input
+ * @param options Conversion options
+ * @returns Resulting Blob
+ */
+function createBlobFromBinaryData(
+  data: ArrayBuffer | ArrayBufferView,
   options?: BrowserOptions
 ): Blob {
-  if (input instanceof ArrayBuffer) {
-    return new Blob([input], { type: options?.type });
-  } else {
-    const { buffer, byteOffset, byteLength } = input;
-    const slicedBuffer = buffer.slice(byteOffset, byteOffset + byteLength);
-    return new Blob([slicedBuffer], { type: options?.type });
-  }
+  const buffer =
+    data instanceof ArrayBuffer
+      ? data
+      : data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+
+  return new Blob([buffer], { type: options?.type });
 }
 
-function getQualityForBlobConversion(options?: BrowserOptions): number | undefined {
-  if (isOffscreenCanvasDecoderOptions(options) && options.options) {
+/**
+ * Retrieves the quality parameter from conversion options
+ * @param options Conversion options
+ * @returns Quality value or undefined
+ */
+function getConversionQuality(options?: BrowserOptions): number | undefined {
+  if (isOffscreenCanvasDecoderOptions(options)) {
     return options.options.quality;
+  }
+  if (typeof options?.options?.quality === 'number') {
+    return options.options?.quality;
   }
   return undefined;
 }
 
-export function blobFromCanvas(
-  input: HTMLCanvasElement,
+/**
+ * Gets the current execution environment's origin URL
+ * @returns Origin URL or undefined if unavailable
+ */
+function getExecutionEnvironmentOrigin(): string | undefined {
+  if (typeof location !== 'undefined') return location.origin;
+  if (typeof self !== 'undefined' && self.location) return self.location.href;
+  return undefined;
+}
+
+/**
+ * Converts HTMLCanvasElement to Blob with proper error handling
+ * @param canvas The canvas element to convert
+ * @param options Conversion options
+ * @returns Promise resolving to the resulting Blob
+ */
+export function convertCanvasToBlob(
+  canvas: HTMLCanvasElement,
   options?: BrowserOptions
 ): Promise<Blob> {
   return new Promise((resolve, reject) => {
-    input.toBlob(
-      (blob) =>
-        blob
-          ? resolve(blob)
-          : reject(createError.runtimeError('Failed to convert <canvas> to Blob')),
+    canvas.toBlob(
+      (result) =>
+        result
+          ? resolve(result)
+          : reject(createError.runtimeError('Canvas to Blob conversion failed')),
       options?.type,
-      getQualityForBlobConversion(options)
+      getConversionQuality(options)
     );
   });
 }
 
+/**
+ * Main conversion function for browser-compatible inputs
+ * @param input Input to convert to Blob
+ * @param options Conversion options
+ * @returns Promise resolving to the resulting Blob
+ */
 export async function toBlob(input: BrowserInput, options?: BrowserOptions): Promise<Blob> {
-  // String | URL
+  // Handle URL/string inputs
   if (isStringOrURL(input)) {
-    return blobFromString(input, options);
+    return fetchResourceAsBlob(input, options);
   }
 
-  // BufferSource → Blob
+  // Handle binary data inputs
   if (input instanceof ArrayBuffer || ArrayBuffer.isView(input)) {
-    return blobFromArrayBuffer(input, options);
+    return createBlobFromBinaryData(input, options);
   }
 
-  // Blob → Pass-through
+  // Direct Blob pass-through
   if (input instanceof Blob) {
     return input;
   }
 
-  // VideoFrame → Blob
+  // Handle VideoFrame inputs
   if (typeof VideoFrame !== 'undefined' && input instanceof VideoFrame) {
-    const bitmap = await createImageBitmap(input, imageBitmapOptions(options));
+    const videoFrameInput = input; // Keep a reference to the original VideoFrame
+    const intermediateBitmap = await createImageBitmap(
+      videoFrameInput,
+      imageBitmapOptions(options)
+    );
     try {
-      return await blobFromImageBitmap(bitmap, options);
+      return await convertImageBitmapToBlob(intermediateBitmap, options); // Pass intermediate
     } finally {
-      bitmap.close();
+      intermediateBitmap.close(); // Close the intermediate bitmap created here
+      videoFrameInput.close(); // IMPORTANT: Close the original VideoFrame
     }
   }
 
-  // OffscreenCanvas → Blob
+  // Handle OffscreenCanvas inputs
   if (typeof OffscreenCanvas !== 'undefined' && input instanceof OffscreenCanvas) {
     return input.convertToBlob({
       type: options?.type,
-      quality: getQualityForBlobConversion(options)
+      quality: getConversionQuality(options)
     });
   }
 
-  // ImageData → OffscreenCanvas → Blob
+  // Handle ImageData inputs
   if (typeof ImageData !== 'undefined' && input instanceof ImageData) {
-    const { width, height } = input;
-    const [offscreenCanvas, context] = createCanvasAndContext(width, height, options);
+    const [canvas, context] = createCanvasAndContext(input.width, input.height, options);
     context.putImageData(input, 0, 0);
-    return offscreenCanvas.convertToBlob({
+    return canvas.convertToBlob({
       type: options?.type,
-      quality: getQualityForBlobConversion(options)
+      quality: getConversionQuality(options)
     });
   }
 
-  // HTMLImageElement, HTMLVideoElement → Bitmap →→ Blob
-  if (
-    (typeof HTMLImageElement !== 'undefined' && input instanceof HTMLImageElement) ||
-    (typeof HTMLVideoElement !== 'undefined' && input instanceof HTMLVideoElement)
-  ) {
-    if (input instanceof HTMLImageElement && !input.complete) {
-      throw createError.runtimeError('ImageElement is not fully loaded yet');
-    }
-    if (
-      input instanceof HTMLVideoElement &&
-      input.readyState < HTMLMediaElement.HAVE_CURRENT_DATA
-    ) {
-      throw createError.runtimeError('Video element not ready for frame capture');
-    }
-    const bitmap = await createImageBitmap(input, imageBitmapOptions(options));
+  // Handle HTML media elements
+  if (input instanceof HTMLImageElement || input instanceof HTMLVideoElement) {
+    validateMediaElementReady(input);
+    const intermediateBitmap = await createImageBitmap(input, imageBitmapOptions(options));
     try {
-      return await blobFromImageBitmap(bitmap, options);
+      return await convertImageBitmapToBlob(intermediateBitmap, options); // Pass intermediate
     } finally {
-      bitmap.close();
+      intermediateBitmap.close(); // Close the intermediate bitmap created here
     }
   }
 
-  // HTMLCanvasElement → Blob
-  if (typeof HTMLCanvasElement !== 'undefined' && input instanceof HTMLCanvasElement) {
-    return blobFromCanvas(input, options);
+  // Handle HTMLCanvasElement inputs
+  if (input instanceof HTMLCanvasElement) {
+    return convertCanvasToBlob(input, options);
   }
 
-  // SVGElement → Blob
-  if (typeof SVGElement !== 'undefined' && input instanceof SVGElement) {
+  // Handle SVGElement inputs
+  if (input instanceof SVGElement) {
     return new Blob([input.outerHTML], { type: 'image/svg+xml' });
   }
 
-  // ImageBitmap → Blob
+  // Handle ImageBitmap inputs with a performance warning
   if (input instanceof ImageBitmap) {
-    return blobFromImageBitmap(input, options);
+    console.warn(
+      'Pixelift: Converting a provided ImageBitmap to a Blob requires rendering it to an internal canvas. ' +
+        'This can have performance implications. The original ImageBitmap will remain open.'
+    );
+    // 'input' is the user's ImageBitmap. convertImageBitmapToBlob will use it but not close it.
+    return convertImageBitmapToBlob(input, options);
   }
 
-  // ReadableStream → Response →→ Blob
-  // ReadableStream → Blob
-  if (typeof ReadableStream !== 'undefined' && input instanceof ReadableStream) {
-    const reader = input.getReader();
-    const chunks: Uint8Array[] = [];
-    let abortHandler: (() => void) | undefined;
-
-    try {
-      if (options?.signal) {
-        abortHandler = () => {
-          reader.cancel().catch(() => {});
-        };
-        options.signal.addEventListener('abort', abortHandler);
-      }
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value);
-      }
-
-      return new Blob(chunks, { type: options?.type });
-    } catch (err) {
-      if (isAbortError(err)) {
-        throw createError.aborted();
-      }
-      throw createError.runtimeError('Failed to convert stream to Blob', { cause: err });
-    } finally {
-      if (abortHandler && options?.signal) {
-        options.signal.removeEventListener('abort', abortHandler);
-      }
-      reader.releaseLock();
-    }
+  // Handle ReadableStream inputs
+  if (input instanceof ReadableStream) {
+    return processStreamToBlob(input, options);
   }
 
-  // Response → Blob
-  if (typeof Response !== 'undefined' && input instanceof Response) {
+  // Handle Response inputs
+  if (input instanceof Response) {
     if (!input.body) {
-      throw createError.invalidInput('Response has no body', 'No body stream');
+      throw createError.runtimeError('Response body unavailable');
     }
     return input.blob();
   }
 
-  throw createError.invalidInput('Unsupported input type', typeof input);
+  throw createError.invalidInput(
+    `Unsupported input type: ${typeof input}`,
+    input?.constructor?.name
+  );
+}
+
+/** Helper Functions */
+
+function validateMediaElementReady(element: HTMLImageElement | HTMLVideoElement): void {
+  if (element instanceof HTMLImageElement && !element.complete) {
+    throw createError.runtimeError('Image element not fully loaded');
+  }
+  if (
+    element instanceof HTMLVideoElement &&
+    element.readyState < HTMLMediaElement.HAVE_CURRENT_DATA
+  ) {
+    throw createError.runtimeError('Video element not ready for frame capture');
+  }
+}
+
+async function processStreamToBlob(
+  stream: ReadableStream,
+  options?: BrowserOptions
+): Promise<Blob> {
+  const reader = stream.getReader();
+  const chunks: Uint8Array[] = [];
+  let abortHandler: (() => void) | undefined;
+
+  try {
+    if (options?.signal) {
+      abortHandler = () => reader.cancel().catch(() => {});
+      options.signal.addEventListener('abort', abortHandler);
+    }
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+    }
+
+    return new Blob(chunks, { type: options?.type });
+  } catch (error) {
+    if (isAbortError(error)) throw createError.aborted();
+    throw createError.runtimeError('Stream processing failed', { cause: error });
+  } finally {
+    if (abortHandler && options?.signal) {
+      options.signal.removeEventListener('abort', abortHandler);
+    }
+    reader.releaseLock();
+  }
 }
