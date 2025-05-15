@@ -1,4 +1,4 @@
-import { isStringOrURL } from '../shared/validation';
+import { isAbortError, isStringOrURL } from '../shared/validation';
 import type { BrowserInput, BrowserOptions } from './types';
 import { createError } from '../shared/error';
 import { convertToBlobUsingCanvas } from './decoder/canvas';
@@ -9,10 +9,9 @@ async function blobFromImageBitmap(
   bitmap: ImageBitmap,
   options?: BrowserOptions
 ): Promise<Blob> {
-  const targetWidth = options?.width ?? bitmap.width;
-  const targetHeight = options?.height ?? bitmap.height;
-  const [canvas, ctx] = createCanvasAndContext(targetWidth, targetHeight);
-  ctx.drawImage(bitmap, 0, 0, targetWidth, targetHeight);
+  const { width, height } = bitmap;
+  const [canvas, ctx] = createCanvasAndContext(width, height, options);
+  ctx.drawImage(bitmap, 0, 0, width, height);
   const blobResult = await canvas.convertToBlob(convertToBlobOptions(options));
   if (!blobResult) throw createError.runtimeError('Failed to convert ImageBitmap to Blob.');
   return blobResult;
@@ -45,7 +44,7 @@ async function blobFromString(
       signal: options?.signal
     });
   } catch (error) {
-    if (error instanceof DOMException && error.name === 'AbortError') {
+    if (isAbortError(error)) {
       throw createError.aborted();
     }
     throw createError.networkError(`Unable to fetch from "${url}".`, {
@@ -58,24 +57,6 @@ async function blobFromString(
   return res.blob();
 }
 
-async function htmlCanvasToBlob(
-  canvas: HTMLCanvasElement,
-  options?: BrowserOptions
-): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (blob) =>
-        blob
-          ? resolve(blob)
-          : reject(
-              createError.runtimeError('Failed to convert HTMLCanvasElement to Blob.')
-            ),
-      options?.type,
-      options?.quality
-    );
-  });
-}
-
 export async function toBlob(input: BrowserInput, options?: BrowserOptions): Promise<Blob> {
   if (isStringOrURL(input)) {
     return blobFromString(input, options);
@@ -85,27 +66,8 @@ export async function toBlob(input: BrowserInput, options?: BrowserOptions): Pro
     return new Blob([input], { type: options?.type });
   }
 
-  if (input instanceof ReadableStream) {
-    return new Response(input as ReadableStream<Uint8Array>).blob();
-  }
-
   if (input instanceof Blob) {
     return input;
-  }
-
-  if (input instanceof Response) {
-    return input.blob();
-  }
-
-  if (input instanceof HTMLCanvasElement) {
-    return htmlCanvasToBlob(input, options);
-  }
-
-  if (input instanceof OffscreenCanvas) {
-    const blobResult = await input.convertToBlob(convertToBlobOptions(options));
-    if (!blobResult)
-      throw createError.runtimeError('Failed to convert OffscreenCanvas to Blob.');
-    return blobResult;
   }
 
   if (input instanceof ImageBitmap) {

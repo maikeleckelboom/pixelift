@@ -16,10 +16,6 @@ export async function decode(
   input: BrowserInput,
   options?: BrowserOptions
 ): Promise<PixelData> {
-  if (options?.debug) {
-    console.log('🌐 🎞️ Invoking WebCodecs decode');
-  }
-
   let blobInput: Blob;
 
   if (input instanceof Blob) {
@@ -73,16 +69,6 @@ export async function decode(
       height: frame.codedHeight
     };
   } catch (error) {
-    if (error instanceof DOMException && error.name === 'AbortError') {
-      throw createError.aborted();
-    }
-    if (error instanceof TypeError) {
-      throw createError.decodingFailed(
-        type,
-        `TypeError during WebCodecs decoding: ${error.message}`,
-        error
-      );
-    }
     throw createError.rethrow(error);
   } finally {
     frame?.close();

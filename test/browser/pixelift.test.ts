@@ -1,13 +1,18 @@
+// tests/pixelift.test.ts
+
 import { beforeAll, describe, expect, test } from 'vitest';
 import { pixelift } from '../../src';
-import { VERIFIED_INPUT_FORMATS, type VerifiedFormat } from '../../src/shared/constants';
 import { hashSHA256 } from '../fixtures/hash-sha256';
+import { LOSSLESS_TEST_FORMATS } from '../../src/shared/constants';
+import { createSnapshotTestCaseKey } from '../fixtures/hash-snapshot-key';
 
-const blobs: Partial<Record<VerifiedFormat, Blob>> = {};
-const urls: Partial<Record<VerifiedFormat, URL>> = {};
+// Initialize blobs and URLs
+const blobs: Partial<Record<string, Blob>> = {};
+const urls: Partial<Record<string, URL>> = {};
 
+// Load resources before all tests
 beforeAll(async () => {
-  for (const format of VERIFIED_INPUT_FORMATS) {
+  for (const format of LOSSLESS_TEST_FORMATS) {
     const resourceUrl = new URL(`../fixtures/assets/pixelift.${format}`, import.meta.url);
     urls[format] = resourceUrl;
     const response = await fetch(resourceUrl);
@@ -16,8 +21,8 @@ beforeAll(async () => {
 }, 0);
 
 describe('Decoding from URL', () => {
-  test.each(VERIFIED_INPUT_FORMATS)(
-    '%s → decodes successfully from URL',
+  test.each(LOSSLESS_TEST_FORMATS)(
+    `%s: ${createSnapshotTestCaseKey()}`,
     async (format) => {
       const result = await pixelift(urls[format] as URL);
       expect(result.width).toBeDefined();
@@ -28,11 +33,11 @@ describe('Decoding from URL', () => {
   );
 });
 
-// todo: differentiate between lossy and non-lossy formats so we can
-test.each(VERIFIED_INPUT_FORMATS)(
-  '%s: consistent hash from URL across runs and environments',
+test.each(LOSSLESS_TEST_FORMATS)(
+  `%s: ${createSnapshotTestCaseKey()}`,
+
   async (format) => {
-    const result = await pixelift(urls[format] as URL, { decoder: 'offscreenCanvas' });
+    const result = await pixelift(urls[format] as URL);
     const hash = await hashSHA256(result.data);
     expect(hash).toMatchSnapshot();
   },

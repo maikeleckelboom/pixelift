@@ -8,7 +8,9 @@ export async function decode(
   input: ServerInput,
   options?: ServerOptions
 ): Promise<PixelData> {
-  console.log('🖥️ Invoking server decoder (debug)');
+  // if (import.meta.env.DEV) {
+  //   console.log('🖥️ Invoking server decoder (debug)');
+  // }
 
   const buffer = await getBuffer(input);
 

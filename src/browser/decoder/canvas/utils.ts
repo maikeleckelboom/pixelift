@@ -21,5 +21,5 @@ export function setImageSmoothingSettings(
   const { imageSmoothingQuality, imageSmoothingEnabled } = options || {};
 
   context.imageSmoothingEnabled = imageSmoothingEnabled ?? true;
-  context.imageSmoothingQuality = imageSmoothingQuality ?? 'low';
+  context.imageSmoothingQuality = imageSmoothingQuality ?? 'high';
 }

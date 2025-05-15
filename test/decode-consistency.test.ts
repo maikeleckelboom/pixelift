@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { VERIFIED_INPUT_FORMATS } from '../src/shared/constants';
+import { expect, it } from 'vitest';
+import { LOSSLESS_TEST_FORMATS } from '../src/shared/constants';
 import { existsSync } from 'node:fs';
 import { resolve } from 'path';
 import { createSnapshotTestCaseKey } from './fixtures/hash-snapshot-key';
@@ -27,30 +27,28 @@ export async function loadVitestSnapshot(
   );
 }
 
-describe('Decode Consistency Between Node and Browser', () => {
-  it('should have identical decoded pixel data in server vs browser', async () => {
-    await waitForSnapshots([
-      './browser/__snapshots__/pixelift.test.ts.snap',
-      './server/__snapshots__/pixelift.test.ts.snap'
-    ]);
+it('should have identical decoded pixel data in server vs browser', async () => {
+  await waitForSnapshots([
+    './browser/__snapshots__/pixelift.test.ts.snap',
+    './server/__snapshots__/pixelift.test.ts.snap'
+  ]);
 
-    const browserSnaps = await loadVitestSnapshot(
-      './browser/__snapshots__/pixelift.test.ts.snap'
-    );
-    const serverSnaps = await loadVitestSnapshot(
-      './server/__snapshots__/pixelift.test.ts.snap'
-    );
+  const browserSnaps = await loadVitestSnapshot(
+    './browser/__snapshots__/pixelift.test.ts.snap'
+  );
+  const serverSnaps = await loadVitestSnapshot(
+    './server/__snapshots__/pixelift.test.ts.snap'
+  );
 
-    for (const format of VERIFIED_INPUT_FORMATS) {
-      const key = `${createSnapshotTestCaseKey(format)} 1`;
+  for (const format of LOSSLESS_TEST_FORMATS) {
+    const key = `${createSnapshotTestCaseKey(format)} 1`;
 
-      const browserHash = browserSnaps[key];
-      const serverHash = serverSnaps[key];
+    const browserHash = browserSnaps[key];
+    const serverHash = serverSnaps[key];
 
-      expect(browserHash).toBeDefined();
-      expect(serverHash).toBeDefined();
+    expect(browserHash).toBeDefined();
+    expect(serverHash).toBeDefined();
 
-      expect(browserHash).toEqual(serverHash);
-    }
-  }, 0);
+    expect(browserHash).toEqual(serverHash);
+  }
 }, 0);

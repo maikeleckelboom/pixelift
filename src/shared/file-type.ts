@@ -1,12 +1,16 @@
-import type { BrowserInput, BrowserOptions } from '../browser';
+import type { BrowserInput } from '../browser';
 import { isStringOrURL } from './validation';
 import { SUPPORTED_MIME_MAP } from './constants';
 
-const DATA_URI_EXT_REGEX = /^data:[^/]+\/([^;,]+)/;
-const DATA_URI_MIME_REGEX = /^data:([^;,]+)/;
+const DATA_URI_MIME_REGEX = /^data:([^;,]+)/i;
 const QUERY_FRAGMENT_REGEX = /[?#].*$/;
 
-export function getFileExtension(input: string | URL): string {
+function parseDataUrlMimeType(dataUrl: string): string | undefined {
+  const match = dataUrl.match(DATA_URI_MIME_REGEX);
+  return match?.[1]?.split(';')[0]?.trim().toLowerCase() || undefined;
+}
+
+export function getFileExtension(input: string | URL): string | undefined {
   let path: string;
 
   if (typeof input === 'string') {
@@ -16,39 +20,40 @@ export function getFileExtension(input: string | URL): string {
   }
 
   if (path.startsWith('data:')) {
-    const mimeMatch = path.match(DATA_URI_EXT_REGEX);
-    return mimeMatch?.[1]?.toLowerCase() || '';
+    const mimeType = parseDataUrlMimeType(path);
+    if (!mimeType) return undefined;
+    const [, subtype] = mimeType.split('/', 2);
+    return subtype?.split('+')[0];
   }
 
-  const cleanPath = path.replace(QUERY_FRAGMENT_REGEX, '');
+  let cleanPath: string;
+  try {
+    cleanPath = decodeURIComponent(path.replace(QUERY_FRAGMENT_REGEX, ''));
+  } catch {
+    cleanPath = path.replace(QUERY_FRAGMENT_REGEX, '');
+  }
+
   const lastSlash = Math.max(cleanPath.lastIndexOf('/'), cleanPath.lastIndexOf('\\'));
   const filename = cleanPath.substring(lastSlash + 1);
   const lastDotIndex = filename.lastIndexOf('.');
 
   if (lastDotIndex <= 0 || lastDotIndex === filename.length - 1) {
-    return '';
+    return undefined;
   }
 
   return filename.substring(lastDotIndex + 1).toLowerCase();
 }
 
-export function getFileType(input: BrowserInput, options?: BrowserOptions): string {
-  if (options?.type) return options.type;
-
-  if (typeof VideoFrame !== 'undefined' && input instanceof VideoFrame) return 'video/mp4';
-  if (typeof HTMLVideoElement !== 'undefined' && input instanceof HTMLVideoElement)
-    return 'video/mp4';
-
-  if (input instanceof Blob && input.type) {
-    return input.type;
-  }
-  if (typeof HTMLCanvasElement !== 'undefined' && input instanceof HTMLCanvasElement) {
-    return 'image/png';
+export function guessInputMimeType(
+  input: BrowserInput,
+  fallbackMimeType?: string
+): string | undefined {
+  if (input instanceof Blob) {
+    return input.type || fallbackMimeType;
   }
 
   if (typeof input === 'string' && input.startsWith('data:')) {
-    const mimeMatch = input.match(DATA_URI_MIME_REGEX);
-    return mimeMatch?.[1] || 'image/png';
+    return parseDataUrlMimeType(input) || 'text/plain';
   }
 
   let sourceUrl: string | URL | undefined;
@@ -62,23 +67,28 @@ export function getFileType(input: BrowserInput, options?: BrowserOptions): stri
   }
 
   if (sourceUrl) {
-    if (typeof sourceUrl === 'string' && sourceUrl.startsWith('data:')) {
-      const mimeMatch = sourceUrl.match(DATA_URI_MIME_REGEX);
-      return mimeMatch?.[1] || 'image/png';
+    const urlString = sourceUrl instanceof URL ? sourceUrl.href : sourceUrl;
+
+    // Data URL handling for URL objects
+    if (urlString.startsWith('data:')) {
+      return parseDataUrlMimeType(urlString) || 'text/plain';
     }
 
     const ext = getFileExtension(sourceUrl);
-    const isVideoInput =
-      typeof HTMLVideoElement !== 'undefined' && input instanceof HTMLVideoElement;
+    const isVideo = input instanceof HTMLVideoElement;
 
-    if (ext) {
-      return SUPPORTED_MIME_MAP[ext] || (isVideoInput ? 'video/mp4' : 'image/png');
+    // Handle known extensions
+    if (ext && SUPPORTED_MIME_MAP[ext]) {
+      return SUPPORTED_MIME_MAP[ext];
     }
 
-    if (isVideoInput) {
-      return 'video/mp4';
+    // Smart fallbacks
+    if (isVideo) {
+      return ext ? `video/${ext}` : 'video/mp4';
     }
+
+    return ext ? `image/${ext}` : fallbackMimeType;
   }
 
-  return 'image/png';
+  return fallbackMimeType;
 }

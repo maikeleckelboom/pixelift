@@ -12,19 +12,13 @@ export interface EnvironmentConfig<I extends PixeliftInput, O extends PixeliftOp
 
 export const browserConfig: EnvironmentConfig<BrowserInput, BrowserOptions> = {
   validate: validateBrowserInput,
-  importDecoder: () => {
-    console.log('🧪 🌐 Loading browser decoder (debug)');
-    return import('../browser/decoder');
-  },
   expected:
-    'string, URL, Blob, File, ImageData, ArrayBuffer, ArrayBufferView, ReadableStream<Uint8Array>, HTMLOrSVGImageElement, HTMLVideoElement, HTMLCanvasElement, ImageBitmap, OffscreenCanvas or VideoFrame'
+    'string, URL, Blob, SVGElement, HTMLImageElement, HTMLVideoElement or VideoFrame',
+  importDecoder: () => import('../browser/decoder')
 };
 
 export const serverConfig: EnvironmentConfig<ServerInput, ServerOptions> = {
   validate: validateServerInput,
-  importDecoder: () => {
-    console.log('🧪 🖥️ Loading server decoder (debug)');
-    return import('../server/decoder');
-  },
-  expected: 'string, URL, Buffer or BufferSource'
+  expected: 'string, URL, Buffer or BufferSource',
+  importDecoder: () => import('../server/decoder')
 };

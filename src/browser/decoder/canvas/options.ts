@@ -1,13 +1,10 @@
 import type { BrowserOptions } from '../../types';
 
-export function imageBitmapOptions(options?: BrowserOptions): ImageBitmapOptions {
+export function imageBitmapOptions(_options?: BrowserOptions): ImageBitmapOptions {
   return {
-    resizeQuality: options?.resizeQuality ?? 'low',
-    resizeWidth: options?.width,
-    resizeHeight: options?.height,
     premultiplyAlpha: 'none',
     colorSpaceConversion: 'none',
-    imageOrientation: 'none'
+    imageOrientation: 'from-image'
   };
 }
 

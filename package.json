@@ -51,17 +51,13 @@
     "test": "vitest",
     "test:update": "vitest -u",
     "test:sequential": "vitest run --project=server && vitest run --project=browser && vitest run --project=snapshot-consistency",
-
     "test:server": "vitest --project server",
     "test:browser": "vitest --project browser",
     "test:consistency": "vitest run test/decode-consistency.test.ts",
-
     "test:ci": "vitest --reporter dot",
-
     "bench": "vitest --run bench --reporter verbose",
     "bench:server": "vitest --project server --run bench --reporter verbose",
     "bench:browser": "vitest --project browser --run bench --reporter verbose",
-
     "lint": "eslint 'src/**/*.ts' --max-warnings=0",
     "lint:fix": "eslint 'src/**/*.ts' --fix",
     "format": "prettier --write .",
@@ -99,6 +95,7 @@
     "@vitest/browser": "^3.1.2",
     "eslint": "^9.25.1",
     "eslint-config-prettier": "^10.1.2",
+    "pixelmatch": "^7.1.0",
     "playwright": "^1.52.0",
     "prettier": "^3.5.3",
     "tsup": "^8.4.0",

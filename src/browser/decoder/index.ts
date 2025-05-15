@@ -1,101 +1,56 @@
 import { createError } from '../../shared/error';
-import type { DecoderStrategy } from './types';
 import type { PixelData } from '../../types';
 import type { BrowserInput, BrowserOptions } from '../types';
-import { getFileType } from '../../shared/file-type';
+import { guessInputMimeType } from '../../shared/file-type';
 
-let canvasDecoderModule: Promise<typeof import('./canvas')>;
-let webCodecsModule: Promise<typeof import('./webcodecs')>;
+// Eagerly load WebCodecs decoder (default path)
+import * as WebCodecsDecoder from './webcodecs';
 
-async function loadCanvasDecoder(): Promise<typeof import('./canvas')> {
-  return (canvasDecoderModule ||= import('./canvas'));
+// Prepare a single, cached promise for the Canvas decoder (fallback)
+let canvasDecoderPromise: Promise<typeof import('./canvas')> | null = null;
+
+function loadCanvasDecoder() {
+  return (canvasDecoderPromise ||= import('./canvas'));
 }
 
-async function loadWebCodecsDecoder(): Promise<typeof import('./webcodecs')> {
-  return (webCodecsModule ||= import('./webcodecs'));
+// Memoize WebCodecs support per MIME type
+const webCodecsSupportCache = new Map<string, boolean>();
+
+async function isWebCodecsSupported(type: string): Promise<boolean> {
+  if (webCodecsSupportCache.has(type)) {
+    return !!webCodecsSupportCache.get(type);
+  }
+  const supported = await WebCodecsDecoder.isSupported(type);
+  webCodecsSupportCache.set(type, supported);
+  return supported;
 }
 
-const DECODER_STRATEGIES: DecoderStrategy<Blob, BrowserOptions>[] = [
-  {
-    id: 'webCodecs',
-    isSupported: async (type: string): Promise<boolean> => {
-      const webcodecs = await loadWebCodecsDecoder();
-      return webcodecs.isSupported(type);
-    },
-    decode: async (blob: Blob, options?: BrowserOptions): Promise<PixelData> => {
-      const webcodecs = await loadWebCodecsDecoder();
-      return webcodecs.decode(blob, options);
-    }
-  },
-  {
-    id: 'offscreenCanvas',
-    isSupported: async (): Promise<boolean> => {
-      const canvasDecoder = await loadCanvasDecoder();
-      return canvasDecoder.isSupported();
-    },
-    decode: async (blob: Blob, options?: BrowserOptions): Promise<PixelData> => {
-      const canvasDecoder = await loadCanvasDecoder();
-      return canvasDecoder.decode(blob, options);
-    }
-  }
-];
-
-async function getDecoderStrategy(
-  input: BrowserInput,
-  options?: BrowserOptions
-): Promise<DecoderStrategy<Blob, BrowserOptions>> {
-  const fileType = getFileType(input, options);
-
-  if (options?.decoder) {
-    const strategy = DECODER_STRATEGIES.find((s) => s.id === options?.decoder);
-
-    if (!strategy) {
-      throw createError.decoderUnsupported(options.decoder);
-    }
-
-    if (await strategy.isSupported(fileType)) {
-      return strategy;
-    }
-
-    throw createError.decoderUnsupported(strategy.id, `Unsupported MIME type ${fileType}.`);
-  }
-
-  for (const strategy of DECODER_STRATEGIES) {
-    if (await strategy.isSupported(fileType)) {
-      return strategy;
-    }
-  }
-
-  throw createError.decoderUnsupported('webCodecs', `Unsupported MIME type ${fileType}.`);
-}
-
+// Core decode function: default to WebCodecs, fallback to Canvas
 export async function decode(
   input: BrowserInput,
   options?: BrowserOptions
 ): Promise<PixelData> {
-  if (options?.debug) {
-    console.log('🌐 Invoking browser decoder (debug)');
+  const fileType = options?.type || guessInputMimeType(input);
+
+  if (!fileType) {
+    throw createError.invalidInput(
+      'Unsupported input type for decoder',
+      input?.constructor?.name || typeof input
+    );
   }
 
-  if (input instanceof ImageData && !(options?.width || options?.height)) {
-    return {
-      data: input.data,
-      width: input.width,
-      height: input.height
-    };
+  // If a user explicitly requests Canvas, use it immediately
+  if (options?.decoder === 'offscreenCanvas') {
+    const { decode: decodeCanvas } = await loadCanvasDecoder();
+    return decodeCanvas(input, options);
   }
 
-  const decoder = await getDecoderStrategy(input, options);
-
-  if (decoder.id === 'webCodecs') {
-    const webcodecs = await loadWebCodecsDecoder();
-    return webcodecs.decode(input, options);
+  // If a user explicitly requests WebCodecs, or WebCodecs supports this type, use it
+  if (options?.decoder === 'webCodecs' || (await isWebCodecsSupported(fileType))) {
+    return WebCodecsDecoder.decode(input, options);
   }
 
-  if (decoder.id === 'offscreenCanvas') {
-    const canvasDecoder = await loadCanvasDecoder();
-    return canvasDecoder.decode(input, options);
-  }
-
-  throw createError.decoderUnsupported(decoder.id, 'Strategy could not be executed.');
+  // Fallback: load and invoke Canvas decoder
+  const { decode: decodeCanvas } = await loadCanvasDecoder();
+  return decodeCanvas(input, options);
 }

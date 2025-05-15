@@ -2,11 +2,9 @@ export const PIXELIFT_BROWSER_DECODERS = ['webCodecs', 'offscreenCanvas'] as con
 
 export const PIXELIFT_SERVER_DECODERS = ['sharp'] as const;
 
-// todo: Change to Lossy and Lossless formats
+export const LOSSLESS_TEST_FORMATS = ['png', 'webp', 'svg', 'gif'] as const;
 
-export const VERIFIED_INPUT_FORMATS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'] as const;
-
-export type VerifiedFormat = (typeof VERIFIED_INPUT_FORMATS)[number];
+export type LosslessTestFormat = (typeof LOSSLESS_TEST_FORMATS)[number];
 
 export const CANVAS_IMAGE_MIME_MAP = {
   jpg: 'image/jpeg',
@@ -48,14 +46,14 @@ export const CANVAS_VIDEO_MIME_MAP = {
   flv: 'video/x-flv'
 } as const;
 
-export type CanvasVideoFormat =
-  (typeof CANVAS_VIDEO_MIME_MAP)[keyof typeof CANVAS_VIDEO_MIME_MAP];
-
 export const WEB_CODECS_MIME_MAP = {
   h265: 'video/mp4; codecs="hvc1"',
   vp9: 'video/webm; codecs="vp09"',
   av1: 'video/webm; codecs="av01"'
 } as const;
+
+export type CanvasVideoFormat =
+  (typeof CANVAS_VIDEO_MIME_MAP)[keyof typeof CANVAS_VIDEO_MIME_MAP];
 
 export type WebCodecsFormat =
   (typeof WEB_CODECS_MIME_MAP)[keyof typeof WEB_CODECS_MIME_MAP];

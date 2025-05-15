@@ -2,24 +2,24 @@ import { beforeAll, bench, describe } from 'vitest';
 import { pixelift } from '../../../src';
 import {
   PIXELIFT_BROWSER_DECODERS,
-  VERIFIED_INPUT_FORMATS,
-  type VerifiedFormat
+  LOSSLESS_TEST_FORMATS,
+  type LosslessTestFormat
 } from '../../../src/shared/constants';
 
-let urls: Record<VerifiedFormat, URL>;
+let urls: Record<LosslessTestFormat, URL>;
 
 beforeAll(() => {
   urls = Object.fromEntries(
-    VERIFIED_INPUT_FORMATS.map((format) => [
+    LOSSLESS_TEST_FORMATS.map((format) => [
       format,
       new URL(`../../fixtures/assets/pixelift.${format}`, import.meta.url)
     ])
-  ) as Record<VerifiedFormat, URL>;
+  ) as Record<LosslessTestFormat, URL>;
 });
 
 describe('Browser Benchmarks', () => {
   for (const decoder of PIXELIFT_BROWSER_DECODERS) {
-    for (const format of VERIFIED_INPUT_FORMATS) {
+    for (const format of LOSSLESS_TEST_FORMATS) {
       bench(
         `${decoder} - ${format}`,
         async () => {

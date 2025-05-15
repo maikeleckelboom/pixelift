@@ -9,14 +9,12 @@ export function imageDecoderOptions(options?: BrowserOptions): ImageDecodeOption
 
 export function imageDecoderInitOptions(
   source: ImageBufferSource,
-  sourceType: string,
+  sourceType?: string,
   options?: BrowserOptions
 ): ImageDecoderInit {
   return {
     data: source,
-    type: options?.type ?? sourceType,
-    desiredHeight: options?.height,
-    desiredWidth: options?.width,
+    type: options?.type ?? sourceType ?? 'image/png',
     colorSpaceConversion: 'none'
   };
 }

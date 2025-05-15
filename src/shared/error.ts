@@ -8,7 +8,6 @@ export const ErrorCode = {
   pathTraversal: 'path-traversal',
   runtimeError: 'runtime-error',
   fileReadError: 'file-read-error',
-  environment: 'environment-error',
   aborted: 'aborted'
 } as const;
 
@@ -24,8 +23,7 @@ const MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.pathTraversal]: 'Path traversal attempt detected: {path}',
   [ErrorCode.aborted]: 'Operation aborted',
   [ErrorCode.runtimeError]: 'Runtime error: {detail}',
-  [ErrorCode.fileReadError]: 'Failed to read file: {path}',
-  [ErrorCode.environment]: 'Environment error: {detail}'
+  [ErrorCode.fileReadError]: 'Failed to read file: {path}'
 };
 
 function formatMessage(template: string, context: Record<string, unknown> = {}): string {
@@ -85,9 +83,6 @@ export const createError = {
 
   fileReadError: (path: string, cause?: unknown): PixeliftError =>
     new PixeliftError(ErrorCode.fileReadError, { path }, { cause }),
-
-  environment: (detail: string, cause?: unknown): PixeliftError =>
-    new PixeliftError(ErrorCode.environment, { detail }, { cause }),
 
   runtimeError: (detail: string, cause?: unknown): PixeliftError =>
     new PixeliftError(ErrorCode.runtimeError, { detail }, { cause }),

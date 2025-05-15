@@ -1,6 +1,7 @@
 import type { DecoderOptions } from '../types';
+import type { SharpOptions } from 'sharp';
 
-export interface ServerOptions extends DecoderOptions {
+export interface ServerOptions extends DecoderOptions, SharpOptions {
   decoder?: 'sharp';
 }
 

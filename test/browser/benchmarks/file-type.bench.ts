@@ -1,6 +1,6 @@
 import { beforeAll, bench, describe } from 'vitest';
-import { getFileType } from '../../../src/shared/file-type';
-import { mockBrowserEnvironment } from '../../fixtures/mock-browser-environment';
+import { guessInputMimeType } from '../../../src/shared/file-type';
+import { setupMediaElementMocks } from '../../fixtures/setup-media-element-mocks';
 
 const BENCH_CONFIG = {
   iterations: 1000,
@@ -10,7 +10,7 @@ const BENCH_CONFIG = {
 
 describe('File Type Inference Benchmarks', () => {
   beforeAll(() => {
-    mockBrowserEnvironment();
+    setupMediaElementMocks();
   });
 
   describe('Core Operations', () => {
@@ -23,7 +23,7 @@ describe('File Type Inference Benchmarks', () => {
     bench(
       'URL parsing',
       () => {
-        getFileType(complexUrl);
+        guessInputMimeType(complexUrl);
       },
       BENCH_CONFIG
     );
@@ -31,7 +31,7 @@ describe('File Type Inference Benchmarks', () => {
     bench(
       'Data URI parsing',
       () => {
-        getFileType(dataUri);
+        guessInputMimeType(dataUri);
       },
       BENCH_CONFIG
     );
@@ -39,7 +39,7 @@ describe('File Type Inference Benchmarks', () => {
     bench(
       'Pre-typed files',
       () => {
-        getFileType(typedFile);
+        guessInputMimeType(typedFile);
       },
       BENCH_CONFIG
     );
@@ -47,28 +47,16 @@ describe('File Type Inference Benchmarks', () => {
 
   describe('Browser Elements', () => {
     let videoElement: HTMLVideoElement;
-    let canvas: HTMLCanvasElement;
 
     beforeAll(() => {
       videoElement = document.createElement('video');
       videoElement.src = 'https://example.com/video.ogv';
-      canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-      ctx.fillRect(0, 0, 100, 100);
     });
 
     bench(
       'Video element analysis',
       () => {
-        getFileType(videoElement);
-      },
-      BENCH_CONFIG
-    );
-
-    bench(
-      'Canvas conversion',
-      () => {
-        getFileType(canvas);
+        guessInputMimeType(videoElement);
       },
       BENCH_CONFIG
     );
@@ -78,7 +66,7 @@ describe('File Type Inference Benchmarks', () => {
     bench(
       'Fallback handling',
       () => {
-        getFileType({} as never);
+        guessInputMimeType({} as never);
       },
       BENCH_CONFIG
     );
