@@ -1,24 +1,28 @@
 import type { BrowserOptions } from '../../types';
 
-export function imageBitmapOptions(_options?: BrowserOptions): ImageBitmapOptions {
+export const DEFAULT_IMAGE_SMOOTHING_SETTINGS = {
+  imageSmoothingEnabled: true,
+  imageSmoothingQuality: 'high'
+} as const;
+
+export function imageBitmapOptions(
+  options?: BrowserOptions<'offscreenCanvas' | 'webCodecs'>
+): ImageBitmapOptions {
   return {
     premultiplyAlpha: 'none',
     colorSpaceConversion: 'none',
-    imageOrientation: 'from-image'
+    imageOrientation: 'from-image',
+    ...(options?.options || {})
   };
 }
 
-export function canvasContextOptions(_?: BrowserOptions): CanvasRenderingContext2DSettings {
+export function offscreenCanvasOptions(
+  options?: BrowserOptions<'offscreenCanvas'>
+): CanvasRenderingContext2DSettings {
   return {
     colorSpace: 'srgb',
     alpha: true,
-    willReadFrequently: true
-  };
-}
-
-export function convertToBlobOptions(options?: BrowserOptions): ImageEncodeOptions {
-  return {
-    type: options?.type,
-    quality: options?.quality
+    willReadFrequently: true,
+    ...(options?.options || {})
   };
 }

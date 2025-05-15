@@ -1,10 +1,13 @@
 import { isBrowser } from './shared/env';
 import { createError } from './shared/error';
-import type { PixelData, PixeliftInput, PixeliftOptions } from './types';
+import type { DecoderOptions, PixelData, PixeliftInput, PixeliftOptions } from './types';
 import type { ServerInput, ServerOptions } from './server';
 import type { BrowserInput, BrowserOptions } from './browser';
-import type { Decoder } from './browser/decoder/types';
 import { validateBrowserInput, validateServerInput } from './shared/validation';
+
+interface Decoder<Input extends PixeliftInput, Options extends DecoderOptions> {
+  decode: (input: Input, options?: Options) => Promise<PixelData>;
+}
 
 export interface EnvironmentConfig<I extends PixeliftInput, O extends PixeliftOptions> {
   validate: (input: unknown) => input is I;

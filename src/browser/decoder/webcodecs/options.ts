@@ -12,9 +12,11 @@ export function imageDecoderOptions(
   };
 }
 
-export function imageDecodeOptions(options?: BrowserOptions): ImageDecodeOptions {
+export function imageDecodeOptions(
+  options?: BrowserOptions<'webCodecs'>
+): ImageDecodeOptions {
   return {
-    frameIndex: options?.frameIndex ?? 0,
-    completeFramesOnly: !!options?.completeFramesOnly
+    frameIndex: options?.options?.frameIndex ?? 0,
+    completeFramesOnly: options?.options?.completeFramesOnly ?? false
   };
 }

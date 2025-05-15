@@ -4,16 +4,8 @@ export const PIXELIFT_SERVER_DECODERS = ['sharp'] as const;
 
 export const LOSSLESS_TEST_FORMATS = ['png', 'svg', 'gif'] as const;
 
-export type LosslessTestFormat = (typeof LOSSLESS_TEST_FORMATS)[number];
+const LOSSY_TEST_FORMATS = ['webp', 'avif'] as const;
 
-export const losslessImageFormats = [
-  ['png', 'image/png'],
-  ['svg', 'image/svg+xml'],
-  ['bmp', 'image/bmp'],
-  ['tiff', 'image/tiff'],
-  ['tif', 'image/tiff'],
-  ['ico', 'image/x-icon'],
-  ['apng', 'image/apng'],
-  ['qoi', 'image/qoi'],
-  ['exr', 'image/exr']
-] as const;
+export const ALL_TEST_FORMATS = [...LOSSLESS_TEST_FORMATS, ...LOSSY_TEST_FORMATS] as const;
+
+export type LosslessTestFormat = (typeof LOSSLESS_TEST_FORMATS)[number];

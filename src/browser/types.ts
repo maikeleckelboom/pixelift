@@ -1,20 +1,35 @@
 import type { DecoderOptions } from '../types';
 
-export interface BrowserOptions
-  extends DecoderOptions,
-    ImageEncodeOptions,
-    ImageDecodeOptions {
-  decoder?: 'offscreenCanvas' | 'webCodecs';
-  targetTime?: number;
-}
-
-export type BrowserInput =
+export type WorkerCompatibleInput =
   | string
   | URL
   | Blob
   | BufferSource
-  | HTMLImageElement
-  | SVGImageElement
-  | HTMLVideoElement
+  | VideoFrame
   | ImageBitmap
-  | VideoFrame;
+  | ImageData;
+
+export type HTMLMediaElement = HTMLImageElement | HTMLVideoElement;
+
+export type BrowserInput = WorkerCompatibleInput | HTMLMediaElement;
+
+export type WebCodecsOptions = ImageEncodeOptions & ImageDecodeOptions;
+
+export interface OffscreenCanvasOptions extends ImageBitmapOptions, ImageEncodeOptions {
+  imageSmoothingEnabled?: boolean;
+  imageSmoothingQuality?: ImageSmoothingQuality;
+}
+
+export type BrowserDecoder = 'webCodecs' | 'offscreenCanvas';
+
+type DecoderOptionsMap = {
+  webCodecs: WebCodecsOptions;
+  offscreenCanvas: OffscreenCanvasOptions;
+};
+
+export interface BrowserOptions<D extends BrowserDecoder = BrowserDecoder>
+  extends DecoderOptions {
+  type?: string;
+  decoder?: D;
+  options?: DecoderOptionsMap[D];
+}

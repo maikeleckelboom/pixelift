@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import type { ServerInput, ServerOptions } from './types';
 import { createError } from '../shared/error';
 import { fileURLToPath } from 'node:url';
+import { isAbortError } from '../shared/validation';
 
 function sanitizeFilePath(url: URL): string {
   const decoded = fileURLToPath(url);
@@ -55,7 +56,7 @@ export async function getBuffer(
     return Buffer.from(dataMatch[2] || '', 'base64');
   }
 
-  // 5) Try URL
+  // 5) URL
   let url: URL | null = null;
   try {
     url = new URL(str);
@@ -100,13 +101,11 @@ export async function getBuffer(
   const local = resolveLocalPath(str);
 
   try {
-    // Pass the signal to fs.readFile as well
-    return fs.readFile(local, { signal }); // Added await for clarity
-  } catch (e) {
-    if (signal?.aborted) {
+    return fs.readFile(local, { signal });
+  } catch (error) {
+    if (isAbortError(error)) {
       throw createError.aborted();
     }
-    // Use the resolved 'local' path for the error message
-    throw createError.fileReadError(local, e);
+    throw createError.fileReadError(local, error);
   }
 }

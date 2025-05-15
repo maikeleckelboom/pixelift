@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, test } from 'vitest';
 import { pixelift } from '../../src';
 import { LOSSLESS_TEST_FORMATS, type LosslessTestFormat } from '../fixtures/constants';
 import { hashSHA256 } from '../fixtures/hash-sha256';
-import { createSnapshotTestCaseKey } from '../fixtures/create-snapshot-test-case-key';
+import { snapshotTestCaseKey } from '../fixtures/snapshot-test-case-key';
 
 const buffers: Partial<Record<LosslessTestFormat, Buffer>> = {};
 const urls: Partial<Record<LosslessTestFormat, URL>> = {};
@@ -41,7 +41,7 @@ describe('Server Environment', () => {
 });
 
 test.each(LOSSLESS_TEST_FORMATS)(
-  `%s: ${createSnapshotTestCaseKey()}`,
+  `%s: ${snapshotTestCaseKey()}`,
   async (format) => {
     const result = await pixelift(urls[format] as URL, { decoder: 'sharp' });
     const hash = await hashSHA256(result.data);

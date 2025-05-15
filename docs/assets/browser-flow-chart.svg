@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1519.221" height="929.4" >
+  <path fill="#fff" d="M0 0h1519.221v929.4H0z"/>
+  <path fill="none" stroke="#1e1e1e" stroke-linecap="round" d="M377.15 10c136.05 1.82 274.05 3.02 432.56 0m-432.56 0c92.11-.93 183.87-1.1 432.56 0m0 0c-.03 12.42-1.82 26.27 0 55.35m0-55.35c-.55 16.41.49 32 0 55.35m0 0c-141.7-.19-283.98-.39-432.56 0m432.56 0c-170.76-.69-340.78-1.25-432.56 0m0 0c.87-18.96-.36-33.78 0-55.35m0 55.35c-.49-20.05-.08-39.32 0-55.35"/>
+  <text x="201.528" y="22.116" fill="#1e1e1e" dominant-baseline="alphabetic" font-family="Comic Shanns, Segoe UI Emoji" font-size="25.276" style="white-space:pre" text-anchor="middle" transform="translate(391.902 21.88)">Start: decode(input, options)</text>
+  <path fill="none" stroke="#1e1e1e" stroke-linecap="round" d="M267.873 128.542c182.05-2.46 365.88-2.33 651.11 0m-651.11 0c208.97.01 418.75.38 651.11 0m0 0c-.75 18.46.4 32.9 0 55.35m0-55.35c.37 20.92-.16 42.03 0 55.35m0 0c-219.02-.27-439.93.14-651.11 0m651.11 0c-238.91-1.22-477.57-.95-651.11 0m0 0c1.18-11.73 1.56-25.47 0-55.35m0 55.35c-.88-13.37-.76-27.11 0-55.35"/>
+  <text x="305.767" y="22.116" fill="#1e1e1e" dominant-baseline="alphabetic" font-family="Comic Shanns, Segoe UI Emoji" font-size="25.276" style="white-space:pre" text-anchor="middle" transform="translate(287.663 140.422)">Extract decoder, type, and rest from options</text>
+  <path fill="none" stroke="#1e1e1e" stroke-linecap="round" d="M367.412 247.084c140.52-.74 280.53-1.36 452.04 0m-452.04 0c102.62-.75 205.58-.5 452.04 0m0 0c1.84 20.13 1.81 40.08 0 55.35m0-55.35c.23 14.71.03 32.15 0 55.35m0 0c-92.92-.3-187.53-.75-452.04 0m452.04 0c-121.35.62-241.69 1-452.04 0m0 0c-1.59-18.35-1.21-38.83 0-55.35m0 55.35c-.16-16.57.22-31.76 0-55.35"/>
+  <text x="215.427" y="22.116" fill="#1e1e1e" dominant-baseline="alphabetic" font-family="Comic Shanns, Segoe UI Emoji" font-size="25.276" style="white-space:pre" text-anchor="middle" transform="translate(378.003 258.964)">Is decoder specified and valid?</text>
+  <path fill="none" stroke="#1e1e1e" stroke-linecap="round" d="M10 394.023c136.75 2.04 274.92 1.77 483.47 0m-483.47 0c111.05.54 221.23.72 483.47 0m0 0c.08 17.07.12 35.93 0 55.35m0-55.35c-.83 11.17-.31 23.95 0 55.35m0 0c-175.4 1.13-349.96-.32-483.47 0m483.47 0c-131.79 1.37-264.01.81-483.47 0m0 0c.07-18.66-.8-35.64 0-55.35m0 55.35c-.26-14.82-.14-29.55 0-55.35"/>
+  <text x="201.528" y="22.116" fill="#1e1e1e" dominant-baseline="alphabetic" font-family="Comic Shanns, Segoe UI Emoji" font-size="25.276" style="white-space:pre" text-anchor="middle" transform="translate(50.208 405.903)">Throw DecoderUnsupportedError</text>
+  <path fill="none" stroke="#1e1e1e" stroke-linecap="round" d="M556.662 394.023c260 .39 520.99.07 756.92 0m-756.92 0c257.06-2.14 514.08-2.53 756.92 0m0 0c-1.88 15.52 1.8 28.45 0 55.35m0-55.35c.39 13.59-.07 27.69 0 55.35m0 0c-298.52-1.81-596.2-1.98-756.92 0m756.92 0c-280.43-1.97-561.28-1.84-756.92 0m0 0c-.52-13.1 1.46-26.28 0-55.35m0 55.35c.63-14.64.42-27.64 0-55.35"/>
+  <text x="347.462" y="22.116" fill="#1e1e1e" dominant-baseline="alphabetic" font-family="Comic Shanns, Segoe UI Emoji" font-size="25.276" style="white-space:pre" text-anchor="middle" transform="translate(587.661 405.903)">Determine type: explicitType ?? getMimeType(input)</text>
+  <path fill="none" stroke="#1e1e1e" stroke-linecap="round" d="M388.892 579.962c208.96-1.9 417.94-1.06 525.4 0m-525.4 0c199.53.31 399.41.02 525.4 0m0 0c-.42 16.78 1.86 36.47 0 55.35m0-55.35c1.03 14.63-.67 28.31 0 55.35m0 0c-187.24.53-376.09.86-525.4 0m525.4 0c-136.47-.37-272.61-.32-525.4 0m0 0c-1.19-16.18-1.89-30.43 0-55.35m0 55.35c-.74-13.28.59-27.65 0-55.35"/>
+  <text x="236.274" y="22.116" fill="#1e1e1e" dominant-baseline="alphabetic" font-family="Comic Shanns, Segoe UI Emoji" font-size="25.276" style="white-space:pre" text-anchor="middle" transform="translate(415.317 591.842)">Throw RuntimeError: &apos;No MIME type&apos;</text>
+  <path fill="none" stroke="#1e1e1e" stroke-linecap="round" d="M977.48 579.962c108.13-.14 214.84-.57 504.07 0m-504.07 0c143.01 2.19 285.49 1.62 504.07 0m0 0c-.46 14.88-.27 31.03 0 56.4m0-56.4c.15 19.37-.07 38.42 0 56.4m0 0c-137.03-.41-273.46-.31-504.07 0m504.07 0c-125.34-.57-250.69-.98-504.07 0m0 0c-.41-15.04 2.04-32.4 0-56.4m0 56.4c-.99-22.69-.8-44.77 0-56.4"/>
+  <text x="236.274" y="22.116" fill="#1e1e1e" dominant-baseline="alphabetic" font-family="Comic Shanns, Segoe UI Emoji" font-size="25.276" style="white-space:pre" text-anchor="middle" transform="translate(993.238 592.364)">Select strategy: decoder ?? &apos;auto&apos;</text>
+  <path fill="none" stroke="#1e1e1e" stroke-linecap="round" d="M928.09 723.504c190.01.91 379.56.76 581.13 0m-581.13 0c228.96 1.36 458.5.92 581.13 0m0 0c.44 22.42-.79 48.99 0 75.83m0-75.83c-.01 26.06.4 52.9 0 75.83m0 0c-127.28-2.04-254.05-1.73-581.13 0m581.13 0c-208.7-1.32-417.02-1.17-581.13 0m0 0c1.34-23.48 1.13-51.11 0-75.83m0 75.83c.49-21.27-.19-42.22 0-75.83"/>
+  <text x="284.919" y="22.116" fill="#1e1e1e" dominant-baseline="alphabetic" font-family="Comic Shanns, Segoe UI Emoji" font-size="25.276" style="white-space:pre" text-anchor="middle" transform="translate(933.736 745.62)">Call strategies[strategy](input, options)</text>
+  <path fill="none" stroke="#1e1e1e" stroke-linecap="round" d="M1091.267 864.047c87.52-1.88 171.24-1.05 254.78 0m-254.78 0c93.63.6 187.78 1.14 254.78 0m0 0c.88 13.17 1.26 24.32 0 55.35m0-55.35c-.75 13.22-.62 26.09 0 55.35m0 0c-61.68-.89-125.97-.7-254.78 0m254.78 0c-56.34-.22-113.62-.08-254.78 0m0 0c-1.03-21.53-.36-41.13 0-55.35m0 55.35c-.67-13.12.48-26.68 0-55.35"/>
+  <text x="111.188" y="22.116" fill="#1e1e1e" dominant-baseline="alphabetic" font-family="Comic Shanns, Segoe UI Emoji" font-size="25.276" style="white-space:pre" text-anchor="middle" transform="translate(1107.468 875.926)">Return PixelData</text>
+  <g stroke-linecap="round">
+    <path fill="none" stroke="#1e1e1e" d="M593.473 70.353c1.1 12.25-1.08 22.33.02 53.19m-.02-53.19c-.24 13.96 1.09 28.99.02 53.19M585.453 99.873c2.89 6.18 2.38 10.14 8.04 23.67m-8.04-23.67c1.62 6.04 5.1 13.16 8.04 23.67M602.543 100.243c-.64 6.03-4.69 9.91-9.05 23.3m9.05-23.3c-2.95 5.99-4.05 13.02-9.05 23.3"/>
+  </g>
+  <g stroke-linecap="round">
+    <path fill="none" stroke="#1e1e1e" d="M593.495 188.896c-.49 14.05-.3 29.37-.02 53.19m.02-53.19c.17 18.3-.05 36.28-.02 53.19M584.955 218.576c1.52 6.33 3.91 13.98 8.52 23.51m-8.52-23.51c3.25 8.4 5.88 16.45 8.52 23.51"/>
+    <path fill="none" stroke="#1e1e1e" d="M602.055 218.606c-2.89 6.43-4.92 14.07-8.58 23.48m8.58-23.48c-2.47 8.34-5.55 16.38-8.58 23.48"/>
+  </g>
+  <g stroke-linecap="round" mask="url(#mask-8Kb-wZ0AXvYw-uwKQXPFt)">
+    <path fill="none" stroke="#1e1e1e" d="M715.503 307.438c-.75 10.86.58 16.46 0 24.79m0-24.79c.5 7.47-.15 12.94 0 24.79m0 0c.24 9.85 3.7 15.85 16 16m-16-16c-1.59 9.49 4.09 15.08 16 16m0 0c52.46.2 105.09 1.68 187.7 0m-187.7 0c47.78-.53 97.47-.64 187.7 0m0 0c9.53-.54 15.24 5.45 16 16m-16-16c11.14-1.37 14.9 3.33 16 16m0 0c-.08 5.03-.2 9.43 0 24.8m0-24.8c.82 8.36.98 16.33 0 24.8"/>
+    <path fill="none" stroke="#1e1e1e" d="M929.743 369.368c1.25 9 4.56 12.73 5.46 19.66m-5.46-19.66c1.96 6.04 2.8 10.1 5.46 19.66"/>
+    <path fill="none" stroke="#1e1e1e" d="M943.653 370.458c-3.79 8.62-5.52 11.96-8.45 18.57m8.45-18.57c-1.84 5.82-4.8 9.58-8.45 18.57"/>
+  </g>
+  <mask id="mask-8Kb-wZ0AXvYw-uwKQXPFt">
+    <path fill="#fff" d="M0 0h1035.199v489.023H0z"/>
+    <path d="M804.503 332.433h41.695v31.594h-41.695z"/>
+  </mask>
+  <text x="20.848" y="22.116" fill="#1e1e1e" dominant-baseline="alphabetic" font-family="Comic Shanns, Segoe UI Emoji" font-size="25.276" style="white-space:pre" text-anchor="middle" transform="translate(804.503 332.433)">Yes</text>
+  <g stroke-linecap="round" mask="url(#mask-8WPsanlnmh3sXl79u63-Z)">
+    <path fill="none" stroke="#1e1e1e" d="M471.357 307.438c-.46 10.92 1.12 20.26 0 24.79m0-24.79c.05 8.78-.89 18.3 0 24.79m0 0c-1.38 9.64-6.42 15.2-16 16m16-16c-.37 12.03-6.14 15.01-16 16m0 0c-52.81 1.54-102.32-.2-187.57 0m187.57 0c-75.12 1.36-149.48 1.69-187.57 0m0 0c-10.25-1.19-16.96 3.59-16 16m16-16c-12.82.44-15.51 5.2-16 16m0 0c.89 8.28 1.7 16.06 0 24.8m0-24.8c.94 5.95 1.21 13.15 0 24.8M246.277 369.388c1.7 8.93 5.44 16.24 5.51 19.64m-5.51-19.64c2.11 6.9 3.21 14.51 5.51 19.64"/>
+    <path fill="none" stroke="#1e1e1e" d="M260.187 370.438c-3.79 8.41-5.53 15.31-8.4 18.59m8.4-18.59c-3.04 6.43-7.1 13.65-8.4 18.59"/>
+  </g>
+  <mask id="mask-8WPsanlnmh3sXl79u63-Z">
+    <path fill="#fff" d="M0 0h790.928v489.023H0z"/>
+    <path d="M347.672 332.433h27.797v31.594h-27.797z"/>
+  </mask>
+  <text x="13.898" y="22.116" fill="#1e1e1e" dominant-baseline="alphabetic" font-family="Comic Shanns, Segoe UI Emoji" font-size="25.276" style="white-space:pre" text-anchor="middle" transform="translate(347.672 332.433)">No</text>
+  <g stroke-linecap="round" mask="url(#mask-seDlW5rfZKN36pGFO06EF)">
+    <path fill="none" stroke="#1e1e1e" d="M1036.419 454.377c1.64 15.26-.97 31.91 0 44.29m0-44.29c-1.05 10.97-.9 22.56 0 44.29m0 0c-.32 11.85 4.63 15.14 16 16m-16-16c-.53 8.88 6.5 15.03 16 16m0 0c55.05 2.44 107.94-.2 161.14 0m-161.14 0c44.14-.69 87.4-.96 161.14 0m0 0c8.8.39 16.43 5.22 16 16m-16-16c10.57-.28 15.07 6.4 16 16m0 0c-.06 17.12-1.29 32.25 0 44.3m0-44.3c.43 9.82-.17 18.12 0 44.3M1221.019 551.467c4.58 7.79 5.03 17.01 8.54 23.5m-8.54-23.5c1.33 5.58 3.7 11.79 8.54 23.5"/>
+    <path fill="none" stroke="#1e1e1e" d="M1238.119 551.467c-1.53 7.86-7.19 17.07-8.56 23.5m8.56-23.5c-3.1 5.57-5.17 11.78-8.56 23.5"/>
+  </g>
+  <mask id="mask-seDlW5rfZKN36pGFO06EF">
+    <path fill="#fff" d="M0 0h1329.563v674.962H0z"/>
+    <path d="M1063.498 498.872h138.985v31.594h-138.985z"/>
+  </mask>
+  <text x="69.492" y="22.116" fill="#1e1e1e" dominant-baseline="alphabetic" font-family="Comic Shanns, Segoe UI Emoji" font-size="25.276" style="white-space:pre" text-anchor="middle" transform="translate(1063.498 498.872)">Type Found</text>
+  <g stroke-linecap="round" mask="url(#mask-H58PCiyJAysFSe7ocg1jo)">
+    <path fill="none" stroke="#1e1e1e" d="M833.829 454.377c-1.08 10.38-.42 22.64 0 44.29m0-44.29c-.4 11.6-.59 21.58 0 44.29m0 0c-.46 9.11-4.32 15.16-16 16m16-16c.68 12.51-6.66 18.24-16 16m0 0c-56.92-1.6-112.62-.43-150.19 0m150.19 0c-37.06-1.11-72.03-1.37-150.19 0m0 0c-10.75-.24-16.81 6.26-16 16m16-16c-9.57 1.99-14.37 4.82-16 16m0 0c-2.22 19.1-1.59 34.19 0 44.3m0-44.3c.67 17.06-.07 31.46 0 44.3"/>
+    <path fill="none" stroke="#1e1e1e" d="M643.269 551.407c1.32 4.74 4.25 11.39 8.37 23.56m-8.37-23.56c1.8 6.48 3.69 11.31 8.37 23.56M660.369 551.537c-3.32 4.73-5.03 11.34-8.73 23.43m8.73-23.43c-2.45 6.38-4.81 11.18-8.73 23.43"/>
+  </g>
+  <mask id="mask-H58PCiyJAysFSe7ocg1jo">
+    <path fill="#fff" d="M0 0h1116.014v674.962H0z"/>
+    <path d="M694.092 498.872h97.289v31.594h-97.289z"/>
+  </mask>
+  <text x="48.645" y="22.116" fill="#1e1e1e" dominant-baseline="alphabetic" font-family="Comic Shanns, Segoe UI Emoji" font-size="25.276" style="white-space:pre" text-anchor="middle" transform="translate(694.092 498.872)">No Type</text>
+  <g stroke-linecap="round">
+    <path fill="none" stroke="#1e1e1e" d="M1218.655 660.948c-1.06 11.48-.82 24.81.06 57.56m-.06-57.56c-.41 19.88.35 40.9.06 57.56M1210.215 694.988c.81 4.11 2.89 10.01 8.5 23.52m-8.5-23.52c2.74 7.7 6.53 16.5 8.5 23.52M1227.315 695.028c-2.92 3.99-4.57 9.88-8.6 23.48m8.6-23.48c-3.4 7.61-5.75 16.4-8.6 23.48"/>
+  </g>
+  <g stroke-linecap="round">
+    <path fill="none" stroke="#1e1e1e" d="M1218.655 801.49c-1.09 12.98.9 25.89.03 57.56m-.03-57.56c.38 14.37.18 30.38.03 57.56"/>
+    <path fill="none" stroke="#1e1e1e" d="M1210.275 835.5c1.02 5.17 4.94 10.23 8.41 23.55m-8.41-23.55c2.61 5.69 4.56 12.97 8.41 23.55"/>
+    <path fill="none" stroke="#1e1e1e" d="M1227.375 835.61c-2.93 5.05-2.96 10.08-8.69 23.44m8.69-23.44c-1.78 5.53-4.23 12.78-8.69 23.44"/>
+  </g>
+</svg>

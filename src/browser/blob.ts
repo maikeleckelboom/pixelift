@@ -1,20 +1,29 @@
 import { isAbortError, isStringOrURL } from '../shared/validation';
 import type { BrowserInput, BrowserOptions } from './types';
 import { createError } from '../shared/error';
-import { convertToBlobUsingCanvas } from './decoder/canvas';
-import { convertToBlobOptions, imageBitmapOptions } from './decoder/canvas/options';
+import { imageBitmapOptions } from './decoder/canvas/options';
 import { createCanvasAndContext } from './decoder/canvas/utils';
 
 async function blobFromImageBitmap(
   bitmap: ImageBitmap,
-  options?: BrowserOptions
+  options?: BrowserOptions<'offscreenCanvas' | 'webCodecs'>
 ): Promise<Blob> {
   const { width, height } = bitmap;
-  const [canvas, ctx] = createCanvasAndContext(width, height, options);
+  const [canvas, ctx] = createCanvasAndContext(width, height);
   ctx.drawImage(bitmap, 0, 0, width, height);
-  const blobResult = await canvas.convertToBlob(convertToBlobOptions(options));
+  const blobResult = await canvas.convertToBlob({ type: options?.type });
   if (!blobResult) throw createError.runtimeError('Failed to convert ImageBitmap to Blob.');
   return blobResult;
+}
+
+async function blobFromImageData(
+  imageData: ImageData,
+  options?: BrowserOptions
+): Promise<Blob> {
+  const { width, height } = imageData;
+  const [canvas, context] = createCanvasAndContext(width, height);
+  context.putImageData(imageData, 0, 0);
+  return canvas.convertToBlob({ type: options?.type });
 }
 
 async function blobFromVideoFrame(
@@ -66,17 +75,30 @@ export async function toBlob(input: BrowserInput, options?: BrowserOptions): Pro
     return new Blob([input], { type: options?.type });
   }
 
-  if (input instanceof Blob) {
-    return input;
+  if (input instanceof VideoFrame) {
+    return blobFromVideoFrame(input, options);
   }
 
   if (input instanceof ImageBitmap) {
     return blobFromImageBitmap(input, options);
   }
 
-  if (input instanceof VideoFrame) {
-    return blobFromVideoFrame(input, options);
+  if (input instanceof HTMLImageElement || input instanceof HTMLVideoElement) {
+    const imageBitmap = await createImageBitmap(input, imageBitmapOptions(options));
+    return blobFromImageBitmap(imageBitmap, options);
   }
 
-  return convertToBlobUsingCanvas(input, options);
+  if (input instanceof SVGImageElement) {
+    return new Blob([input.outerHTML], { type: 'image/svg+xml' });
+  }
+
+  if (input instanceof Blob) {
+    return input;
+  }
+
+  if (input instanceof ImageData) {
+    return blobFromImageData(input, options);
+  }
+
+  throw createError.invalidInput('Unsupported input type', typeof input);
 }

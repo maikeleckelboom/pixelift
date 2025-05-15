@@ -1,6 +1,5 @@
 import type { PixelData } from '../../../types';
 import type { BrowserInput, BrowserOptions } from '../../types';
-import { imageDecodeOptions, imageDecoderOptions } from './options';
 import { toBlob } from '../../blob';
 import { createError } from '../../../shared/error';
 
@@ -10,7 +9,7 @@ export async function isSupported(mimeType: string): Promise<boolean> {
 
 export async function decode(
   input: BrowserInput,
-  options?: BrowserOptions
+  options?: BrowserOptions<'webCodecs'>
 ): Promise<PixelData> {
   let blobInput: Blob;
 
@@ -39,17 +38,21 @@ export async function decode(
     );
   }
 
-  const decoderConfig = imageDecoderOptions(blobStream, type, options);
-
   let decoder: ImageDecoder | undefined;
   let frame: VideoFrame | undefined;
 
   try {
-    decoder = new ImageDecoder(decoderConfig);
+    decoder = new ImageDecoder({
+      data: blobStream,
+      type: options?.type ?? 'image/png',
+      colorSpaceConversion: 'none'
+    });
     await decoder.completed;
 
-    const decodeOptions = imageDecodeOptions(options);
-    const { image: frame } = await decoder.decode(decodeOptions);
+    const { image: frame } = await decoder.decode({
+      frameIndex: options?.options?.frameIndex ?? 0,
+      completeFramesOnly: options?.options?.completeFramesOnly ?? false
+    });
 
     const byteLength = frame.allocationSize({ format: 'RGBA' });
     const data = new Uint8ClampedArray(byteLength);

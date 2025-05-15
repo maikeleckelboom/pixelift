@@ -1,8 +1,7 @@
-import { convertToBlobOptions, imageBitmapOptions } from './options';
+import { imageBitmapOptions } from './options';
 import { createCanvasAndContext } from './utils';
 import { toBlob } from '../../blob';
 import { createError } from '../../../shared/error';
-import { isWebWorker } from '../../../shared/env';
 import { isStringOrURL } from '../../../shared/validation';
 
 import type { PixelData } from '../../../types';
@@ -20,7 +19,7 @@ class TrackedBitmaps {
       try {
         bmp.close();
       } catch {
-        /* ignore */
+        /* empty */
       }
     });
     this.tracked = [];
@@ -29,7 +28,7 @@ class TrackedBitmaps {
 
 async function getBitmap(
   input: BrowserInput,
-  opts: BrowserOptions | undefined,
+  opts: BrowserOptions<'offscreenCanvas'> | undefined,
   resources: TrackedBitmaps
 ): Promise<ImageBitmap> {
   const decodeOpts = imageBitmapOptions(opts);
@@ -80,23 +79,21 @@ async function getBitmap(
 
 async function loadBitmapFromBlob(
   blob: Blob,
-  opts: BrowserOptions | undefined,
+  options: BrowserOptions<'offscreenCanvas'> | undefined,
   resources: TrackedBitmaps
 ): Promise<ImageBitmap> {
-  const decodeOpts = imageBitmapOptions(opts);
+  const decoderOptions = imageBitmapOptions(options);
 
   try {
-    const bmp = await createImageBitmap(blob, decodeOpts);
+    const bmp = await createImageBitmap(blob, decoderOptions);
     resources.track(bmp);
     return bmp;
   } catch (err) {
-    if (isWebWorker()) {
-      throw createError.decodingFailed(
-        'new Image()',
-        'is not supported in Web Workers',
-        err
-      );
-    }
+    // if (blob.type === 'image/svg+xml') {
+    //   console.log(
+    //     'SVG images are not supported in OffscreenCanvas. Using HTMLCanvasElement instead.'
+    //   );
+    // }
 
     const url = URL.createObjectURL(blob);
     try {
@@ -104,7 +101,7 @@ async function loadBitmapFromBlob(
       img.crossOrigin = 'anonymous';
       img.src = url;
       await img.decode();
-      const bmp = await createImageBitmap(img, decodeOpts);
+      const bmp = await createImageBitmap(img, decoderOptions);
       resources.track(bmp);
       return bmp;
     } finally {
@@ -115,7 +112,7 @@ async function loadBitmapFromBlob(
 
 export async function decode(
   input: BrowserInput,
-  options?: BrowserOptions
+  options?: BrowserOptions<'offscreenCanvas'>
 ): Promise<PixelData> {
   const resources = new TrackedBitmaps();
   try {
@@ -130,20 +127,6 @@ export async function decode(
       width: img.width,
       height: img.height
     };
-  } finally {
-    resources.closeAll();
-  }
-}
-
-export async function convertToBlobUsingCanvas(
-  input: BrowserInput,
-  options?: BrowserOptions
-): Promise<Blob> {
-  const resources = new TrackedBitmaps();
-  try {
-    const { width, height } = await getBitmap(input, options, resources);
-    const [canvas] = createCanvasAndContext(width, height);
-    return await canvas.convertToBlob(convertToBlobOptions(options));
   } finally {
     resources.closeAll();
   }

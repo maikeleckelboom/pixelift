@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 
-export function setupMediaElementMocks() {
+export function mockMediaElements() {
   class MockHTMLImageElement {
     src: string;
 
@@ -21,12 +21,13 @@ export function setupMediaElementMocks() {
 
   class MockHTMLVideoElement {
     currentSrc: string;
+    src: string;
 
-    constructor() {
-      this.currentSrc = '';
+    constructor(src: string = '', currentSrc?: string) {
+      this.src = src;
+      this.currentSrc = currentSrc || src;
     }
   }
-
   Object.defineProperty(MockHTMLVideoElement, Symbol.hasInstance, {
     value: (obj: unknown): obj is MockHTMLVideoElement =>
       obj !== null &&

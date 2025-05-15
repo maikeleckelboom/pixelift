@@ -1,6 +1,6 @@
 import { beforeAll, bench, describe } from 'vitest';
-import { guessInputMimeType } from '../../../src/shared/file-type';
-import { setupMediaElementMocks } from '../../fixtures/setup-media-element-mocks';
+import { getMimeType } from '../../../src/shared/mime';
+import { mockMediaElements } from '../../fixtures/mock-media-elements';
 
 const BENCH_CONFIG = {
   iterations: 1000,
@@ -10,7 +10,7 @@ const BENCH_CONFIG = {
 
 describe('File Type Inference Benchmarks', () => {
   beforeAll(() => {
-    setupMediaElementMocks();
+    mockMediaElements();
   });
 
   describe('Core Operations', () => {
@@ -23,7 +23,7 @@ describe('File Type Inference Benchmarks', () => {
     bench(
       'URL parsing',
       () => {
-        guessInputMimeType(complexUrl);
+        getMimeType(complexUrl);
       },
       BENCH_CONFIG
     );
@@ -31,7 +31,7 @@ describe('File Type Inference Benchmarks', () => {
     bench(
       'Data URI parsing',
       () => {
-        guessInputMimeType(dataUri);
+        getMimeType(dataUri);
       },
       BENCH_CONFIG
     );
@@ -39,7 +39,7 @@ describe('File Type Inference Benchmarks', () => {
     bench(
       'Pre-typed files',
       () => {
-        guessInputMimeType(typedFile);
+        getMimeType(typedFile);
       },
       BENCH_CONFIG
     );
@@ -56,7 +56,7 @@ describe('File Type Inference Benchmarks', () => {
     bench(
       'Video element analysis',
       () => {
-        guessInputMimeType(videoElement);
+        getMimeType(videoElement);
       },
       BENCH_CONFIG
     );
@@ -66,7 +66,7 @@ describe('File Type Inference Benchmarks', () => {
     bench(
       'Fallback handling',
       () => {
-        guessInputMimeType({} as never);
+        getMimeType({} as never);
       },
       BENCH_CONFIG
     );

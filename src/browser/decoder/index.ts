@@ -1,7 +1,7 @@
-import { createError, PixeliftError } from '../../shared/error';
+import { createError } from '../../shared/error';
 import type { PixelData } from '../../types';
-import type { BrowserInput, BrowserOptions } from '../types';
-import { guessInputMimeType } from '../../shared/file-type';
+import type { BrowserDecoder, BrowserInput, BrowserOptions } from '../types';
+import { getMimeType } from '../../shared/mime';
 import * as WebCodecsDecoder from './webcodecs';
 
 const canvasDecoderPromise: Promise<typeof import('./canvas')> = import('./canvas');
@@ -18,44 +18,35 @@ function isWebCodecsSupported(mime: string): Promise<boolean> {
   return supportPromiseCache.get(mime) as Promise<boolean>;
 }
 
-type DecoderOption = 'auto' | 'webCodecs' | 'offscreenCanvas';
-
 interface DecodeOptions extends BrowserOptions {
   readonly type: string;
-  readonly onError?: (type: string, error?: PixeliftError) => void;
 }
 
 type DecoderStrategy = (input: BrowserInput, options: DecodeOptions) => Promise<PixelData>;
 
-const strategies: Record<DecoderOption, DecoderStrategy> = {
+const strategies: Record<BrowserDecoder | 'auto', DecoderStrategy> = {
   async webCodecs(input, options) {
-    try {
-      return await WebCodecsDecoder.decode(input, options);
-    } catch (error: unknown) {
-      options?.onError?.('webCodecs', createError.rethrow(error));
-      return strategies.offscreenCanvas(input, options);
-    }
+    return WebCodecsDecoder.decode(input, options);
   },
 
   async offscreenCanvas(input, options) {
     const module = await canvasDecoderPromise;
     try {
-      return await module.decode(input, options);
+      return await module.decode(input, options as BrowserOptions<'offscreenCanvas'>);
     } catch (error: unknown) {
-      options?.onError?.('offscreenCanvas', createError.rethrow(error));
       throw createError.rethrow(error);
     }
   },
 
-  async auto(input, opts) {
+  async auto(input, options) {
     try {
-      const supported = await isWebCodecsSupported(opts.type);
-      if (supported) return strategies.webCodecs(input, opts);
+      const supported = await isWebCodecsSupported(options.type);
+      if (supported) return strategies.webCodecs(input, options);
     } catch {
-      /* Fallback to Canvas */
+      /* empty */
     }
 
-    return strategies.offscreenCanvas(input, opts);
+    return strategies.offscreenCanvas(input, options);
   }
 };
 
@@ -69,10 +60,12 @@ export async function decode(
     throw createError.decoderUnsupported(decoder);
   }
 
-  const type = explicitType ?? guessInputMimeType(input);
+  const type = explicitType ?? getMimeType(input);
 
   if (!type) {
-    throw createError.runtimeError('Unable to determine MIME type for input.');
+    throw createError.runtimeError(
+      'Unable to determine MIME type. Please provide a valid type.'
+    );
   }
 
   const strategy = decoder ?? 'auto';

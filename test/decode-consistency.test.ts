@@ -2,9 +2,9 @@ import { expect, it } from 'vitest';
 import { LOSSLESS_TEST_FORMATS } from './fixtures/constants';
 import { existsSync } from 'node:fs';
 import { resolve } from 'path';
-import { createSnapshotTestCaseKey } from './fixtures/create-snapshot-test-case-key';
+import { snapshotTestCaseKey } from './fixtures/snapshot-test-case-key';
 
-async function waitForSnapshots(paths: string[], seconds: number = 60) {
+async function waitForSnapshots(paths: string[], seconds: number = 30) {
   const retries = Math.floor((seconds * 1000) / 200);
   for (let i = 0; i < retries; i++) {
     if (paths.every((p) => existsSync(resolve(__dirname, p)))) {
@@ -41,7 +41,7 @@ it('should have identical decoded pixel data in server vs browser', async () => 
   );
 
   for (const format of LOSSLESS_TEST_FORMATS) {
-    const key = `${createSnapshotTestCaseKey(format)} 1`;
+    const key = `${snapshotTestCaseKey(format)} 1`;
 
     const browserHash = browserSnaps[key];
     const serverHash = serverSnaps[key];
