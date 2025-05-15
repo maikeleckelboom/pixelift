@@ -1,5 +1,5 @@
 import { isAbortError, isStringOrURL } from '../shared/validation';
-import type { BrowserInput, BrowserOptions } from './types';
+import type { BrowserInput, BrowserOptions, OffscreenCanvasDecoderOptions } from './types';
 import { createError } from '../shared/error';
 import { imageBitmapOptions } from './decoder/canvas/options';
 import { createCanvasAndContext } from './decoder/canvas/utils';
@@ -12,7 +12,11 @@ async function blobFromImageBitmap(
   options?: BrowserOptions
 ): Promise<Blob> {
   const { width, height } = bitmap;
-  const [canvas, context] = createCanvasAndContext(width, height, options);
+  const [canvas, context] = createCanvasAndContext(
+    width,
+    height,
+    options as OffscreenCanvasDecoderOptions
+  );
   context.drawImage(bitmap, 0, 0, width, height);
   if ('convertToBlob' in canvas) {
     return (canvas as OffscreenCanvas).convertToBlob({
@@ -128,8 +132,12 @@ export async function toBlob(input: BrowserInput, options?: BrowserOptions): Pro
 
   // VideoFrame → Blob
   if (typeof VideoFrame !== 'undefined' && input instanceof VideoFrame) {
-    const bitmap = await createImageBitmap(input);
-    return blobFromImageBitmap(bitmap, options);
+    const bitmap = await createImageBitmap(input, imageBitmapOptions(options));
+    try {
+      return await blobFromImageBitmap(bitmap, options);
+    } finally {
+      bitmap.close();
+    }
   }
 
   // OffscreenCanvas → Blob
@@ -143,7 +151,11 @@ export async function toBlob(input: BrowserInput, options?: BrowserOptions): Pro
   // ImageData → OffscreenCanvas → Blob
   if (typeof ImageData !== 'undefined' && input instanceof ImageData) {
     const { width, height } = input;
-    const [canvas, context] = createCanvasAndContext(width, height, options);
+    const [canvas, context] = createCanvasAndContext(
+      width,
+      height,
+      options as OffscreenCanvasDecoderOptions
+    );
     context.putImageData(input, 0, 0);
     return canvas.convertToBlob({
       type: options?.type,
@@ -167,9 +179,12 @@ export async function toBlob(input: BrowserInput, options?: BrowserOptions): Pro
     ) {
       throw createError.runtimeError('Video element not ready for frame capture');
     }
-
     const bitmap = await createImageBitmap(input, imageBitmapOptions(options));
-    return blobFromImageBitmap(bitmap, options);
+    try {
+      return await blobFromImageBitmap(bitmap, options);
+    } finally {
+      bitmap.close();
+    }
   }
 
   // HTMLCanvasElement → Blob
@@ -182,7 +197,7 @@ export async function toBlob(input: BrowserInput, options?: BrowserOptions): Pro
     return new Blob([input.outerHTML], { type: 'image/svg+xml' });
   }
 
-  // ImageBitmap → Blob (Worker & Main Thread)
+  // ImageBitmap → Blob
   if (input instanceof ImageBitmap) {
     return blobFromImageBitmap(input, options);
   }

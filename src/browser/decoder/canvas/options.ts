@@ -1,4 +1,4 @@
-import type { BrowserOptions } from '../../types';
+import type { BrowserOptions, OffscreenCanvasDecoderOptions } from '../../types';
 
 export const DEFAULT_IMAGE_SMOOTHING_SETTINGS = {
   imageSmoothingEnabled: true,
@@ -15,7 +15,7 @@ export function imageBitmapOptions(options?: BrowserOptions): ImageBitmapOptions
 }
 
 export function offscreenCanvasOptions(
-  options?: BrowserOptions
+  options?: OffscreenCanvasDecoderOptions
 ): CanvasRenderingContext2DSettings {
   return {
     colorSpace: 'srgb',

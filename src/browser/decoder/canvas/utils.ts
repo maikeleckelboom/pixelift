@@ -1,5 +1,5 @@
 import { createError } from '../../../shared/error';
-import type { BrowserOptions, OffscreenCanvasDecoderOptions } from '../../types';
+import type { OffscreenCanvasDecoderOptions } from '../../types';
 import { DEFAULT_IMAGE_SMOOTHING_SETTINGS, offscreenCanvasOptions } from './options';
 
 /**
@@ -14,7 +14,7 @@ import { DEFAULT_IMAGE_SMOOTHING_SETTINGS, offscreenCanvasOptions } from './opti
 export function createCanvasAndContext(
   width: number,
   height: number,
-  options?: BrowserOptions
+  options?: OffscreenCanvasDecoderOptions
 ): [OffscreenCanvas, OffscreenCanvasRenderingContext2D] {
   const canvas = new OffscreenCanvas(width, height);
   const contextOptions = offscreenCanvasOptions(options);
@@ -22,7 +22,7 @@ export function createCanvasAndContext(
   if (!context) {
     throw createError.runtimeError('Failed to create OffscreenCanvasRenderingContext2D');
   }
-  setImageSmoothingSettings(context, options as OffscreenCanvasDecoderOptions);
+  setImageSmoothingSettings(context, options);
   return [canvas, context];
 }
 

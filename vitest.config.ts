@@ -35,25 +35,13 @@ export default defineConfig({
             headless: true,
             screenshotFailures: false,
             instances: [
-              { browser: 'chromium' }
-              // { browser: 'firefox' },
-              // { browser: 'webkit' }
+              { browser: 'chromium' },
+              { browser: 'firefox' },
+              { browser: 'webkit' }
             ]
           }
         }
       }
-      // {
-      //   test: {
-      //     name: 'snapshot-consistency',
-      //     include: ['**/decode-consistency.test.ts'],
-      //     environment: 'node'
-      //   }
-      // }
     ]
   }
-  // server: {
-  //   fs: {
-  //     strict: false
-  //   }
-  // }
 });
