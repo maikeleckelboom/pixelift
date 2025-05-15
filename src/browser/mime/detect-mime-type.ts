@@ -1,8 +1,8 @@
-import type { BrowserInput } from '../browser';
-import { isStringOrURL } from './validation';
-import { lookup } from '../browser/mime';
+import type { BrowserInput } from '../index';
+import { isStringOrURL } from '../../shared/validation';
+import { lookup } from './registry';
 
-export function getMimeType(input: BrowserInput) {
+export function detectMimeType(input: BrowserInput) {
   if (isStringOrURL(input)) {
     return lookup(input.toString());
   }
@@ -27,5 +27,3 @@ export function getMimeType(input: BrowserInput) {
 
   return src ? lookup(src) : undefined;
 }
-
-// todo: move to browser/mime.ts

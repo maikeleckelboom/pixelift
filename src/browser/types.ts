@@ -1,35 +1,69 @@
-import type { DecoderOptions } from '../types';
+import type { CommonDecoderOptions } from '../types';
 
-export type WorkerCompatibleInput =
-  | string
-  | URL
-  | Blob
-  | BufferSource
-  | VideoFrame
+// 1) Raw (encoded-only) inputs you might fetch or send to a worker:
+export type RawWorkerInput = string | URL | Blob | BufferSource;
+
+// 2) Transferable decoded inputs (pixel buffers):
+export type TransferableDecodedInput =
   | ImageBitmap
-  | ImageData;
+  | ImageData
+  | VideoFrame
+  | OffscreenCanvas;
 
-export type HTMLMediaElement = HTMLImageElement | HTMLVideoElement;
+// 3) DOM-only sources (not transferable):
+export type DOMSource =
+  | HTMLImageElement
+  | HTMLVideoElement
+  | HTMLCanvasElement
+  | SVGElement;
 
-export type BrowserInput = WorkerCompatibleInput | HTMLMediaElement;
+// 4) Everything you can pass to a worker:
+export type WorkerCompatibleInput = RawWorkerInput | TransferableDecodedInput;
 
-export type WebCodecsOptions = ImageEncodeOptions & ImageDecodeOptions;
+// 5) Everything you accept in-browser:
+export type BrowserInput = WorkerCompatibleInput | DOMSource;
 
-export interface OffscreenCanvasOptions extends ImageBitmapOptions, ImageEncodeOptions {
+// 7) Undecoded inputs (sources not yet pixel buffers):
+export type EncodedBrowserInput = RawWorkerInput | DOMSource;
+
+// 8) Decoded inputs (transferable pixel buffers):
+export type DecodedBrowserInput = TransferableDecodedInput;
+
+export interface WebCodecsOptions extends ImageDecodeOptions {
+  quality?: number;
+}
+
+export interface CanvasRenderingContextOptions {
   imageSmoothingEnabled?: boolean;
   imageSmoothingQuality?: ImageSmoothingQuality;
 }
 
-export type BrowserDecoder = 'webCodecs' | 'offscreenCanvas';
-
-type DecoderOptionsMap = {
-  webCodecs: WebCodecsOptions;
-  offscreenCanvas: OffscreenCanvasOptions;
-};
-
-export interface BrowserOptions<D extends BrowserDecoder = BrowserDecoder>
-  extends DecoderOptions {
-  type?: string;
-  decoder?: D;
-  options?: DecoderOptionsMap[D];
+export interface OffscreenCanvasOptions
+  extends ImageBitmapOptions,
+    CanvasRenderingContextOptions {
+  quality?: number;
 }
+
+export interface BrowserDecoderOptions extends CommonDecoderOptions {
+  type?: string;
+}
+
+export interface WebCodecsDecoderOptions extends BrowserDecoderOptions {
+  decoder: 'webCodecs';
+  options?: WebCodecsOptions;
+}
+
+export interface OffscreenCanvasDecoderOptions extends BrowserDecoderOptions {
+  decoder: 'offscreenCanvas';
+  options?: OffscreenCanvasOptions;
+}
+
+export type BrowserOptions = BrowserDecoderOptions &
+  (
+    | WebCodecsDecoderOptions
+    | OffscreenCanvasOptions
+    | {
+        decoder?: never;
+        options?: never;
+      }
+  );

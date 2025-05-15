@@ -5,3 +5,7 @@ export function isBrowser(): boolean {
 export function isServer(): boolean {
   return typeof process !== 'undefined' && typeof process.versions === 'object';
 }
+
+export function isWorker(): boolean {
+  return typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope;
+}

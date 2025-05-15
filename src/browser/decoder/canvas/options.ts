@@ -1,4 +1,4 @@
-import type { BrowserOptions } from '../../types';
+import type { OffscreenCanvasDecoderOptions } from '../../types';
 
 export const DEFAULT_IMAGE_SMOOTHING_SETTINGS = {
   imageSmoothingEnabled: true,
@@ -6,7 +6,7 @@ export const DEFAULT_IMAGE_SMOOTHING_SETTINGS = {
 } as const;
 
 export function imageBitmapOptions(
-  options?: BrowserOptions<'offscreenCanvas' | 'webCodecs'>
+  options?: OffscreenCanvasDecoderOptions
 ): ImageBitmapOptions {
   return {
     premultiplyAlpha: 'none',
@@ -17,7 +17,7 @@ export function imageBitmapOptions(
 }
 
 export function offscreenCanvasOptions(
-  options?: BrowserOptions<'offscreenCanvas'>
+  options?: OffscreenCanvasDecoderOptions
 ): CanvasRenderingContext2DSettings {
   return {
     colorSpace: 'srgb',

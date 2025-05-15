@@ -1,5 +1,5 @@
 import { beforeAll, bench, describe } from 'vitest';
-import { getMimeType } from '../../../src/shared/mime';
+import { detectMimeType } from '../../../src/browser/mime/detect-mime-type';
 import { mockMediaElements } from '../../fixtures/mock-media-elements';
 
 const BENCH_CONFIG = {
@@ -23,7 +23,7 @@ describe('File Type Inference Benchmarks', () => {
     bench(
       'URL parsing',
       () => {
-        getMimeType(complexUrl);
+        detectMimeType(complexUrl);
       },
       BENCH_CONFIG
     );
@@ -31,7 +31,7 @@ describe('File Type Inference Benchmarks', () => {
     bench(
       'Data URI parsing',
       () => {
-        getMimeType(dataUri);
+        detectMimeType(dataUri);
       },
       BENCH_CONFIG
     );
@@ -39,7 +39,7 @@ describe('File Type Inference Benchmarks', () => {
     bench(
       'Pre-typed files',
       () => {
-        getMimeType(typedFile);
+        detectMimeType(typedFile);
       },
       BENCH_CONFIG
     );
@@ -56,7 +56,7 @@ describe('File Type Inference Benchmarks', () => {
     bench(
       'Video element analysis',
       () => {
-        getMimeType(videoElement);
+        detectMimeType(videoElement);
       },
       BENCH_CONFIG
     );
@@ -66,7 +66,7 @@ describe('File Type Inference Benchmarks', () => {
     bench(
       'Fallback handling',
       () => {
-        getMimeType({} as never);
+        detectMimeType({} as never);
       },
       BENCH_CONFIG
     );

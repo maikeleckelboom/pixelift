@@ -1,13 +1,13 @@
 import { imageBitmapOptions } from './options';
 import { createError } from '../../../shared/error';
 import type { PixelData } from '../../../types';
-import type { BrowserOptions, WorkerCompatibleInput } from '../../types';
+import type { OffscreenCanvasDecoderOptions, WorkerCompatibleInput } from '../../types';
 import { createCanvasAndContext } from './utils';
 import { toBlob } from '../../blob';
 
 export async function decodeInWorker(
   input: WorkerCompatibleInput,
-  options?: BrowserOptions<'offscreenCanvas'>
+  options?: OffscreenCanvasDecoderOptions
 ): Promise<PixelData> {
   const blob = await toBlob(input, options);
 

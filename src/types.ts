@@ -7,7 +7,7 @@ export interface PixelData {
   height: number;
 }
 
-export interface DecoderOptions {
+export interface CommonDecoderOptions {
   headers?: HeadersInit;
   signal?: AbortSignal;
 }

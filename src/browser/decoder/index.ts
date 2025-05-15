@@ -1,7 +1,12 @@
 import { createError } from '../../shared/error';
 import type { PixelData } from '../../types';
-import type { BrowserDecoder, BrowserInput, BrowserOptions } from '../types';
-import { getMimeType } from '../../shared/mime';
+import type {
+  BrowserDecoder,
+  BrowserInput,
+  BrowserOptions,
+  OffscreenCanvasDecoderOptions
+} from '../types';
+import { detectMimeType } from '../mime/detect-mime-type';
 import * as WebCodecsDecoder from './webcodecs';
 
 const canvasDecoderPromise: Promise<typeof import('./canvas')> = import('./canvas');
@@ -18,7 +23,7 @@ function isWebCodecsSupported(mime: string): Promise<boolean> {
   return supportPromiseCache.get(mime) as Promise<boolean>;
 }
 
-interface DecodeOptions extends BrowserOptions {
+interface DecodeOptions extends OffscreenCanvasDecoderOptions {
   readonly type: string;
 }
 
@@ -32,7 +37,7 @@ const strategies: Record<BrowserDecoder | 'auto', DecoderStrategy> = {
   async offscreenCanvas(input, options) {
     const module = await canvasDecoderPromise;
     try {
-      return await module.decode(input, options as BrowserOptions<'offscreenCanvas'>);
+      return await module.decode(input, options as OffscreenCanvasDecoderOptions);
     } catch (error: unknown) {
       throw createError.rethrow(error);
     }
@@ -60,7 +65,7 @@ export async function decode(
     throw createError.decoderUnsupported(decoder);
   }
 
-  const type = explicitType ?? getMimeType(input);
+  const type = explicitType ?? detectMimeType(input);
 
   if (!type) {
     throw createError.runtimeError(
