@@ -3,8 +3,8 @@
 import { beforeAll, describe, expect, test } from 'vitest';
 import { pixelift } from '../../src';
 import { hashSHA256 } from '../fixtures/hash-sha256';
-import { LOSSLESS_TEST_FORMATS } from '../../src/shared/constants';
-import { createSnapshotTestCaseKey } from '../fixtures/hash-snapshot-key';
+import { LOSSLESS_TEST_FORMATS } from '../fixtures/constants';
+import { createSnapshotTestCaseKey } from '../fixtures/create-snapshot-test-case-key';
 
 // Initialize blobs and URLs
 const blobs: Partial<Record<string, Blob>> = {};
@@ -35,7 +35,6 @@ describe('Decoding from URL', () => {
 
 test.each(LOSSLESS_TEST_FORMATS)(
   `%s: ${createSnapshotTestCaseKey()}`,
-
   async (format) => {
     const result = await pixelift(urls[format] as URL);
     const hash = await hashSHA256(result.data);

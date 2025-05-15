@@ -5,5 +5,3 @@ exports[`gif: consistent hash from URL across runs and environments 1`] = `"3b5c
 exports[`png: consistent hash from URL across runs and environments 1`] = `"a7f87557625aaaef7f151c5a7272e9c47f04f59e66db68c5e702de0ea28dc940"`;
 
 exports[`svg: consistent hash from URL across runs and environments 1`] = `"a7f87557625aaaef7f151c5a7272e9c47f04f59e66db68c5e702de0ea28dc940"`;
-
-exports[`webp: consistent hash from URL across runs and environments 1`] = `"c76094215f551b4c9a5d9b670d13fa7e813052bf59b593e874d327f74a366d0d"`;

@@ -6,9 +6,6 @@ export interface BrowserOptions
     ImageDecodeOptions {
   decoder?: 'offscreenCanvas' | 'webCodecs';
   targetTime?: number;
-  imageSmoothingEnabled?: boolean;
-  imageSmoothingQuality?: ImageSmoothingQuality;
-  resizeQuality?: ResizeQuality;
 }
 
 export type BrowserInput =

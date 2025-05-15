@@ -2,55 +2,110 @@ import { createError } from '../../shared/error';
 import type { PixelData } from '../../types';
 import type { BrowserInput, BrowserOptions } from '../types';
 import { guessInputMimeType } from '../../shared/file-type';
-
-// Eagerly load WebCodecs decoder (default path)
 import * as WebCodecsDecoder from './webcodecs';
 
-// Prepare a single, cached promise for the Canvas decoder (fallback)
-let canvasDecoderPromise: Promise<typeof import('./canvas')> | null = null;
+const canvasDecoderPromise: Promise<typeof import('./canvas')> = import('./canvas');
 
-function loadCanvasDecoder() {
-  return (canvasDecoderPromise ||= import('./canvas'));
-}
+const supportPromiseCache: Map<string, Promise<boolean>> = new Map();
 
-// Memoize WebCodecs support per MIME type
-const webCodecsSupportCache = new Map<string, boolean>();
-
-async function isWebCodecsSupported(type: string): Promise<boolean> {
-  if (webCodecsSupportCache.has(type)) {
-    return !!webCodecsSupportCache.get(type);
+function isWebCodecsSupported(mime: string): Promise<boolean> {
+  if (!supportPromiseCache.has(mime)) {
+    const promise = WebCodecsDecoder.isSupported(mime).catch((err) => {
+      supportPromiseCache.delete(mime);
+      throw err;
+    });
+    supportPromiseCache.set(mime, promise);
   }
-  const supported = await WebCodecsDecoder.isSupported(type);
-  webCodecsSupportCache.set(type, supported);
-  return supported;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  return supportPromiseCache.get(mime)!;
 }
 
-// Core decode function: default to WebCodecs, fallback to Canvas
+type DecoderOption = 'auto' | 'webCodecs' | 'offscreenCanvas';
+
+/**
+ * Extended options to carry MIME type into strategies
+ */
+interface DecodeOptions extends BrowserOptions {
+  readonly type: string;
+  readonly onDecodeStart?: (type: string, decoder: DecoderOption) => void;
+  readonly onDecodeEnd?: (
+    type: string,
+    decoder: DecoderOption,
+    duration: number,
+    error?: Error
+  ) => void;
+}
+
+type DecoderStrategy = (input: BrowserInput, options: DecodeOptions) => Promise<PixelData>;
+
+const strategies: Record<DecoderOption, DecoderStrategy> = {
+  async webCodecs(input, options) {
+    const { type, onDecodeStart, onDecodeEnd } = options;
+    onDecodeStart?.(type, 'webCodecs');
+    const startTime = performance.now();
+
+    try {
+      const result = await WebCodecsDecoder.decode(input, options);
+      onDecodeEnd?.(type, 'webCodecs', performance.now() - startTime);
+      return result;
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      onDecodeEnd?.(type, 'webCodecs', performance.now() - startTime, err);
+      return strategies.offscreenCanvas(input, options);
+    }
+  },
+
+  async offscreenCanvas(input, options) {
+    const { type, onDecodeStart, onDecodeEnd } = options;
+    onDecodeStart?.(type, 'offscreenCanvas');
+    const startTime = performance.now();
+    const module = await canvasDecoderPromise;
+    try {
+      const result = await module.decode(input, options);
+      onDecodeEnd?.(type, 'offscreenCanvas', performance.now() - startTime);
+      return result;
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      onDecodeEnd?.(type, 'offscreenCanvas', performance.now() - startTime, err);
+      throw err;
+    }
+  },
+
+  async auto(input, opts) {
+    try {
+      const supported = await isWebCodecsSupported(opts.type);
+      if (supported) {
+        return strategies.webCodecs(input, opts);
+      }
+    } catch {
+      // → support check failed, fallback to Canvas
+    }
+    return strategies.offscreenCanvas(input, opts);
+  }
+};
+
 export async function decode(
   input: BrowserInput,
-  options?: BrowserOptions
+  options: BrowserOptions = {}
 ): Promise<PixelData> {
-  const fileType = options?.type || guessInputMimeType(input);
+  const type = options.type ?? guessInputMimeType(input);
 
-  if (!fileType) {
+  if (typeof type !== 'string' || type.trim() === '') {
     throw createError.invalidInput(
       'Unsupported input type for decoder',
-      input?.constructor?.name || typeof input
+      input?.constructor?.name ?? typeof input
     );
   }
 
-  // If a user explicitly requests Canvas, use it immediately
-  if (options?.decoder === 'offscreenCanvas') {
-    const { decode: decodeCanvas } = await loadCanvasDecoder();
-    return decodeCanvas(input, options);
+  const decoderOption = options.decoder ?? 'auto';
+
+  if (!['auto', 'webCodecs', 'offscreenCanvas'].includes(decoderOption)) {
+    throw createError.invalidOption(
+      Object.keys(strategies).join(', '),
+      decoderOption,
+      'decoder'
+    );
   }
 
-  // If a user explicitly requests WebCodecs, or WebCodecs supports this type, use it
-  if (options?.decoder === 'webCodecs' || (await isWebCodecsSupported(fileType))) {
-    return WebCodecsDecoder.decode(input, options);
-  }
-
-  // Fallback: load and invoke Canvas decoder
-  const { decode: decodeCanvas } = await loadCanvasDecoder();
-  return decodeCanvas(input, options);
+  return strategies[decoderOption](input, { ...options, type });
 }

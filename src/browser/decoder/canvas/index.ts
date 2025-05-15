@@ -28,10 +28,6 @@ class TrackedBitmaps {
   }
 }
 
-export function isSupported(): boolean {
-  return typeof OffscreenCanvas === 'function' && typeof createImageBitmap === 'function';
-}
-
 async function getBitmap(
   input: BrowserInput,
   opts: BrowserOptions | undefined,
@@ -152,11 +148,7 @@ export async function convertToBlobUsingCanvas(
   try {
     const { width, height } = await getBitmap(input, options, resources);
     const [canvas] = createCanvasAndContext(width, height);
-    const blob = await canvas.convertToBlob(convertToBlobOptions(options));
-    if (!blob) {
-      throw createError.runtimeError('Canvas conversion to Blob failed');
-    }
-    return blob;
+    return await canvas.convertToBlob(convertToBlobOptions(options));
   } finally {
     resources.closeAll();
   }

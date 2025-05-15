@@ -1,6 +1,5 @@
 import type { BrowserInput } from '../browser';
 import { isStringOrURL } from './validation';
-import { SUPPORTED_MIME_MAP } from './constants';
 
 const DATA_URI_MIME_REGEX = /^data:([^;,]+)/i;
 const QUERY_FRAGMENT_REGEX = /[?#].*$/;
@@ -78,8 +77,8 @@ export function guessInputMimeType(
     const isVideo = input instanceof HTMLVideoElement;
 
     // Handle known extensions
-    if (ext && SUPPORTED_MIME_MAP[ext]) {
-      return SUPPORTED_MIME_MAP[ext];
+    if (ext) {
+      return isVideo ? `video/${ext}` : `image/${ext}`;
     }
 
     // Smart fallbacks

@@ -1,10 +1,10 @@
 import { beforeAll, bench, describe } from 'vitest';
 import { pixelift } from '../../../src';
 import {
-  PIXELIFT_BROWSER_DECODERS,
   LOSSLESS_TEST_FORMATS,
-  type LosslessTestFormat
-} from '../../../src/shared/constants';
+  type LosslessTestFormat,
+  PIXELIFT_BROWSER_DECODERS
+} from '../../fixtures/constants';
 
 let urls: Record<LosslessTestFormat, URL>;
 

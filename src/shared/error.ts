@@ -2,6 +2,7 @@ export const ErrorCode = {
   decoderUnsupported: 'decoder-unsupported',
   decodingFailed: 'decoding-failed',
   invalidInput: 'invalid-input',
+  invalidOption: 'invalid-option',
   dependencyMissing: 'dependency-missing',
   fetchFailed: 'fetch-failed',
   networkError: 'network-error',
@@ -17,6 +18,7 @@ const MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.decoderUnsupported]: 'Decoder {decoder} is not supported: {detail}',
   [ErrorCode.decodingFailed]: 'Failed to decode {type}: {detail}',
   [ErrorCode.invalidInput]: 'Invalid input: expected {expected}, got {received}',
+  [ErrorCode.invalidOption]: 'Invalid option: {expected}, got {received} for {option}',
   [ErrorCode.dependencyMissing]: 'Required dependency missing: {dependency}',
   [ErrorCode.fetchFailed]: 'Failed to fetch from {url}: {status} {statusText}',
   [ErrorCode.networkError]: 'Network error: {detail}',
@@ -74,6 +76,9 @@ export const createError = {
 
   invalidInput: (expected: string, received: string): PixeliftError =>
     new PixeliftError(ErrorCode.invalidInput, { expected, received }),
+
+  invalidOption: (expected: string, received: string, option: string): PixeliftError =>
+    new PixeliftError(ErrorCode.invalidOption, { expected, received, option }),
 
   networkError: (detail: string, cause?: unknown): PixeliftError =>
     new PixeliftError(ErrorCode.networkError, { detail }, { cause }),

@@ -1,9 +1,6 @@
 import { bench, describe } from 'vitest';
 import { pixelift } from '../../../src/server';
-import {
-  PIXELIFT_SERVER_DECODERS,
-  LOSSLESS_TEST_FORMATS
-} from '../../../src/shared/constants';
+import { PIXELIFT_SERVER_DECODERS, LOSSLESS_TEST_FORMATS } from '../../fixtures/constants';
 
 describe('Server Benchmarks', () => {
   for (const decoder of PIXELIFT_SERVER_DECODERS) {

@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { beforeAll, describe, expect, test } from 'vitest';
 import { pixelift } from '../../src';
-import { LOSSLESS_TEST_FORMATS, type LosslessTestFormat } from '../../src/shared/constants';
+import { LOSSLESS_TEST_FORMATS, type LosslessTestFormat } from '../fixtures/constants';
 import { hashSHA256 } from '../fixtures/hash-sha256';
-import { createSnapshotTestCaseKey } from '../fixtures/hash-snapshot-key';
+import { createSnapshotTestCaseKey } from '../fixtures/create-snapshot-test-case-key';
 
 const buffers: Partial<Record<LosslessTestFormat, Buffer>> = {};
 const urls: Partial<Record<LosslessTestFormat, URL>> = {};
