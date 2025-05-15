@@ -2,23 +2,21 @@ export const ErrorCode = {
   decoderUnsupported: 'decoder-unsupported',
   decodingFailed: 'decoding-failed',
   invalidInput: 'invalid-input',
-  invalidOption: 'invalid-option',
   dependencyMissing: 'dependency-missing',
   fetchFailed: 'fetch-failed',
   networkError: 'network-error',
   pathTraversal: 'path-traversal',
-  runtimeError: 'runtime-error',
   fileReadError: 'file-read-error',
+  runtimeError: 'runtime-error',
   aborted: 'aborted'
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
 
 const MESSAGES: Record<ErrorCode, string> = {
-  [ErrorCode.decoderUnsupported]: 'Decoder {decoder} is not supported: {detail}',
+  [ErrorCode.decoderUnsupported]: 'Decoder not supported: {decoder}',
   [ErrorCode.decodingFailed]: 'Failed to decode {type}: {detail}',
   [ErrorCode.invalidInput]: 'Invalid input: expected {expected}, got {received}',
-  [ErrorCode.invalidOption]: 'Invalid option: {expected}, got {received} for {option}',
   [ErrorCode.dependencyMissing]: 'Required dependency missing: {dependency}',
   [ErrorCode.fetchFailed]: 'Failed to fetch from {url}: {status} {statusText}',
   [ErrorCode.networkError]: 'Network error: {detail}',
@@ -56,10 +54,8 @@ export class PixeliftError extends Error {
 }
 
 export const createError = {
-  aborted: (): PixeliftError => new PixeliftError(ErrorCode.aborted),
-
-  decoderUnsupported: (decoder: string = 'unknown', detail?: string): PixeliftError =>
-    new PixeliftError(ErrorCode.decoderUnsupported, { decoder, detail }),
+  decoderUnsupported: (decoder: string): PixeliftError =>
+    new PixeliftError(ErrorCode.decoderUnsupported, { decoder }),
 
   decodingFailed: (type: string, detail?: string, cause?: unknown): PixeliftError =>
     new PixeliftError(ErrorCode.decodingFailed, { type, detail }, { cause }),
@@ -77,9 +73,6 @@ export const createError = {
   invalidInput: (expected: string, received: string): PixeliftError =>
     new PixeliftError(ErrorCode.invalidInput, { expected, received }),
 
-  invalidOption: (expected: string, received: string, option: string): PixeliftError =>
-    new PixeliftError(ErrorCode.invalidOption, { expected, received, option }),
-
   networkError: (detail: string, cause?: unknown): PixeliftError =>
     new PixeliftError(ErrorCode.networkError, { detail }, { cause }),
 
@@ -88,6 +81,8 @@ export const createError = {
 
   fileReadError: (path: string, cause?: unknown): PixeliftError =>
     new PixeliftError(ErrorCode.fileReadError, { path }, { cause }),
+
+  aborted: (): PixeliftError => new PixeliftError(ErrorCode.aborted),
 
   runtimeError: (detail: string, cause?: unknown): PixeliftError =>
     new PixeliftError(ErrorCode.runtimeError, { detail }, { cause }),
@@ -99,14 +94,14 @@ export const createError = {
 
     if (error instanceof Error) {
       return new PixeliftError(
-        ErrorCode.decodingFailed,
+        ErrorCode.runtimeError,
         { detail: error.message },
         { cause: error }
       );
     }
 
     return new PixeliftError(
-      ErrorCode.decodingFailed,
+      ErrorCode.runtimeError,
       { detail },
       {
         cause: error

@@ -13,7 +13,7 @@ export default defineConfig({
           name: 'server',
           environment: 'node',
           include: ['**/*.test.ts', '**/*.universal.test.ts'],
-          exclude: ['**/browser/**/*.test.ts', '**/decode-consistency.test.ts'],
+          exclude: ['**/browser/**/*.test.ts'],
           benchmark: {
             include: ['**/server/**/*.bench.ts'],
             exclude: ['**/browser/**/*.bench.ts']
@@ -41,19 +41,19 @@ export default defineConfig({
             ]
           }
         }
-      },
-      {
-        test: {
-          name: 'snapshot-consistency',
-          include: ['**/decode-consistency.test.ts'],
-          environment: 'node'
-        }
       }
+      // {
+      //   test: {
+      //     name: 'snapshot-consistency',
+      //     include: ['**/decode-consistency.test.ts'],
+      //     environment: 'node'
+      //   }
+      // }
     ]
-  },
-  server: {
-    fs: {
-      strict: false
-    }
   }
+  // server: {
+  //   fs: {
+  //     strict: false
+  //   }
+  // }
 });

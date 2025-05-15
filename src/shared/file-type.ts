@@ -1,93 +1,85 @@
 import type { BrowserInput } from '../browser';
 import { isStringOrURL } from './validation';
 
-const DATA_URI_MIME_REGEX = /^data:([^;,]+)/i;
-const QUERY_FRAGMENT_REGEX = /[?#].*$/;
+const DATA_PREFIX = 'data:';
+const QUERY_OR_FRAGMENT = /[?#].*$/; // still OK once
+const SLASH_BACKSLASH = /[\\/]/;
 
 function parseDataUrlMimeType(dataUrl: string): string | undefined {
-  const match = dataUrl.match(DATA_URI_MIME_REGEX);
-  return match?.[1]?.split(';')[0]?.trim().toLowerCase() || undefined;
+  // data:mime/sub[;...],base64,...
+  const semicolon = dataUrl.indexOf(';', DATA_PREFIX.length);
+  const comma = dataUrl.indexOf(',', DATA_PREFIX.length);
+  const end = semicolon > 0 ? semicolon : comma;
+  if (end < 0) return undefined;
+
+  const mime = dataUrl.substring(DATA_PREFIX.length, end).toLowerCase();
+  const slash = mime.indexOf('/');
+  return slash > 0
+    ? mime.substring(0, slash + 1).concat(mime.substring(slash + 1).split('+')[0] || '')
+    : undefined;
 }
 
 export function getFileExtension(input: string | URL): string | undefined {
-  let path: string;
+  let path =
+    typeof input === 'string'
+      ? input
+      : input.protocol === DATA_PREFIX
+        ? input.href
+        : input.pathname;
 
-  if (typeof input === 'string') {
-    path = input;
-  } else {
-    path = input.protocol === 'data:' ? input.href : input.pathname;
+  if (path.startsWith(DATA_PREFIX)) {
+    const mime = parseDataUrlMimeType(path);
+    return mime ? mime.split('/')[1] : undefined;
   }
 
-  if (path.startsWith('data:')) {
-    const mimeType = parseDataUrlMimeType(path);
-    if (!mimeType) return undefined;
-    const [, subtype] = mimeType.split('/', 2);
-    return subtype?.split('+')[0];
-  }
+  // strip query & fragment
+  path = path.replace(QUERY_OR_FRAGMENT, '');
 
-  let cleanPath: string;
-  try {
-    cleanPath = decodeURIComponent(path.replace(QUERY_FRAGMENT_REGEX, ''));
-  } catch {
-    cleanPath = path.replace(QUERY_FRAGMENT_REGEX, '');
-  }
+  // find filename
+  const sepIdx = path.search(SLASH_BACKSLASH);
+  const file =
+    sepIdx < 0
+      ? path
+      : path.slice(path.lastIndexOf(path.match(SLASH_BACKSLASH)?.[0] || '') + 1);
 
-  const lastSlash = Math.max(cleanPath.lastIndexOf('/'), cleanPath.lastIndexOf('\\'));
-  const filename = cleanPath.substring(lastSlash + 1);
-  const lastDotIndex = filename.lastIndexOf('.');
-
-  if (lastDotIndex <= 0 || lastDotIndex === filename.length - 1) {
-    return undefined;
-  }
-
-  return filename.substring(lastDotIndex + 1).toLowerCase();
+  const dot = file.lastIndexOf('.');
+  if (dot <= 0 || dot === file.length - 1) return undefined;
+  return file.slice(dot + 1).toLowerCase();
 }
 
-export function guessInputMimeType(
-  input: BrowserInput,
-  fallbackMimeType?: string
-): string | undefined {
-  if (input instanceof Blob) {
-    return input.type || fallbackMimeType;
-  }
+export function guessInputMimeType(input: BrowserInput): string | undefined {
+  // Blob case is already fast
+  if (input instanceof Blob) return input.type || undefined;
 
-  if (typeof input === 'string' && input.startsWith('data:')) {
+  // String data URL is very common—catch early
+  if (typeof input === 'string' && input.startsWith(DATA_PREFIX)) {
     return parseDataUrlMimeType(input) || 'text/plain';
   }
 
-  let sourceUrl: string | URL | undefined;
-
+  // Determine a “source” URL string for images/videos/strings
+  let src: string | undefined;
   if (typeof HTMLImageElement !== 'undefined' && input instanceof HTMLImageElement) {
-    sourceUrl = input.src;
+    src = input.src;
   } else if (typeof HTMLVideoElement !== 'undefined' && input instanceof HTMLVideoElement) {
-    sourceUrl = input.currentSrc;
+    src = input.currentSrc;
   } else if (isStringOrURL(input)) {
-    sourceUrl = input;
+    src = input.toString();
   }
 
-  if (sourceUrl) {
-    const urlString = sourceUrl instanceof URL ? sourceUrl.href : sourceUrl;
+  if (!src) return undefined;
 
-    // Data URL handling for URL objects
-    if (urlString.startsWith('data:')) {
-      return parseDataUrlMimeType(urlString) || 'text/plain';
-    }
-
-    const ext = getFileExtension(sourceUrl);
-    const isVideo = input instanceof HTMLVideoElement;
-
-    // Handle known extensions
-    if (ext) {
-      return isVideo ? `video/${ext}` : `image/${ext}`;
-    }
-
-    // Smart fallbacks
-    if (isVideo) {
-      return ext ? `video/${ext}` : 'video/mp4';
-    }
-
-    return ext ? `image/${ext}` : fallbackMimeType;
+  // Data URL inside a URL object?
+  if (src.startsWith(DATA_PREFIX)) {
+    return parseDataUrlMimeType(src) || 'text/plain';
   }
 
-  return fallbackMimeType;
+  const ext = getFileExtension(src);
+  const isVideo = input instanceof HTMLVideoElement;
+
+  if (ext) {
+    return `${isVideo ? 'video' : 'image'}/${ext}`;
+  }
+
+  // fallback
+  return isVideo ? 'video/mp4' : undefined;
 }

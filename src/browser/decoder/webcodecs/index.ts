@@ -1,15 +1,11 @@
 import type { PixelData } from '../../../types';
 import type { BrowserInput, BrowserOptions } from '../../types';
-import { imageDecoderInitOptions, imageDecoderOptions } from './options';
+import { imageDecodeOptions, imageDecoderOptions } from './options';
 import { toBlob } from '../../blob';
 import { createError } from '../../../shared/error';
 
 export async function isSupported(mimeType: string): Promise<boolean> {
-  return (
-    'ImageDecoder' in window &&
-    typeof ImageDecoder === 'function' &&
-    (await ImageDecoder.isTypeSupported(mimeType))
-  );
+  return ImageDecoder.isTypeSupported(mimeType);
 }
 
 export async function decode(
@@ -34,7 +30,7 @@ export async function decode(
   }
 
   const blobStream = blobInput.stream();
-  const type = blobInput.type ?? blobInput.type;
+  const type = blobInput.type;
 
   if (!type) {
     throw createError.decodingFailed(
@@ -43,7 +39,7 @@ export async function decode(
     );
   }
 
-  const decoderConfig = imageDecoderInitOptions(blobStream, type, options);
+  const decoderConfig = imageDecoderOptions(blobStream, type, options);
 
   let decoder: ImageDecoder | undefined;
   let frame: VideoFrame | undefined;
@@ -52,7 +48,7 @@ export async function decode(
     decoder = new ImageDecoder(decoderConfig);
     await decoder.completed;
 
-    const decodeOptions = imageDecoderOptions(options);
+    const decodeOptions = imageDecodeOptions(options);
     const { image: frame } = await decoder.decode(decodeOptions);
 
     const byteLength = frame.allocationSize({ format: 'RGBA' });

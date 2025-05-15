@@ -1,5 +1,4 @@
 import { convertToBlobOptions, imageBitmapOptions } from './options';
-import { createVideoFrameBitmap } from './video/utils';
 import { createCanvasAndContext } from './utils';
 import { toBlob } from '../../blob';
 import { createError } from '../../../shared/error';
@@ -53,14 +52,10 @@ async function getBitmap(
     }
   }
 
-  if (input instanceof HTMLImageElement) {
+  if (input instanceof HTMLImageElement || input instanceof HTMLVideoElement) {
     const bitmap = await createImageBitmap(input, decodeOpts);
     resources.track(bitmap);
     return bitmap;
-  }
-
-  if (input instanceof HTMLVideoElement) {
-    return createVideoFrameBitmap(input, opts);
   }
 
   if (isStringOrURL(input)) {

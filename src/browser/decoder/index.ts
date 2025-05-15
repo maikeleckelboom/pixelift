@@ -1,85 +1,60 @@
-import { createError } from '../../shared/error';
+import { createError, PixeliftError } from '../../shared/error';
 import type { PixelData } from '../../types';
 import type { BrowserInput, BrowserOptions } from '../types';
 import { guessInputMimeType } from '../../shared/file-type';
 import * as WebCodecsDecoder from './webcodecs';
 
 const canvasDecoderPromise: Promise<typeof import('./canvas')> = import('./canvas');
-
 const supportPromiseCache: Map<string, Promise<boolean>> = new Map();
 
 function isWebCodecsSupported(mime: string): Promise<boolean> {
   if (!supportPromiseCache.has(mime)) {
     const promise = WebCodecsDecoder.isSupported(mime).catch((err) => {
       supportPromiseCache.delete(mime);
-      throw err;
+      throw createError.rethrow(err);
     });
     supportPromiseCache.set(mime, promise);
   }
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return supportPromiseCache.get(mime)!;
+  return supportPromiseCache.get(mime) as Promise<boolean>;
 }
 
 type DecoderOption = 'auto' | 'webCodecs' | 'offscreenCanvas';
 
-/**
- * Extended options to carry MIME type into strategies
- */
 interface DecodeOptions extends BrowserOptions {
   readonly type: string;
-  readonly onDecodeStart?: (type: string, decoder: DecoderOption) => void;
-  readonly onDecodeEnd?: (
-    type: string,
-    decoder: DecoderOption,
-    duration: number,
-    error?: Error
-  ) => void;
+  readonly onError?: (type: string, error?: PixeliftError) => void;
 }
 
 type DecoderStrategy = (input: BrowserInput, options: DecodeOptions) => Promise<PixelData>;
 
 const strategies: Record<DecoderOption, DecoderStrategy> = {
   async webCodecs(input, options) {
-    const { type, onDecodeStart, onDecodeEnd } = options;
-    onDecodeStart?.(type, 'webCodecs');
-    const startTime = performance.now();
-
     try {
-      const result = await WebCodecsDecoder.decode(input, options);
-      onDecodeEnd?.(type, 'webCodecs', performance.now() - startTime);
-      return result;
+      return await WebCodecsDecoder.decode(input, options);
     } catch (error: unknown) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      onDecodeEnd?.(type, 'webCodecs', performance.now() - startTime, err);
+      options?.onError?.('webCodecs', createError.rethrow(error));
       return strategies.offscreenCanvas(input, options);
     }
   },
 
   async offscreenCanvas(input, options) {
-    const { type, onDecodeStart, onDecodeEnd } = options;
-    onDecodeStart?.(type, 'offscreenCanvas');
-    const startTime = performance.now();
     const module = await canvasDecoderPromise;
     try {
-      const result = await module.decode(input, options);
-      onDecodeEnd?.(type, 'offscreenCanvas', performance.now() - startTime);
-      return result;
+      return await module.decode(input, options);
     } catch (error: unknown) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      onDecodeEnd?.(type, 'offscreenCanvas', performance.now() - startTime, err);
-      throw err;
+      options?.onError?.('offscreenCanvas', createError.rethrow(error));
+      throw createError.rethrow(error);
     }
   },
 
   async auto(input, opts) {
     try {
       const supported = await isWebCodecsSupported(opts.type);
-      if (supported) {
-        return strategies.webCodecs(input, opts);
-      }
+      if (supported) return strategies.webCodecs(input, opts);
     } catch {
-      // → support check failed, fallback to Canvas
+      /* Fallback to Canvas */
     }
+
     return strategies.offscreenCanvas(input, opts);
   }
 };
@@ -88,24 +63,18 @@ export async function decode(
   input: BrowserInput,
   options: BrowserOptions = {}
 ): Promise<PixelData> {
-  const type = options.type ?? guessInputMimeType(input);
+  const { decoder, type: explicitType, ...rest } = options;
 
-  if (typeof type !== 'string' || type.trim() === '') {
-    throw createError.invalidInput(
-      'Unsupported input type for decoder',
-      input?.constructor?.name ?? typeof input
-    );
+  if (decoder && !strategies[decoder]) {
+    throw createError.decoderUnsupported(decoder);
   }
 
-  const decoderOption = options.decoder ?? 'auto';
+  const type = explicitType ?? guessInputMimeType(input);
 
-  if (!['auto', 'webCodecs', 'offscreenCanvas'].includes(decoderOption)) {
-    throw createError.invalidOption(
-      Object.keys(strategies).join(', '),
-      decoderOption,
-      'decoder'
-    );
+  if (!type) {
+    throw createError.runtimeError('Unable to determine MIME type for input.');
   }
 
-  return strategies[decoderOption](input, { ...options, type });
+  const strategy = decoder ?? 'auto';
+  return strategies[strategy](input, { ...rest, type });
 }
