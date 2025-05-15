@@ -8,7 +8,7 @@ import type {
 } from './types';
 import type { ServerInput, ServerOptions } from './server';
 import type { BrowserInput, BrowserOptions } from './browser';
-import { validateBrowserInput, validateServerInput } from './shared/validation';
+import { isValidBrowserInput, isValidServerInput } from './shared/guards';
 
 interface Decoder<Input extends PixeliftInput, Options extends CommonDecoderOptions> {
   decode: (input: Input, options?: Options) => Promise<PixelData>;
@@ -21,14 +21,14 @@ export interface EnvironmentConfig<I extends PixeliftInput, O extends PixeliftOp
 }
 
 export const browserConfig: EnvironmentConfig<BrowserInput, BrowserOptions> = {
-  validate: validateBrowserInput,
+  validate: isValidBrowserInput,
   expected:
     'string, URL, Blob, BufferSource, SVGElement, HTMLImageElement, HTMLVideoElement, VideoFrame, ImageBitmap or ImageData,',
   importDecoder: () => import('./browser/decoder')
 };
 
 export const serverConfig: EnvironmentConfig<ServerInput, ServerOptions> = {
-  validate: validateServerInput,
+  validate: isValidServerInput,
   expected: 'string, URL, Buffer or BufferSource',
   importDecoder: () => import('./server/decoder')
 };

@@ -1,7 +1,16 @@
 import type { CommonDecoderOptions } from '../types';
 
 /**
- * The raw inputs you can receive in worker or browser contexts.
+ * Represents the raw input that can be provided to a web worker or other similar processing utility.
+ * This type accommodates a variety of input formats, allowing flexibility in handling different source data.
+ *
+ * It supports the following types of inputs:
+ * - `string`: A textual representation, typically a URL or inline script content.
+ * - `URL`: A URL object providing a reference to the resource to be processed.
+ * - `Blob`: A Blob object representing immutable binary data, often used for file handling.
+ * - `BufferSource`: A buffer or array buffer content designed for low-level binary data manipulation.
+ * - `ReadableStream<Uint8Array>`: A stream of binary data, usually for handling dynamic or continuous input.
+ * - `Response`: A fetch API Response instance, typically containing HTTP payloads.
  */
 export type RawWorkerInput =
   | string
@@ -12,7 +21,15 @@ export type RawWorkerInput =
   | Response;
 
 /**
- * Anything that can be transferred back from a worker once decoded.
+ * Defines a type union, `TransferableDecodedInput`, that represents various input types
+ * that can be transferred across threads or contexts for processing in operations
+ * involving decoded data.
+ *
+ * This type can be one of the following:
+ * - `ImageBitmap`: Represents an efficiently created and handled bitmap of image data.
+ * - `ImageData`: Represents raw pixel data and dimensions of an image.
+ * - `VideoFrame`: Represents a frame of video data, typically used with modern video APIs.
+ * - `OffscreenCanvas`: Represents a canvas that can be rendered off the main thread.
  */
 export type TransferableDecodedInput =
   | ImageBitmap
@@ -21,7 +38,15 @@ export type TransferableDecodedInput =
   | OffscreenCanvas;
 
 /**
- * Any DOM element source you’d like to support.
+ * Type definition for a DOMSource.
+ *
+ * Represents a source type that can be used as input in various DOM-related operations.
+ * The supported sources include:
+ *
+ * - HTMLImageElement: Represents an image element.
+ * - HTMLVideoElement: Represents a video element.
+ * - HTMLCanvasElement: Represents a canvas element.
+ * - SVGElement: Represents an SVG element.
  */
 export type DOMSource =
   | HTMLImageElement
@@ -30,71 +55,150 @@ export type DOMSource =
   | SVGElement;
 
 /**
- * All inputs that your worker can accept (raw or already‑decoded).
+ * Represents an input type that is compatible with a worker.
+ * This type is a union of `RawWorkerInput` and `TransferableDecodedInput`.
+ *
+ * - `RawWorkerInput`: A type that typically includes raw data or information
+ *   that can be directly consumed or processed by the worker.
+ * - `TransferableDecodedInput`: A type that includes decoded or structured
+ *   information, often involving data that can be transferred efficiently between
+ *   threads or processes using transferable objects.
  */
 export type WorkerCompatibleInput = RawWorkerInput | TransferableDecodedInput;
 
 /**
- * All inputs you support in the browser.
+ * Represents the possible input types for a browser environment.
+ * This can be one of two types:
+ * - `WorkerCompatibleInput`: Represents input that is compatible with a web worker.
+ * - `DOMSource`: Represents a source related to the Document Object Model.
+ *
+ * The `BrowserInput` type abstracts the input mechanisms for browser-based processes.
+ * It aids in handling worker-compatible inputs or DOM-related resources seamlessly.
  */
 export type BrowserInput = WorkerCompatibleInput | DOMSource;
 
 /**
- * Inputs that represent encoded data (so they need decoding).
+ * EncodedBrowserInput represents a type that can either be `RawWorkerInput` or `DOMSource`.
+ * It is used to specify the input type for handling encoded data in a browser environment.
+ *
+ * - `RawWorkerInput`: Refers to data input obtained from a worker thread, typically raw or preprocessed content.
+ * - `DOMSource`: Refers to a browser-based Document Object Model (DOM) source, such as HTML elements or other DOM-related data.
  */
 export type EncodedBrowserInput = RawWorkerInput | DOMSource;
 
 /**
- * Inputs that are already in a decoded, transferable form.
+ * Represents a type alias of `TransferableDecodedInput` for browser input that has been decoded.
+ *
+ * This type is used to define inputs after they have been processed from a raw transferable state into
+ * a decoded format suitable for further manipulation within a browser-based environment.
+ *
+ * It encapsulates all properties and behaviors contained within `TransferableDecodedInput`.
  */
 export type DecodedBrowserInput = TransferableDecodedInput;
 
 /**
- * Shared options for Canvas/WebCodecs.
+ * Interface representing configuration options for a `CanvasRenderingContext`.
+ * It combines settings for `CanvasRenderingContext2D` and image smoothing properties.
+ *
+ * This interface extends:
+ * - `CanvasRenderingContext2DSettings`: Provides configurable options for a 2D rendering context,
+ *   such as alpha compositing, desynchronized rendering, and more.
+ * - `CanvasImageSmoothing`: Includes properties to control image smoothing behavior
+ *   when resizing images within the canvas.
+ *
+ * Use this interface to specify options when creating and manipulating 2D rendering contexts
+ * for a `HTMLCanvasElement`.
  */
-export interface CanvasRenderingContextOptions {
-  imageSmoothingEnabled?: boolean;
-  imageSmoothingQuality?: ImageSmoothingQuality;
-}
+export interface CanvasRenderingContextOptions
+  extends CanvasRenderingContext2DSettings,
+    CanvasImageSmoothing {}
+
+export type PartialImageEncodeOptions = Pick<ImageEncodeOptions, 'quality'>;
 
 /**
- * Options for ImageBitmap decoding in workers.
+ * Represents the options that can be used with WebCodecs API for image decoding.
+ * Extends the `ImageDecodeOptions` interface to include additional properties for fine-tuning image decoding.
+ *
+ * The `WebCodecsOptions` interface provides flexibility in specifying decoding behavior for images while
+ * also allowing adjustment of factors like quality level.
+ *
+ * - `quality`: An optional property to specify the desired quality of the resulting image. The value must be
+ * a number between 0 and 1, where 0 represents the lowest quality and 1 represents the highest quality.
  */
-export interface WebCodecsOptions extends ImageDecodeOptions {
-  quality?: number;
-}
+export interface WebCodecsOptions extends ImageDecodeOptions, PartialImageEncodeOptions {}
 
 /**
- * Options for OffscreenCanvas decoding in workers.
+ * Represents configuration options for an `OffscreenCanvas`.
+ * Extends `ImageBitmapOptions` and `CanvasRenderingContextOptions` to provide additional
+ * properties and configurations for creating an offscreen rendering context.
+ *
+ * Properties in this interface can be used to control aspects such as rendering
+ * quality and other canvas-related settings.
+ *
+ * @property {number} [quality] - A number specifying the desired quality for the rendering context.
+ *                                The interpretation of this value may vary depending on the
+ *                                implemented rendering context.
  */
 export interface OffscreenCanvasOptions
   extends ImageBitmapOptions,
-    CanvasRenderingContextOptions {
-  quality?: number;
-}
+    CanvasRenderingContextOptions,
+    PartialImageEncodeOptions {}
 
 /**
- * The base options your browser‑side decoders all share.
+ * Interface representing the configuration options for a browser-based decoder.
+ * Extends the `CommonDecoderOptions` to include additional settings specific
+ * to browser decoding.
+ *
+ * @interface BrowserDecoderOptions
+ * @extends CommonDecoderOptions
+ *
+ * @property {string} [type] Specifies the type or format of the decoding process.
  */
-export interface BrowserDecoderOptions extends CommonDecoderOptions {
-  type?: string;
-}
+export interface BrowserDecoderOptions extends CommonDecoderOptions {}
 
 /**
- * Specific decoder flavors for the browser.
+ * Represents the options for configuring a decoder that uses the WebCodecs API.
+ * This configuration interface extends the base `BrowserDecoderOptions`.
+ * It is specifically tailored for using the WebCodecs API to decode media.
+ *
+ * The `decoder` property must be set to `'webCodecs'` to indicate the use of the WebCodecs API.
+ * Additional decoding configuration may be provided through the optional `options` property.
+ *
+ * This is used in scenarios where you want to work with low-level media decoding,
+ * leveraging the WebCodecs API for high performance and efficient handling of media content.
  */
 export interface WebCodecsDecoderOptions extends BrowserDecoderOptions {
   decoder: 'webCodecs';
   options?: WebCodecsOptions;
 }
 
+/**
+ * Represents the options for configuring a decoder that utilizes an offscreen canvas.
+ * This interface extends the base `BrowserDecoderOptions` interface and is specifically
+ * used to initialize or configure the functionality of an offscreen canvas decoder.
+ *
+ * The `decoder` property is predefined as `'offscreenCanvas'`, identifying it as an offscreen canvas decoder.
+ * Additional optional configurations can be provided through the `options` property, which represents
+ * specific settings for the offscreen canvas.
+ *
+ * Use this interface to ensure the decoder is set to work efficiently with offscreen canvas features.
+ */
 export interface OffscreenCanvasDecoderOptions extends BrowserDecoderOptions {
   decoder: 'offscreenCanvas';
   options?: OffscreenCanvasOptions;
 }
 
 /**
- * The full union of allowed decoder options in the browser.
+ * Represents the available options for configuring browser-based decoders.
+ *
+ * This type can take the form of one of the following:
+ * - `WebCodecsDecoderOptions`: Specific configuration options for a decoder
+ *   using the WebCodecs API.
+ * - `OffscreenCanvasDecoderOptions`: Specific configuration options for a
+ *   decoder utilizing the OffscreenCanvas API.
+ * - A combination of `BrowserDecoderOptions` with `decoder` and `options`
+ *   properties explicitly omitted to avoid conflicts when specifying custom
+ *   decoder configurations.
  */
 export type BrowserOptions =
   | WebCodecsDecoderOptions

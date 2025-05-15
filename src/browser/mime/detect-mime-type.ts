@@ -1,5 +1,5 @@
 import type { BrowserInput } from '../index';
-import { isStringOrURL } from '../../shared/validation';
+import { isStringOrURL } from '../../shared/guards';
 import { lookup } from './registry';
 
 export function detectMimeType(input: BrowserInput) {

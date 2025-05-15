@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import type { ServerInput, ServerOptions } from './types';
 import { createError } from '../shared/error';
 import { fileURLToPath } from 'node:url';
-import { isAbortError } from '../shared/validation';
+import { isAbortError } from '../shared/guards';
 
 function sanitizeFilePath(url: URL): string {
   const decoded = fileURLToPath(url);

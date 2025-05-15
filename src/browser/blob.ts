@@ -1,12 +1,12 @@
-import { isAbortError, isStringOrURL } from '../shared/validation';
+import { isAbortError, isStringOrURL } from '../shared/guards';
 import type { BrowserInput, BrowserOptions, OffscreenCanvasDecoderOptions } from './types';
 import { createError } from '../shared/error';
-import { imageBitmapOptions } from './decoder/canvas/options';
+import {
+  imageBitmapOptions,
+  isOffscreenCanvasDecoderOptions
+} from './decoder/canvas/options';
 import { createCanvasAndContext } from './decoder/canvas/utils';
 
-/**
- * Convert an ImageBitmap into a Blob via OffscreenCanvas or <canvas>.
- */
 async function blobFromImageBitmap(
   bitmap: ImageBitmap,
   options?: BrowserOptions
@@ -18,28 +18,12 @@ async function blobFromImageBitmap(
     options as OffscreenCanvasDecoderOptions
   );
   context.drawImage(bitmap, 0, 0, width, height);
-  if ('convertToBlob' in canvas) {
-    return (canvas as OffscreenCanvas).convertToBlob({
-      type: options?.type,
-      quality: options?.options?.quality
-    });
-  } else {
-    return new Promise((resolve, reject) => {
-      (canvas as HTMLCanvasElement).toBlob(
-        (blob) =>
-          blob
-            ? resolve(blob)
-            : reject(createError.runtimeError('Failed to convert <canvas> to Blob')),
-        options?.type,
-        options?.options?.quality
-      );
-    });
-  }
+  return canvas.convertToBlob({
+    type: options?.type,
+    quality: getQualityForBlobConversion(options)
+  });
 }
 
-/**
- * Fetch a resource from a string/URL and return its Blob.
- */
 async function blobFromString(
   input: string | URL,
   options?: BrowserOptions
@@ -75,9 +59,6 @@ async function blobFromString(
   return res.blob();
 }
 
-/**
- * Wrap an ArrayBuffer or TypedArray into a Blob.
- */
 function blobFromArrayBuffer(
   input: ArrayBuffer | ArrayBufferView,
   options?: BrowserOptions
@@ -91,9 +72,13 @@ function blobFromArrayBuffer(
   }
 }
 
-/**
- * Convert DOM <canvas> into Blob.
- */
+function getQualityForBlobConversion(options?: BrowserOptions): number | undefined {
+  if (isOffscreenCanvasDecoderOptions(options) && options.options) {
+    return options.options.quality;
+  }
+  return undefined;
+}
+
 export function blobFromCanvas(
   input: HTMLCanvasElement,
   options?: BrowserOptions
@@ -105,15 +90,11 @@ export function blobFromCanvas(
           ? resolve(blob)
           : reject(createError.runtimeError('Failed to convert <canvas> to Blob')),
       options?.type,
-      options?.options?.quality
+      getQualityForBlobConversion(options)
     );
   });
 }
 
-/**
- * Input-to-Blob converter.
- * Works in both the main thread (DOM) and Web Workers.
- */
 export async function toBlob(input: BrowserInput, options?: BrowserOptions): Promise<Blob> {
   // String | URL
   if (isStringOrURL(input)) {
@@ -125,7 +106,7 @@ export async function toBlob(input: BrowserInput, options?: BrowserOptions): Pro
     return blobFromArrayBuffer(input, options);
   }
 
-  //  Blob → ...
+  // Blob → Pass-through
   if (input instanceof Blob) {
     return input;
   }
@@ -144,26 +125,20 @@ export async function toBlob(input: BrowserInput, options?: BrowserOptions): Pro
   if (typeof OffscreenCanvas !== 'undefined' && input instanceof OffscreenCanvas) {
     return input.convertToBlob({
       type: options?.type,
-      quality: options?.options?.quality
+      quality: getQualityForBlobConversion(options)
     });
   }
 
   // ImageData → OffscreenCanvas → Blob
   if (typeof ImageData !== 'undefined' && input instanceof ImageData) {
     const { width, height } = input;
-    const [canvas, context] = createCanvasAndContext(
-      width,
-      height,
-      options as OffscreenCanvasDecoderOptions
-    );
+    const [offscreenCanvas, context] = createCanvasAndContext(width, height, options);
     context.putImageData(input, 0, 0);
-    return canvas.convertToBlob({
+    return offscreenCanvas.convertToBlob({
       type: options?.type,
-      quality: options?.options?.quality
+      quality: getQualityForBlobConversion(options)
     });
   }
-
-  /* DOM Main Thread */
 
   // HTMLImageElement, HTMLVideoElement → Bitmap →→ Blob
   if (

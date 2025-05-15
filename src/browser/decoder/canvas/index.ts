@@ -11,13 +11,12 @@ import type {
   RawWorkerInput
 } from '../../types';
 import { isWorker } from '../../../shared/env';
-// Use the corrected guards
 import {
   isDecodedInput,
   isEncodedInput,
   isMediaElement,
   isRawData
-} from '../../../shared/validation';
+} from '../../../shared/guards';
 import { ResourceManager } from '../resources';
 
 async function loadBitmapOnMainThread(
@@ -73,15 +72,13 @@ async function convertToBlobAndLoad(
 }
 
 async function createBitmapFromEncodedInput(
-  input: EncodedBrowserInput, // RawWorkerInput | DOMSource
+  input: EncodedBrowserInput,
   options: OffscreenCanvasDecoderOptions | undefined,
   resourceManager: ResourceManager
 ): Promise<ImageBitmap> {
   const opts = imageBitmapOptions(options);
 
-  // DOMSource part of EncodedBrowserInput
   if (isMediaElement(input)) {
-    // Handles HTMLImageElement, HTMLVideoElement, HTMLCanvasElement
     if (
       input instanceof HTMLVideoElement &&
       input.readyState < HTMLMediaElement.HAVE_CURRENT_DATA
@@ -94,20 +91,15 @@ async function createBitmapFromEncodedInput(
   }
 
   if (typeof SVGElement !== 'undefined' && input instanceof SVGElement) {
-    // SVGElement is DOMSource
-    const svgString = new XMLSerializer().serializeToString(input);
-    const blob = new Blob([svgString], { type: 'image/svg+xml' });
+    const blob = new Blob([input.outerHTML], { type: 'image/svg+xml' });
     return loadBitmapFromBlob(blob, options, resourceManager);
   }
 
-  // RawWorkerInput part of EncodedBrowserInput
   if (isRawData(input)) {
-    // Handles string, URL, Blob, BufferSource
     return convertToBlobAndLoad(input, options, resourceManager);
   }
 
   if (input instanceof Response) {
-    // Response is RawWorkerInput
     if (!input.body) {
       throw createError.runtimeError('Response has no body');
     }
@@ -115,11 +107,9 @@ async function createBitmapFromEncodedInput(
   }
 
   if (input instanceof ReadableStream) {
-    // ReadableStream is RawWorkerInput
     return convertToBlobAndLoad(input, options, resourceManager);
   }
 
-  // This should be unreachable if isEncodedInput is correct and all EncodedBrowserInput variants are handled.
   throw createError.invalidInput(
     'Unsupported or unhandled EncodedBrowserInput subtype',
     typeof input
@@ -127,7 +117,7 @@ async function createBitmapFromEncodedInput(
 }
 
 async function createBitmapFromDecodedInput(
-  input: DecodedBrowserInput, // ImageBitmap | ImageData | VideoFrame | OffscreenCanvas
+  input: DecodedBrowserInput,
   options: OffscreenCanvasDecoderOptions | undefined,
   resources: ResourceManager
 ): Promise<ImageBitmap> {
@@ -162,9 +152,8 @@ async function toBitmap(
     return createBitmapFromDecodedInput(input, options, resources);
   }
 
-  // Based on BrowserInput = EncodedInput | DecodedInput, this should be unreachable.
   throw createError.invalidInput(
-    'Input is neither Encoded nor Decoded BrowserInput',
+    'Unsupported or unhandled BrowserInput subtype',
     typeof input
   );
 }

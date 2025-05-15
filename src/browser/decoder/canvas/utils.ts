@@ -1,6 +1,10 @@
 import { createError } from '../../../shared/error';
-import type { OffscreenCanvasDecoderOptions } from '../../types';
-import { DEFAULT_IMAGE_SMOOTHING_SETTINGS, offscreenCanvasOptions } from './options';
+import type { BrowserOptions, OffscreenCanvasDecoderOptions } from '../../types';
+import {
+  DEFAULT_IMAGE_SMOOTHING_SETTINGS,
+  isOffscreenCanvasDecoderOptions,
+  offscreenCanvasContextOptions
+} from './options';
 
 /**
  * Creates an OffscreenCanvas of specified dimensions along with its 2D rendering context.
@@ -14,10 +18,10 @@ import { DEFAULT_IMAGE_SMOOTHING_SETTINGS, offscreenCanvasOptions } from './opti
 export function createCanvasAndContext(
   width: number,
   height: number,
-  options?: OffscreenCanvasDecoderOptions
+  options?: BrowserOptions
 ): [OffscreenCanvas, OffscreenCanvasRenderingContext2D] {
   const canvas = new OffscreenCanvas(width, height);
-  const contextOptions = offscreenCanvasOptions(options);
+  const contextOptions = offscreenCanvasContextOptions(options);
   const context = canvas.getContext('2d', contextOptions);
   if (!context) {
     throw createError.runtimeError('Failed to create OffscreenCanvasRenderingContext2D');
@@ -35,12 +39,12 @@ export function createCanvasAndContext(
  */
 export function setImageSmoothingSettings(
   context: OffscreenCanvasRenderingContext2D,
-  options?: OffscreenCanvasDecoderOptions
+  options?: BrowserOptions
 ): void {
   let imageSmoothingEnabled: boolean | undefined;
   let imageSmoothingQuality: ImageSmoothingQuality | undefined;
 
-  if (options?.decoder === 'offscreenCanvas' && options.options) {
+  if (isImageSmoothingSettings(options)) {
     imageSmoothingEnabled = options.options.imageSmoothingEnabled;
     imageSmoothingQuality = options.options.imageSmoothingQuality;
   }
@@ -48,4 +52,10 @@ export function setImageSmoothingSettings(
   const defaults = DEFAULT_IMAGE_SMOOTHING_SETTINGS;
   context.imageSmoothingEnabled = imageSmoothingEnabled ?? defaults.imageSmoothingEnabled;
   context.imageSmoothingQuality = imageSmoothingQuality ?? defaults.imageSmoothingQuality;
+}
+
+export function isImageSmoothingSettings(
+  options?: BrowserOptions
+): options is Required<OffscreenCanvasDecoderOptions> {
+  return isOffscreenCanvasDecoderOptions(options) && !!options.options;
 }
