@@ -31,7 +31,7 @@ export async function getBuffer(
   input: ServerInput,
   options: ServerOptions = {}
 ): Promise<Buffer> {
-  const { signal, headers } = options;
+  const { signal, headers, credentials } = options;
   signal?.throwIfAborted();
 
   // 1) Already a Buffer
@@ -81,7 +81,7 @@ export async function getBuffer(
       case 'http:':
       case 'https:': {
         signal?.throwIfAborted();
-        const res = await fetch(url.toString(), { headers, signal });
+        const res = await fetch(url.toString(), { headers, signal, credentials });
         if (!res.ok) {
           throw createError.fetchFailed(url.toString(), res.status, res.statusText);
         }

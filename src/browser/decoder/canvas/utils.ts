@@ -1,5 +1,5 @@
 import { createError } from '../../../shared/error';
-import type { OffscreenCanvasDecoderOptions } from '../../types';
+import type { BrowserOptions, OffscreenCanvasDecoderOptions } from '../../types';
 import { DEFAULT_IMAGE_SMOOTHING_SETTINGS, offscreenCanvasOptions } from './options';
 
 /**
@@ -14,7 +14,7 @@ import { DEFAULT_IMAGE_SMOOTHING_SETTINGS, offscreenCanvasOptions } from './opti
 export function createCanvasAndContext(
   width: number,
   height: number,
-  options?: OffscreenCanvasDecoderOptions
+  options?: BrowserOptions
 ): [OffscreenCanvas, OffscreenCanvasRenderingContext2D] {
   const canvas = new OffscreenCanvas(width, height);
   const contextOptions = offscreenCanvasOptions(options);
@@ -22,9 +22,7 @@ export function createCanvasAndContext(
   if (!context) {
     throw createError.runtimeError('Failed to create OffscreenCanvasRenderingContext2D');
   }
-  context.canvas.width = width;
-  context.canvas.height = height;
-  setImageSmoothingSettings(context, options);
+  setImageSmoothingSettings(context, options as OffscreenCanvasDecoderOptions);
   return [canvas, context];
 }
 
@@ -39,11 +37,15 @@ export function setImageSmoothingSettings(
   context: OffscreenCanvasRenderingContext2D,
   options?: OffscreenCanvasDecoderOptions
 ): void {
-  const { imageSmoothingQuality, imageSmoothingEnabled } = options?.options || {};
-  const {
-    imageSmoothingEnabled: defaultImageSmoothingEnabled,
-    imageSmoothingQuality: defaultImageSmoothingQuality
-  } = DEFAULT_IMAGE_SMOOTHING_SETTINGS;
-  context.imageSmoothingEnabled = imageSmoothingEnabled || defaultImageSmoothingEnabled;
-  context.imageSmoothingQuality = imageSmoothingQuality || defaultImageSmoothingQuality;
+  let imageSmoothingEnabled: boolean | undefined;
+  let imageSmoothingQuality: ImageSmoothingQuality | undefined;
+
+  if (options?.decoder === 'offscreenCanvas' && options.options) {
+    imageSmoothingEnabled = options.options.imageSmoothingEnabled;
+    imageSmoothingQuality = options.options.imageSmoothingQuality;
+  }
+
+  const defaults = DEFAULT_IMAGE_SMOOTHING_SETTINGS;
+  context.imageSmoothingEnabled = imageSmoothingEnabled ?? defaults.imageSmoothingEnabled;
+  context.imageSmoothingQuality = imageSmoothingQuality ?? defaults.imageSmoothingQuality;
 }

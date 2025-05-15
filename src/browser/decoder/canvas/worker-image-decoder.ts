@@ -9,6 +9,7 @@ export async function decodeInWorker(
   input: WorkerCompatibleInput,
   options?: OffscreenCanvasDecoderOptions
 ): Promise<PixelData> {
+  // if bitmap than now i do from bitmap -> blob -> bitmap -> canvas
   const blob = await toBlob(input, options);
 
   let bitmap: ImageBitmap;

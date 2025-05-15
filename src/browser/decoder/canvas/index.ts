@@ -2,152 +2,144 @@ import { imageBitmapOptions } from './options';
 import { createCanvasAndContext } from './utils';
 import { toBlob } from '../../blob';
 import { createError } from '../../../shared/error';
-import { isStringOrURL } from '../../../shared/validation';
 import type { PixelData } from '../../../types';
 import type {
   BrowserInput,
   DecodedBrowserInput,
   EncodedBrowserInput,
-  OffscreenCanvasDecoderOptions
+  OffscreenCanvasDecoderOptions,
+  RawWorkerInput
 } from '../../types';
 import { isWorker } from '../../../shared/env';
+// Use the corrected guards
+import {
+  isDecodedInput,
+  isEncodedInput,
+  isMediaElement,
+  isRawData
+} from '../../../shared/validation';
+import { ResourceManager } from '../resources';
 
-/**
- * Tracks ImageBitmap instances for cleanup.
- */
-export class TrackedBitmaps {
-  private list: ImageBitmap[] = [];
-
-  track(bmp: ImageBitmap) {
-    this.list.push(bmp);
+async function loadBitmapOnMainThread(
+  blob: Blob,
+  opts: ImageBitmapOptions,
+  resources: ResourceManager
+): Promise<ImageBitmap> {
+  const url = URL.createObjectURL(blob);
+  try {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = url;
+    await img.decode();
+    const bitmap = await createImageBitmap(img, opts);
+    resources.trackBitmap(bitmap);
+    return bitmap;
+  } catch (e) {
+    throw createError.decodingFailed(
+      'Blob (ImageElement fallback)',
+      'Failed to decode blob via ImageElement',
+      e
+    );
+  } finally {
+    URL.revokeObjectURL(url);
   }
-
-  closeAll() {
-    this.list.forEach((bmp) => {
-      try {
-        bmp.close();
-      } catch {
-        // Ignore errors when closing bitmaps
-        // This can happen if the bitmap is already closed or invalid
-      }
-    });
-    this.list = [];
-  }
-}
-
-/** True for actual pixel buffers / transferables. */
-function isDecodedInput(input: BrowserInput): input is DecodedBrowserInput {
-  return (
-    input instanceof ImageBitmap ||
-    input instanceof ImageData ||
-    input instanceof VideoFrame ||
-    (typeof OffscreenCanvas !== 'undefined' && input instanceof OffscreenCanvas)
-  );
-}
-
-function isUndecodedInput(input: BrowserInput): input is EncodedBrowserInput {
-  return (
-    typeof input === 'string' ||
-    input instanceof URL ||
-    input instanceof Blob ||
-    // covers ArrayBuffer and all TypedArrays / DataViews:
-    input instanceof ArrayBuffer ||
-    ArrayBuffer.isView(input) ||
-    (typeof HTMLImageElement !== 'undefined' && input instanceof HTMLImageElement) ||
-    (typeof HTMLVideoElement !== 'undefined' && input instanceof HTMLVideoElement) ||
-    (typeof HTMLCanvasElement !== 'undefined' && input instanceof HTMLCanvasElement) ||
-    (typeof SVGElement !== 'undefined' && input instanceof SVGElement)
-  );
 }
 
 async function loadBitmapFromBlob(
   blob: Blob,
   options: OffscreenCanvasDecoderOptions | undefined,
-  resources: TrackedBitmaps
+  resources: ResourceManager
 ): Promise<ImageBitmap> {
   const opts = imageBitmapOptions(options);
 
   try {
     const bitmap = await createImageBitmap(blob, opts);
-    resources.track(bitmap);
+    resources.trackBitmap(bitmap);
     return bitmap;
   } catch (err) {
     if (isWorker()) {
       throw createError.decodingFailed('Blob', 'createImageBitmap failed in worker', err);
     }
-    // Main-thread fallback
-    const url = URL.createObjectURL(blob);
-    try {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.src = url;
-      await img.decode();
-      const bmp = await createImageBitmap(img, opts);
-      resources.track(bmp);
-      return bmp;
-    } catch (e) {
-      throw createError.decodingFailed(
-        'Blob (ImageElement fallback)',
-        'Failed to decode blob via ImageElement',
-        e
-      );
-    } finally {
-      URL.revokeObjectURL(url);
-    }
+    return loadBitmapOnMainThread(blob, opts, resources);
   }
+}
+
+async function convertToBlobAndLoad(
+  // These are the types that createBitmapFromEncodedInput will pass
+  input: RawWorkerInput,
+  options: OffscreenCanvasDecoderOptions | undefined,
+  resources: ResourceManager
+): Promise<ImageBitmap> {
+  const blob = await toBlob(input, options); // toBlob must handle these input types
+  return loadBitmapFromBlob(blob, options, resources);
 }
 
 async function createBitmapFromEncodedInput(
-  input: EncodedBrowserInput,
+  input: EncodedBrowserInput, // RawWorkerInput | DOMSource
   options: OffscreenCanvasDecoderOptions | undefined,
-  resources: TrackedBitmaps
+  resources: ResourceManager
 ): Promise<ImageBitmap> {
   const opts = imageBitmapOptions(options);
-  if (
-    (typeof HTMLImageElement !== 'undefined' && input instanceof HTMLImageElement) ||
-    (typeof HTMLVideoElement !== 'undefined' && input instanceof HTMLVideoElement) ||
-    (typeof HTMLCanvasElement !== 'undefined' && input instanceof HTMLCanvasElement)
-  ) {
-    const bmp = await createImageBitmap(input, opts);
-    resources.track(bmp);
-    return bmp;
-  }
 
-  if (typeof OffscreenCanvas !== 'undefined' && input instanceof OffscreenCanvas) {
-    const bmp = input.transferToImageBitmap();
-    resources.track(bmp);
-    return bmp;
+  // DOMSource part of EncodedBrowserInput
+  if (isMediaElement(input)) {
+    // Handles HTMLImageElement, HTMLVideoElement, HTMLCanvasElement
+    if (
+      input instanceof HTMLVideoElement &&
+      input.readyState < HTMLMediaElement.HAVE_CURRENT_DATA
+    ) {
+      throw createError.runtimeError('Video element not ready for frame capture');
+    }
+    const bitmap = await createImageBitmap(input, opts);
+    resources.trackBitmap(bitmap);
+    return bitmap;
   }
 
   if (typeof SVGElement !== 'undefined' && input instanceof SVGElement) {
-    const blob = new Blob([new XMLSerializer().serializeToString(input)], {
-      type: 'image/svg+xml'
-    });
+    // SVGElement is DOMSource
+    const svgString = new XMLSerializer().serializeToString(input);
+    const blob = new Blob([svgString], { type: 'image/svg+xml' });
     return loadBitmapFromBlob(blob, options, resources);
   }
 
-  if (
-    isStringOrURL(input) ||
-    input instanceof Blob ||
-    input instanceof ArrayBuffer ||
-    ArrayBuffer.isView(input)
-  ) {
-    const blob = await toBlob(input, options);
-    return loadBitmapFromBlob(blob, options, resources);
+  // RawWorkerInput part of EncodedBrowserInput
+  if (isRawData(input)) {
+    // Handles string, URL, Blob, BufferSource
+    return convertToBlobAndLoad(input, options, resources);
   }
 
-  throw createError.invalidInput('unsupported encoded input', typeof input);
+  if (input instanceof Response) {
+    // Response is RawWorkerInput
+    if (!input.body) {
+      throw createError.runtimeError('Response has no body');
+    }
+    return convertToBlobAndLoad(input.body, options, resources);
+  }
+
+  if (input instanceof ReadableStream) {
+    // ReadableStream is RawWorkerInput
+    return convertToBlobAndLoad(input, options, resources);
+  }
+
+  // This should be unreachable if isEncodedInput is correct and all EncodedBrowserInput variants are handled.
+  throw createError.invalidInput(
+    'Unsupported or unhandled EncodedBrowserInput subtype',
+    typeof input
+  );
 }
 
-async function getBitmapFromDecoded(
-  input: DecodedBrowserInput,
+async function createBitmapFromDecodedInput(
+  input: DecodedBrowserInput, // ImageBitmap | ImageData | VideoFrame | OffscreenCanvas
   options: OffscreenCanvasDecoderOptions | undefined,
-  resources: TrackedBitmaps
+  resources: ResourceManager
 ): Promise<ImageBitmap> {
+  const opts = imageBitmapOptions(options);
   try {
-    const bitmap = await createImageBitmap(input, imageBitmapOptions(options));
-    resources.track(bitmap);
-    if (input instanceof VideoFrame) input.close();
+    // If input is ImageBitmap and opts are effectively no-op, could return input directly.
+    // However, createImageBitmap(input, opts) consistently applies options.
+    // For OffscreenCanvas, createImageBitmap(input, opts) is also the standard way to get a snapshot with options.
+    const bitmap = await createImageBitmap(input, opts);
+    resources.trackBitmap(bitmap);
     return bitmap;
   } catch (error) {
     throw createError.decodingFailed(
@@ -155,32 +147,46 @@ async function getBitmapFromDecoded(
       `createImageBitmap failed for ${input.constructor.name}`,
       error
     );
+  } finally {
+    if (input instanceof VideoFrame) {
+      input.close();
+    }
   }
 }
 
-/**
- * Canvas-based decoder (sRGB only).
- */
-export async function decode(
-  input: EncodedBrowserInput,
-  options?: OffscreenCanvasDecoderOptions
-): Promise<PixelData> {
-  const resources = new TrackedBitmaps();
-  try {
-    let bitmap: ImageBitmap;
-    if (isUndecodedInput(input)) {
-      bitmap = await createBitmapFromEncodedInput(input, options, resources);
-    } else if (isDecodedInput(input)) {
-      bitmap = await getBitmapFromDecoded(input, options, resources);
-    } else {
-      throw createError.invalidInput('unsupported input', typeof input);
-    }
+async function toBitmap(
+  input: BrowserInput,
+  options: OffscreenCanvasDecoderOptions | undefined,
+  resources: ResourceManager
+): Promise<ImageBitmap> {
+  // Use the corrected type guards
+  if (isEncodedInput(input)) {
+    return createBitmapFromEncodedInput(input, options, resources);
+  }
+  if (isDecodedInput(input)) {
+    return createBitmapFromDecodedInput(input, options, resources);
+  }
+  // If BrowserInput can be something other than Encoded or Decoded, this throw is needed.
+  // Based on BrowserInput = EncodedInput | DecodedInput, this should be unreachable.
+  throw createError.invalidInput(
+    'Input is neither Encoded nor Decoded BrowserInput',
+    typeof input
+  );
+}
 
+export async function decode(
+  input: BrowserInput,
+  options?: OffscreenCanvasDecoderOptions // This implies your options utilities can handle this
+): Promise<PixelData> {
+  const resources = new ResourceManager();
+  try {
+    const bitmap = await toBitmap(input, options, resources);
+    // createCanvasAndContext needs to safely handle 'options' (OffscreenCanvasDecoderOptions)
     const [canvas, context] = createCanvasAndContext(bitmap.width, bitmap.height, options);
     context.drawImage(bitmap, 0, 0);
 
     const imgData = context.getImageData(0, 0, canvas.width, canvas.height, {
-      colorSpace: 'srgb'
+      colorSpace: 'srgb' // Explicitly sRGB as per function comment
     });
 
     return { data: imgData.data, width: imgData.width, height: imgData.height };
