@@ -22,8 +22,6 @@ import * as CanvasDecoder from './canvas'; // Assuming this is the correct impor
  * The dynamic import ensures that the `CanvasDecoder` module is not loaded
  * until required, optimizing the application's performance by reducing
  * initial loading time and memory usage.
- *
- * @type {Promise<typeof CanvasDecoder>}
  */
 const canvasDecoderPromise: Promise<typeof CanvasDecoder> = import('./canvas');
 /**
@@ -51,7 +49,7 @@ function isWebCodecsSupported(mime?: string): Promise<boolean> {
   if (!mime) return Promise.resolve(false);
   if (!supportPromiseCache.has(mime)) {
     const promise = WebCodecsDecoder.isSupported(mime).catch((err) => {
-      supportPromiseCache.delete(mime); // Evict on error
+      supportPromiseCache.delete(mime);
       throw createError.rethrow(err);
     });
     supportPromiseCache.set(mime, promise);
@@ -135,17 +133,17 @@ const strategies: Record<
   BrowserDecoder | 'auto',
   (input: BrowserInput, opts: StrategyParameterOptions) => Promise<PixelData>
 > = {
-  async webCodecs(input, opts) {
+  async webCodecs(input, options) {
     const fullOptions: WebCodecsDecoderOptions = {
-      ...(opts as Omit<WebCodecsDecoderOptions, 'decoder'>),
+      ...(options as Omit<WebCodecsDecoderOptions, 'decoder'>),
       decoder: 'webCodecs'
     };
     return performWebCodecsDecode(input, fullOptions);
   },
 
-  async offscreenCanvas(input, opts) {
+  async offscreenCanvas(input, options) {
     const fullOptions: OffscreenCanvasDecoderOptions = {
-      ...(opts as Omit<OffscreenCanvasDecoderOptions, 'decoder'>),
+      ...(options as Omit<OffscreenCanvasDecoderOptions, 'decoder'>),
       decoder: 'offscreenCanvas'
     };
     return performOffscreenCanvasDecode(input, fullOptions);

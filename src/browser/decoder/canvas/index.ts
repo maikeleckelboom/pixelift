@@ -18,6 +18,7 @@ import {
   isRawData
 } from '../../../shared/guards';
 import { ResourceManager } from '../resources';
+import { createPixelData } from '../../../shared/factory';
 
 async function loadBitmapOnMainThread(
   blob: Blob,
@@ -144,12 +145,12 @@ async function toBitmap(
   options: OffscreenCanvasDecoderOptions | undefined,
   resources: ResourceManager
 ): Promise<ImageBitmap> {
-  if (isEncodedInput(input)) {
-    return createBitmapFromEncodedInput(input, options, resources);
-  }
-
   if (isDecodedInput(input)) {
     return createBitmapFromDecodedInput(input, options, resources);
+  }
+
+  if (isEncodedInput(input)) {
+    return createBitmapFromEncodedInput(input, options, resources);
   }
 
   throw createError.invalidInput(
@@ -158,22 +159,27 @@ async function toBitmap(
   );
 }
 
+export function pixelDataFromBitmap(
+  bitmap: ImageBitmap,
+  options?: OffscreenCanvasDecoderOptions
+) {
+  const [canvas, context] = createCanvasAndContext(bitmap.width, bitmap.height, options);
+  context.drawImage(bitmap, 0, 0);
+  const imgData = context.getImageData(0, 0, canvas.width, canvas.height, {
+    colorSpace: 'srgb'
+  });
+  return createPixelData(imgData.data, imgData.width, imgData.height);
+}
+
 export async function decode(
   input: BrowserInput,
   options?: OffscreenCanvasDecoderOptions
 ): Promise<PixelData> {
-  const resources = new ResourceManager();
+  const resourceManager = new ResourceManager();
   try {
-    const bitmap = await toBitmap(input, options, resources);
-    const [canvas, context] = createCanvasAndContext(bitmap.width, bitmap.height, options);
-    context.drawImage(bitmap, 0, 0);
-
-    const imgData = context.getImageData(0, 0, canvas.width, canvas.height, {
-      colorSpace: 'srgb'
-    });
-
-    return { data: imgData.data, width: imgData.width, height: imgData.height };
+    const bitmap = await toBitmap(input, options, resourceManager);
+    return pixelDataFromBitmap(bitmap, options);
   } finally {
-    resources.closeAll();
+    resourceManager.closeAll();
   }
 }

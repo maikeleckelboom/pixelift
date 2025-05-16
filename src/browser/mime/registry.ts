@@ -1,3 +1,4 @@
+// todo: link source mrmime -> mime-db
 const mimes = {
   apng: 'image/apng',
   avci: 'image/avci',
@@ -55,33 +56,6 @@ const mimes = {
   tiff: 'image/tiff',
   wmf: 'image/wmf',
   webp: 'image/webp'
-  // webm: 'video/webm',
-  // jpgv: 'video/jpeg',
-  // h261: 'video/h261',
-  // h263: 'video/h263',
-  // h264: 'video/h264',
-  // '3g2': 'video/3gpp2',
-  // '3gp': 'video/3gpp',
-  // '3gpp': 'video/3gpp',
-  // m1v: 'video/mpeg',
-  // m2t: 'video/mp2t',
-  // m2ts: 'video/mp2t',
-  // m2v: 'video/mpeg',
-  // m4s: 'video/iso.segment',
-  // m4v: 'video/mp4',
-  // mj2: 'video/mj2',
-  // mjp2: 'video/mj2',
-  // mov: 'video/quicktime',
-  // mp4: 'video/mp4',
-  // mp4v: 'video/mp4',
-  // mpe: 'video/mpeg',
-  // mpeg: 'video/mpeg',
-  // mpg: 'video/mpeg',
-  // mpg4: 'video/mp4',
-  // mts: 'video/mp2t',
-  // ogv: 'video/ogg',
-  // qt: 'video/quicktime',
-  // ts: 'video/mp2t',
 } as const;
 
 export type Extension = keyof typeof mimes;

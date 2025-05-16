@@ -194,9 +194,9 @@ export async function toBlob(input: BrowserInput, options?: BrowserOptions): Pro
     validateMediaElementReady(input);
     const intermediateBitmap = await createImageBitmap(input, imageBitmapOptions(options));
     try {
-      return await convertImageBitmapToBlob(intermediateBitmap, options); // Pass intermediate
+      return await convertImageBitmapToBlob(intermediateBitmap, options);
     } finally {
-      intermediateBitmap.close(); // Close the intermediate bitmap created here
+      intermediateBitmap.close();
     }
   }
 
@@ -216,6 +216,7 @@ export async function toBlob(input: BrowserInput, options?: BrowserOptions): Pro
       'Pixelift: Converting a provided ImageBitmap to a Blob requires rendering it to an internal canvas. ' +
         'This can have performance implications. The original ImageBitmap will remain open.'
     );
+
     // 'input' is the user's ImageBitmap. convertImageBitmapToBlob will use it but not close it.
     return convertImageBitmapToBlob(input, options);
   }
@@ -230,6 +231,7 @@ export async function toBlob(input: BrowserInput, options?: BrowserOptions): Pro
     if (!input.body) {
       throw createError.runtimeError('Response body unavailable');
     }
+
     return input.blob();
   }
 
@@ -254,10 +256,10 @@ function validateMediaElementReady(element: HTMLImageElement | HTMLVideoElement)
 }
 
 async function processStreamToBlob(
-  stream: ReadableStream,
+  readableStream: ReadableStream,
   options?: BrowserOptions
 ): Promise<Blob> {
-  const reader = stream.getReader();
+  const reader = readableStream.getReader();
   const chunks: Uint8Array[] = [];
   let abortHandler: (() => void) | undefined;
 

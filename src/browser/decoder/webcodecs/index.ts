@@ -2,6 +2,7 @@ import type { PixelData } from '../../../types';
 import type { BrowserInput, WebCodecsDecoderOptions } from '../../types';
 import { toBlob } from '../../blob';
 import { createError } from '../../../shared/error';
+import { createPixelData } from '../../../shared/factory';
 
 export async function isSupported(mimeType: string): Promise<boolean> {
   return ImageDecoder.isTypeSupported(mimeType);
@@ -44,7 +45,7 @@ export async function decode(
   try {
     decoder = new ImageDecoder({
       data: blobStream,
-      type: options?.type ?? 'image/png',
+      type: type,
       colorSpaceConversion: 'none'
     });
 
@@ -63,11 +64,7 @@ export async function decode(
       colorSpace: 'srgb'
     });
 
-    return {
-      data,
-      width: frame.codedWidth,
-      height: frame.codedHeight
-    };
+    return createPixelData(data, frame.codedWidth, frame.codedHeight);
   } catch (error) {
     throw createError.rethrow(error);
   } finally {
