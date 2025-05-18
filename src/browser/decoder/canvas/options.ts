@@ -1,4 +1,4 @@
-import type { BrowserOptions, OffscreenCanvasDecoderOptions } from '../../types';
+import type { OffscreenCanvasDecoderOptions } from '../../types';
 
 /**
  * A constant object defining the default configuration settings for image smoothing
@@ -64,9 +64,9 @@ export const DEFAULT_IMAGE_BITMAP_OPTIONS: ImageBitmapOptions = {
   premultiplyAlpha: 'none',
   colorSpaceConversion: 'none',
   imageOrientation: 'from-image',
-  resizeHeight: undefined,
-  resizeQuality: undefined,
-  resizeWidth: undefined
+  resizeQuality: 'high',
+  resizeHeight: 0,
+  resizeWidth: 0
 } as const;
 
 /**
@@ -75,76 +75,13 @@ export const DEFAULT_IMAGE_BITMAP_OPTIONS: ImageBitmapOptions = {
  * @param {BrowserOptions} [options] - Optional browser options which may include settings like decoder type, image orientation, premultiply alpha, color space conversion, and resize parameters.
  * @return {ImageBitmapOptions} Returns an `ImageBitmapOptions` object with the configured options or default options if no relevant settings are provided.
  */
-export function imageBitmapOptions(options?: BrowserOptions): ImageBitmapOptions {
-  if (isOffscreenCanvasDecoderOptions(options) && options.options) {
-    const {
-      imageOrientation: specificImageOrientation,
-      premultiplyAlpha: specificPremultiplyAlpha,
-      colorSpaceConversion: specificColorSpaceConversion,
-      resizeHeight: specificResizeHeight,
-      resizeWidth: specificResizeWidth,
-      resizeQuality: specificResizeQuality
-    } = options.options;
-
-    return {
-      ...DEFAULT_IMAGE_BITMAP_OPTIONS,
-      ...(specificImageOrientation && { imageOrientation: specificImageOrientation }),
-      ...(specificPremultiplyAlpha && { premultiplyAlpha: specificPremultiplyAlpha }),
-      ...(specificColorSpaceConversion && {
-        colorSpaceConversion: specificColorSpaceConversion
-      }),
-      ...(specificResizeHeight !== undefined && { resizeHeight: specificResizeHeight }),
-      ...(specificResizeWidth !== undefined && { resizeWidth: specificResizeWidth }),
-      ...(specificResizeQuality !== undefined && { resizeQuality: specificResizeQuality })
-    };
-  }
-  return DEFAULT_IMAGE_BITMAP_OPTIONS;
-}
-
-/**
- * Checks if the given options object conforms to the structure of OffscreenCanvasDecoderOptions.
- *
- * @param {BrowserOptions} [options] - The options object to be checked.
- * @return {boolean} Returns true if the options object matches the structure of OffscreenCanvasDecoderOptions, otherwise false.
- */
-export function isOffscreenCanvasDecoderOptions(
-  options?: BrowserOptions
-): options is Required<OffscreenCanvasDecoderOptions> {
-  return !!options && 'decoder' in options ? options.decoder === 'offscreenCanvas' : false;
-}
-
-/**
- * Configures and returns settings for an OffscreenCanvas 2D rendering context,
- * including optional overrides from provided browser options.
- *
- * @param {BrowserOptions} [options] - An optional object containing OffscreenCanvas-specific configuration.
- * This may include properties such as `colorSpace`, `alpha`, `willReadFrequently`, and `desynchronized`.
- *
- * @return {CanvasRenderingContext2DSettings} An object containing the merged context settings.
- * Default settings are returned when no applicable options are provided.
- */
-export function offscreenCanvasContextOptions(
-  options?: BrowserOptions
-): CanvasRenderingContext2DSettings {
-  if (isOffscreenCanvasDecoderOptions(options) && options.options) {
-    const {
-      colorSpace: specificColorSpace,
-      alpha: specificAlpha,
-      willReadFrequently: specificWillReadFrequently,
-      desynchronized: specificDesynchronized
-    } = options.options;
-
-    return {
-      ...DEFAULT_CANVAS_CONTEXT_SETTINGS,
-      ...(specificColorSpace && { colorSpace: specificColorSpace }),
-      ...(specificAlpha !== undefined && { alpha: specificAlpha }),
-      ...(specificWillReadFrequently !== undefined && {
-        willReadFrequently: specificWillReadFrequently
-      }),
-      ...(specificDesynchronized !== undefined && {
-        desynchronized: specificDesynchronized
-      })
-    };
-  }
-  return DEFAULT_CANVAS_CONTEXT_SETTINGS;
+export function imageBitmapOptions(
+  options?: OffscreenCanvasDecoderOptions
+): ImageBitmapOptions {
+  return {
+    resizeWidth: options?.options?.resizeWidth,
+    resizeHeight: options?.options?.resizeHeight,
+    resizeQuality: options?.options?.resizeQuality,
+    premultiplyAlpha: options?.options?.alpha ? 'premultiply' : 'none'
+  };
 }

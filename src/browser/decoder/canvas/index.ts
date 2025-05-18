@@ -4,11 +4,11 @@ import { toBlob } from '../../blob';
 import { createError } from '../../../shared/error';
 import type { PixelData } from '../../../types';
 import type {
-  BrowserImageInput,
   DecodedImageData,
-  EncodedImageSource,
+  PixelSource,
   OffscreenCanvasDecoderOptions,
-  WorkerTransportData
+  WorkerTransportData,
+  BrowserInput
 } from '../../types';
 import { isWorker } from '../../../shared/env';
 import {
@@ -17,27 +17,10 @@ import {
   isMediaElement,
   isRawData
 } from '../../../shared/guards';
-import { createPixelData } from '../../../shared/factory';
-import { withAutoClose } from '../../auto-close';
 
-async function rasterizeBlob(blob: Blob, opts: ImageBitmapOptions): Promise<ImageBitmap> {
-  const url = URL.createObjectURL(blob);
-  try {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.src = url;
-    await img.decode();
-    return await createImageBitmap(img, opts);
-  } catch (error) {
-    throw createError.decodingFailed(
-      'Blob via ImageElement',
-      'createImageBitmap failed via ImageElement (main thread)',
-      error
-    );
-  } finally {
-    URL.revokeObjectURL(url);
-  }
-}
+import { createPixelData } from '../../../shared/factory';
+import { withAutoClose } from '../../utils/auto-close';
+import { rasterizeBlob } from '../../blob/rasterize';
 
 async function loadBitmapFromBlob(
   blob: Blob,
@@ -63,7 +46,7 @@ async function convertToBlobAndLoadBitmap(
 }
 
 async function createBitmapFromEncodedImageSource(
-  input: EncodedImageSource,
+  input: PixelSource,
   options: OffscreenCanvasDecoderOptions | undefined
 ): Promise<ImageBitmap> {
   const opts = imageBitmapOptions(options);
@@ -99,12 +82,10 @@ async function createBitmapFromEncodedImageSource(
   }
 
   throw createError.invalidInput(
-    'Unsupported or unhandled EncodedImageSource subtype',
+    'Unsupported or unhandled PixelSource subtype',
     typeof input
   );
 }
-
-const DISABLE_DECODED_INPUT_ENCODING: boolean = false as const;
 
 async function createBitmapFromDecodedInput(
   input: DecodedImageData,
@@ -112,22 +93,19 @@ async function createBitmapFromDecodedInput(
 ): Promise<ImageBitmap> {
   const bitmapOptions = imageBitmapOptions(options);
 
-  if (input instanceof ImageData) {
-    const [canvas, context] = createCanvasAndContext(input.width, input.height, options);
-    context.putImageData(input, 0, 0);
-    return await createImageBitmap(canvas, bitmapOptions);
-  }
-
   if (input instanceof OffscreenCanvas) {
     return await createImageBitmap(input, bitmapOptions);
   }
 
+  if (input instanceof ImageData) {
+    return createImageBitmap(input, bitmapOptions);
+  }
+
   if (input instanceof ImageBitmap) {
-    if (DISABLE_DECODED_INPUT_ENCODING) {
-      return input;
-    } else {
-      return await createImageBitmap(input, bitmapOptions);
-    }
+    return input;
+  }
+  if (input instanceof HTMLCanvasElement) {
+    return createImageBitmap(input, bitmapOptions);
   }
 
   if (input instanceof VideoFrame) {
@@ -137,8 +115,8 @@ async function createBitmapFromDecodedInput(
   return createImageBitmap(input, bitmapOptions);
 }
 
-async function toBitmap(
-  input: BrowserImageInput,
+async function bitmapFromInput(
+  input: BrowserInput,
   options: OffscreenCanvasDecoderOptions | undefined
 ): Promise<ImageBitmap> {
   if (isDecodedInput(input)) {
@@ -150,21 +128,25 @@ async function toBitmap(
   }
 
   throw createError.invalidInput(
-    'Unsupported or unhandled BrowserImageInput subtype',
+    'Unsupported or unhandled BrowserInput subtype',
     typeof input
   );
 }
 
 export async function decode(
-  input: BrowserImageInput,
+  input: BrowserInput,
   options?: OffscreenCanvasDecoderOptions
 ): Promise<PixelData> {
-  return withAutoClose(await toBitmap(input, options), async (bitmap) => {
+  return withAutoClose(await bitmapFromInput(input, options), async (bitmap) => {
     const [canvas, context] = createCanvasAndContext(bitmap.width, bitmap.height, options);
     context.drawImage(bitmap, 0, 0);
-    const imgData = context.getImageData(0, 0, canvas.width, canvas.height, {
-      colorSpace: 'srgb'
-    });
-    return createPixelData(imgData.data, imgData.width, imgData.height);
+    const { data, width, height } = context.getImageData(
+      0,
+      0,
+      canvas.width,
+      canvas.height,
+      { colorSpace: options?.options?.colorSpace ?? 'srgb' }
+    );
+    return createPixelData(data, width, height);
   });
 }

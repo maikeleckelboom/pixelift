@@ -1,10 +1,11 @@
 import type { ServerInput, ServerOptions } from './server';
-import type { BrowserImageInput, BrowserOptions } from './browser';
+import type { BrowserInput, BrowserOptions } from './browser';
 
 export interface PixelData {
   data: Uint8ClampedArray;
   width: number;
   height: number;
+  colorSpace?: PredefinedColorSpace;
 }
 
 export interface CommonDecoderOptions {
@@ -24,6 +25,6 @@ export interface CommonDecoderOptions {
   mode?: RequestMode;
 }
 
-export type PixeliftInput = BrowserImageInput | ServerInput;
+export type PixeliftInput = BrowserInput | ServerInput;
 
 export type PixeliftOptions = BrowserOptions | ServerOptions;

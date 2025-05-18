@@ -84,13 +84,13 @@ export type WorkerImageInput = WorkerTransportData | DecodedImageData;
  * - `WorkerImageInput`: Represents input that is compatible with a web worker.
  * - `ElementSource`: Represents a source related to the Document Object Model.
  *
- * The `BrowserImageInput` type abstracts the input mechanisms for browser-based processes.
+ * The `BrowserInput` type abstracts the input mechanisms for browser-based processes.
  * It aids in handling worker-compatible inputs or DOM-related resources seamlessly.
  */
-export type BrowserImageInput = WorkerImageInput | ElementSource;
+export type BrowserInput = WorkerImageInput | ElementSource | OffscreenCanvas;
 
 /**
- * EncodedImageSource represents a type that can either be `WorkerTransportData` or `ElementSource`.
+ * PixelSource represents a type that can either be `WorkerTransportData` or `ElementSource`.
  * It is used to specify the input type for handling encoded data in a browser environment.
  *
  * NOTE: This type name is potentially misleading as it includes `HTMLCanvasElement` which contains
@@ -99,7 +99,7 @@ export type BrowserImageInput = WorkerImageInput | ElementSource;
  * - `WorkerTransportData`: Refers to data input obtained from a worker thread, typically raw or preprocessed content.
  * - `ElementSource`: Refers to a browser-based Document Object Model (DOM) source, such as HTML elements or other DOM-related data.
  */
-export type EncodedImageSource = WorkerTransportData | ElementSource;
+export type PixelSource = WorkerTransportData | ElementSource;
 
 /**
  * Interface representing configuration options for a `CanvasRenderingContext`.
@@ -200,7 +200,7 @@ export interface OffscreenCanvasDecoderOptions extends BrowserDecoderOptions {
 }
 
 /**
- * Represents the available options for configuring browser-based decoders.
+ * Represents the available options for configuring browser-based _decoders.
  *
  * This type can take the form of one of the following:
  * - `WebCodecsDecoderOptions`: Specific configuration options for a decoder

@@ -1,10 +1,7 @@
 import { createError } from '../../../shared/error';
 import type { BrowserOptions, OffscreenCanvasDecoderOptions } from '../../types';
-import {
-  DEFAULT_IMAGE_SMOOTHING_SETTINGS,
-  isOffscreenCanvasDecoderOptions,
-  offscreenCanvasContextOptions
-} from './options';
+import { DEFAULT_IMAGE_SMOOTHING_SETTINGS } from './options';
+import { isOffscreenCanvasDecoder } from '../../guards';
 
 /**
  * Creates an OffscreenCanvas of specified dimensions along with its 2D rendering context.
@@ -18,15 +15,30 @@ import {
 export function createCanvasAndContext(
   width: number,
   height: number,
-  options?: BrowserOptions
+  options?: OffscreenCanvasDecoderOptions
 ): [OffscreenCanvas, OffscreenCanvasRenderingContext2D] {
   const canvas = new OffscreenCanvas(width, height);
-  const contextOptions = offscreenCanvasContextOptions(options);
-  const context = canvas.getContext('2d', contextOptions);
+
+  const { resizeWidth, resizeHeight } = options?.options ?? {};
+
+  if (resizeWidth && resizeHeight) {
+    canvas.width = resizeWidth;
+    canvas.height = resizeHeight;
+  }
+
+  const context = canvas.getContext('2d', {
+    alpha: true,
+    colorSpace: 'srgb',
+    desynchronized: undefined,
+    willReadFrequently: true
+  } satisfies CanvasRenderingContext2DSettings);
+
   if (!context) {
     throw createError.runtimeError('Failed to create OffscreenCanvasRenderingContext2D');
   }
+
   setImageSmoothingSettings(context, options);
+
   return [canvas, context];
 }
 
@@ -44,18 +56,12 @@ export function setImageSmoothingSettings(
   let imageSmoothingEnabled: boolean | undefined;
   let imageSmoothingQuality: ImageSmoothingQuality | undefined;
 
-  if (isImageSmoothingSettings(options)) {
-    imageSmoothingEnabled = options.options.imageSmoothingEnabled;
-    imageSmoothingQuality = options.options.imageSmoothingQuality;
+  if (isOffscreenCanvasDecoder(options)) {
+    imageSmoothingEnabled = options?.options?.imageSmoothingEnabled;
+    imageSmoothingQuality = options?.options?.imageSmoothingQuality;
   }
 
   const defaults = DEFAULT_IMAGE_SMOOTHING_SETTINGS;
   context.imageSmoothingEnabled = imageSmoothingEnabled ?? defaults.imageSmoothingEnabled;
   context.imageSmoothingQuality = imageSmoothingQuality ?? defaults.imageSmoothingQuality;
-}
-
-export function isImageSmoothingSettings(
-  options?: BrowserOptions
-): options is Required<OffscreenCanvasDecoderOptions> {
-  return isOffscreenCanvasDecoderOptions(options) && !!options.options;
 }

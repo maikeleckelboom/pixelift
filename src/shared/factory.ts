@@ -4,7 +4,8 @@ import { createError } from './error';
 export function createPixelData(
   data: Uint8ClampedArray,
   width: number,
-  height: number
+  height: number,
+  colorSpace?: PredefinedColorSpace
 ): PixelData {
   if (width <= 0 || height <= 0) {
     throw createError.invalidInput(
@@ -15,6 +16,7 @@ export function createPixelData(
   return {
     data,
     width,
-    height
+    height,
+    colorSpace
   };
 }

@@ -21,7 +21,7 @@ const MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.fetchFailed]: 'Failed to fetch from {url}: {status} {statusText}',
   [ErrorCode.networkError]: 'Network error: {detail}',
   [ErrorCode.pathTraversal]: 'Path traversal attempt detected: {path}',
-  [ErrorCode.aborted]: 'Operation aborted',
+  [ErrorCode.aborted]: 'Operation aborted cause: {reason}',
   [ErrorCode.runtimeError]: 'Runtime error: {detail}',
   [ErrorCode.fileReadError]: 'Failed to read file: {path}'
 };
@@ -82,7 +82,8 @@ export const createError = {
   fileReadError: (path: string, cause?: unknown): PixeliftError =>
     new PixeliftError(ErrorCode.fileReadError, { path }, { cause }),
 
-  aborted: (): PixeliftError => new PixeliftError(ErrorCode.aborted),
+  aborted: (reason: string = 'Operation aborted', cause?: unknown): PixeliftError =>
+    new PixeliftError(ErrorCode.aborted, { reason }, { cause }),
 
   runtimeError: (detail: string, cause?: unknown): PixeliftError =>
     new PixeliftError(ErrorCode.runtimeError, { detail }, { cause }),

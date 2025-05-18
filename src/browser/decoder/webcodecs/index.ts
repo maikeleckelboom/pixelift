@@ -1,5 +1,5 @@
 import type { PixelData } from '../../../types';
-import type { BrowserImageInput, WebCodecsDecoderOptions } from '../../types';
+import type { BrowserInput, WebCodecsDecoderOptions } from '../../types';
 import { toBlob } from '../../blob';
 import { createError } from '../../../shared/error';
 import { createPixelData } from '../../../shared/factory';
@@ -9,7 +9,7 @@ export async function isSupported(mimeType: string): Promise<boolean> {
 }
 
 export async function decode(
-  input: BrowserImageInput,
+  input: BrowserInput,
   options?: WebCodecsDecoderOptions
 ): Promise<PixelData> {
   let blobInput: Blob;

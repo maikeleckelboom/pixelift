@@ -1,6 +1,6 @@
 import type { ServerInput } from '../server';
-import type { BrowserImageInput } from '../browser';
-import type { DecodedImageData, EncodedImageSource } from '../browser/types';
+import type { BrowserInput } from '../browser';
+import type { DecodedImageData, PixelSource } from '../browser/types';
 
 /**
  * Determines if the provided input is either a string or an instance of URL.
@@ -72,9 +72,9 @@ export function isRenderableGraphic(
  * Determines whether the given input is an encoded input that matches specific criteria.
  *
  * @param {unknown} input - The input to be evaluated.
- * @return {boolean} - Returns true if the input is an EncodedImageSource; otherwise, false.
+ * @return {boolean} - Returns true if the input is an PixelSource; otherwise, false.
  */
-export function isEncodedInput(input: unknown): input is EncodedImageSource {
+export function isEncodedInput(input: unknown): input is PixelSource {
   return (
     isRawData(input) ||
     isRenderableGraphic(input) ||
@@ -99,12 +99,12 @@ export function isDecodedInput(input: unknown): input is DecodedImageData {
 }
 
 /**
- * Validates whether the provided input is a valid BrowserImageInput.
+ * Validates whether the provided input is a valid BrowserInput.
  *
- * @param {unknown} input - The input to be validated as a BrowserImageInput.
- * @return {boolean} Returns true if the input is a valid BrowserImageInput, otherwise false.
+ * @param {unknown} input - The input to be validated as a BrowserInput.
+ * @return {boolean} Returns true if the input is a valid BrowserInput, otherwise false.
  */
-export function isValidBrowserInput(input: unknown): input is BrowserImageInput {
+export function isValidBrowserInput(input: unknown): input is BrowserInput {
   return isEncodedInput(input) || isDecodedInput(input);
 }
 

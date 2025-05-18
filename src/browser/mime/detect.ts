@@ -1,8 +1,8 @@
-import type { BrowserImageInput } from '../index';
+import type { BrowserInput } from '../index';
 import { isStringOrURL } from '../../shared/guards';
 import { lookup } from './registry';
 
-export function detectMimeType(input: BrowserImageInput) {
+export function detectMimeType(input: BrowserInput) {
   if (isStringOrURL(input)) {
     return lookup(input.toString());
   }
@@ -24,12 +24,21 @@ export function detectMimeType(input: BrowserImageInput) {
     src = input.toDataURL();
   }
 
-  if (typeof HTMLAudioElement !== 'undefined' && input instanceof HTMLAudioElement) {
+  if (typeof HTMLSourceElement !== 'undefined' && input instanceof HTMLSourceElement) {
+    src = input.src;
+  }
+
+  if (typeof HTMLVideoElement !== 'undefined' && input instanceof HTMLVideoElement) {
     src = input.currentSrc;
   }
 
-  if (typeof HTMLSourceElement !== 'undefined' && input instanceof HTMLSourceElement) {
+  if (typeof HTMLImageElement !== 'undefined' && input instanceof HTMLImageElement) {
     src = input.src;
+  }
+
+  if (typeof SVGElement !== 'undefined' && input instanceof SVGElement) {
+    const svgString = new XMLSerializer().serializeToString(input);
+    src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgString)}`;
   }
 
   return src ? lookup(src) : undefined;

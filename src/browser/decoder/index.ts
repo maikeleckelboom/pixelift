@@ -1,7 +1,7 @@
 import { createError } from '../../shared/error';
 import type { PixelData } from '../../types';
 import type {
-  BrowserImageInput,
+  BrowserInput,
   BrowserOptions,
   OffscreenCanvasDecoderOptions,
   OffscreenCanvasOptions,
@@ -13,7 +13,6 @@ import * as WebCodecsDecoder from './webcodecs';
 const canvasDecoderPromise: Promise<typeof import('./canvas')> = import('./canvas');
 const supportPromiseCache = new Map<string, Promise<boolean>>();
 
-// WebCodecs detection 📌
 function isWebCodecsSupported(mime?: string): Promise<boolean> {
   if (!mime) return Promise.resolve(false);
   if (!supportPromiseCache.has(mime)) {
@@ -29,9 +28,8 @@ function isWebCodecsSupported(mime?: string): Promise<boolean> {
   return supportPromiseCache.get(mime) as Promise<boolean>;
 }
 
-// Decoding functions
 async function performWebCodecsDecode(
-  input: BrowserImageInput,
+  input: BrowserInput,
   options: WebCodecsDecoderOptions
 ): Promise<PixelData> {
   const supported = await isWebCodecsSupported(options.type);
@@ -39,14 +37,11 @@ async function performWebCodecsDecode(
   return WebCodecsDecoder.decode(input, options);
 }
 
-// Explicit type casting when passing options
 async function performOffscreenCanvasDecode(
-  input: BrowserImageInput,
+  input: BrowserInput,
   options: OffscreenCanvasDecoderOptions
 ): Promise<PixelData> {
   const module = await canvasDecoderPromise;
-
-  // Type-safe options handling 📌
   const canvasOptions: OffscreenCanvasDecoderOptions = {
     ...options,
     options: {
@@ -55,35 +50,31 @@ async function performOffscreenCanvasDecode(
       ...options.options
     }
   };
-
   return module.decode(input, canvasOptions);
 }
 
-// Type-safe strategy implementations 📌
 const strategies = {
-  webCodecs: (input: BrowserImageInput, options: Omit<BrowserOptions, 'decoder'>) =>
+  webCodecs: (input: BrowserInput, options: Omit<BrowserOptions, 'decoder'>) =>
     performWebCodecsDecode(input, { ...options, decoder: 'webCodecs' }),
-
   offscreenCanvas: async function (
-    input: BrowserImageInput,
+    input: BrowserInput,
     options: Omit<BrowserOptions, 'decoder'>
   ) {
     return performOffscreenCanvasDecode(input, {
       ...options,
       decoder: 'offscreenCanvas',
-      // Explicit type narrowing 📌
       options: options.options ? (options.options as OffscreenCanvasOptions) : undefined
     });
   },
-  auto: async (input: BrowserImageInput, options: Omit<BrowserOptions, 'decoder'>) => {
+  auto: async (input: BrowserInput, options: Omit<BrowserOptions, 'decoder'>) => {
     try {
       if (await isWebCodecsSupported(options.type)) {
-        return strategies.webCodecs(input, options);
+        return await strategies.webCodecs(input, options);
       }
     } catch (error) {
       const env = Bun.env.MODE ?? process.env.NODE_ENV;
       if (env === 'development') {
-        console.warn('⚡️ WebCodecs failed – falling back to Canvas:', error);
+        console.warn('🍂️ Falling back to Canvas:', error);
       }
     }
     return strategies.offscreenCanvas(input, options);
@@ -91,17 +82,15 @@ const strategies = {
 };
 
 export async function decode(
-  input: BrowserImageInput,
+  input: BrowserInput,
   userOptions: BrowserOptions = {}
 ): Promise<PixelData> {
   const { decoder: selectedDecoder = 'auto', type: explicitType, ...rest } = userOptions;
 
-  // Validate decoder choice
   if (selectedDecoder !== 'auto' && !strategies[selectedDecoder]) {
     throw createError.decoderUnsupported(selectedDecoder);
   }
 
-  // Determine MIME type
   const mimeType = explicitType ?? detectMimeType(input);
   if (!mimeType) throw createError.runtimeError('MIME type detection failed');
 
