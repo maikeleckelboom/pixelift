@@ -1,10 +1,7 @@
 import { isAbortError, isStringOrURL } from '../shared/guards';
-import type { BrowserInput, BrowserOptions } from './types';
+import type { BrowserImageInput, BrowserOptions } from './types';
 import { createError, PixeliftError } from '../shared/error';
-import {
-  imageBitmapOptions,
-  isOffscreenCanvasDecoderOptions
-} from './decoder/canvas/options';
+import { imageBitmapOptions } from './decoder/canvas/options';
 import { createCanvasAndContext } from './decoder/canvas/utils';
 
 /**
@@ -18,14 +15,35 @@ async function convertImageBitmapToBlob(
   options?: BrowserOptions
 ): Promise<Blob> {
   const { width, height } = bitmap;
-  const canvasOptions = isOffscreenCanvasDecoderOptions(options) ? options : undefined;
-  const [canvas, context] = createCanvasAndContext(width, height, canvasOptions);
+  const [canvas, context] = createCanvasAndContext(width, height);
 
   context.drawImage(bitmap, 0, 0, width, height);
   return await canvas.convertToBlob({
-    type: options?.type,
-    quality: getConversionQuality(options)
+    type: options?.type
   });
+}
+
+/**
+ * Gets the current execution environment's origin URL
+ * @returns Origin URL or undefined if unavailable
+ */
+function getExecutionEnvironmentOrigin(): string | undefined {
+  const globalLocation =
+    typeof location !== 'undefined'
+      ? location
+      : typeof self !== 'undefined'
+        ? self.location
+        : undefined;
+
+  if (globalLocation) {
+    return (
+      globalLocation.origin ||
+      `${globalLocation.protocol}//${globalLocation.hostname}` +
+        (globalLocation.port ? `:${globalLocation.port}` : '')
+    );
+  }
+
+  return undefined;
 }
 
 /**
@@ -38,10 +56,10 @@ async function fetchResourceAsBlob(
   urlInput: string | URL,
   options?: BrowserOptions
 ): Promise<Blob> {
-  const baseUrl = getExecutionEnvironmentOrigin();
-  const resourceUrl = new URL(urlInput.toString(), baseUrl).toString();
-
   try {
+    const baseUrl = getExecutionEnvironmentOrigin();
+    const resourceUrl = new URL(urlInput.toString(), baseUrl).toString();
+
     const response = await fetch(resourceUrl, {
       mode: options?.mode ?? 'cors',
       headers: options?.headers,
@@ -63,10 +81,24 @@ async function fetchResourceAsBlob(
       throw createError.aborted();
     }
 
-    throw createError.networkError(`Failed to fetch resource: ${resourceUrl}`, {
+    throw createError.networkError(`Failed to fetch resource: ${urlInput.toString()}`, {
       cause: error
     });
   }
+}
+
+export function isArrayBuffer(data: BufferSource): data is ArrayBuffer {
+  return data instanceof ArrayBuffer;
+}
+
+function convertToArrayBuffer(data: BufferSource): ArrayBuffer {
+  if (isArrayBuffer(data)) {
+    return data;
+  }
+  return data.buffer.slice(
+    data.byteOffset,
+    data.byteOffset + data.byteLength
+  ) as ArrayBuffer;
 }
 
 /**
@@ -75,41 +107,9 @@ async function fetchResourceAsBlob(
  * @param options Conversion options
  * @returns Resulting Blob
  */
-function createBlobFromBinaryData(
-  data: ArrayBuffer | ArrayBufferView,
-  options?: BrowserOptions
-): Blob {
-  const buffer =
-    data instanceof ArrayBuffer
-      ? data
-      : data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
-
+function createBlobFromBinaryData(data: BufferSource, options?: BrowserOptions): Blob {
+  const buffer = convertToArrayBuffer(data);
   return new Blob([buffer], { type: options?.type });
-}
-
-/**
- * Retrieves the quality parameter from conversion options
- * @param options Conversion options
- * @returns Quality value or undefined
- */
-function getConversionQuality(options?: BrowserOptions): number | undefined {
-  if (isOffscreenCanvasDecoderOptions(options)) {
-    return options.options.quality;
-  }
-  if (typeof options?.options?.quality === 'number') {
-    return options.options?.quality;
-  }
-  return undefined;
-}
-
-/**
- * Gets the current execution environment's origin URL
- * @returns Origin URL or undefined if unavailable
- */
-function getExecutionEnvironmentOrigin(): string | undefined {
-  if (typeof location !== 'undefined') return location.origin;
-  if (typeof self !== 'undefined' && self.location) return self.location.href;
-  return undefined;
 }
 
 /**
@@ -118,7 +118,7 @@ function getExecutionEnvironmentOrigin(): string | undefined {
  * @param options Conversion options
  * @returns Promise resolving to the resulting Blob
  */
-export function convertCanvasToBlob(
+function convertCanvasToBlob(
   canvas: HTMLCanvasElement,
   options?: BrowserOptions
 ): Promise<Blob> {
@@ -128,8 +128,7 @@ export function convertCanvasToBlob(
         result
           ? resolve(result)
           : reject(createError.runtimeError('Canvas to Blob conversion failed')),
-      options?.type,
-      getConversionQuality(options)
+      options?.type
     );
   });
 }
@@ -140,7 +139,10 @@ export function convertCanvasToBlob(
  * @param options Conversion options
  * @returns Promise resolving to the resulting Blob
  */
-export async function toBlob(input: BrowserInput, options?: BrowserOptions): Promise<Blob> {
+export async function toBlob(
+  input: BrowserImageInput,
+  options?: BrowserOptions
+): Promise<Blob> {
   // Handle URL/string inputs
   if (isStringOrURL(input)) {
     return fetchResourceAsBlob(input, options);
@@ -174,8 +176,7 @@ export async function toBlob(input: BrowserInput, options?: BrowserOptions): Pro
   // Handle OffscreenCanvas inputs
   if (typeof OffscreenCanvas !== 'undefined' && input instanceof OffscreenCanvas) {
     return input.convertToBlob({
-      type: options?.type,
-      quality: getConversionQuality(options)
+      type: options?.type
     });
   }
 
@@ -184,8 +185,7 @@ export async function toBlob(input: BrowserInput, options?: BrowserOptions): Pro
     const [canvas, context] = createCanvasAndContext(input.width, input.height, options);
     context.putImageData(input, 0, 0);
     return canvas.convertToBlob({
-      type: options?.type,
-      quality: getConversionQuality(options)
+      type: options?.type
     });
   }
 

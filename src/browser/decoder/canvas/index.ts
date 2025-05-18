@@ -4,11 +4,11 @@ import { toBlob } from '../../blob';
 import { createError } from '../../../shared/error';
 import type { PixelData } from '../../../types';
 import type {
-  BrowserInput,
-  DecodedBrowserInput,
-  EncodedBrowserInput,
+  BrowserImageInput,
+  DecodedImageData,
+  EncodedImageSource,
   OffscreenCanvasDecoderOptions,
-  RawWorkerInput
+  WorkerTransportData
 } from '../../types';
 import { isWorker } from '../../../shared/env';
 import {
@@ -17,27 +17,21 @@ import {
   isMediaElement,
   isRawData
 } from '../../../shared/guards';
-import { ResourceManager } from '../resources';
 import { createPixelData } from '../../../shared/factory';
+import { withAutoClose } from '../../auto-close';
 
-async function loadBitmapOnMainThread(
-  blob: Blob,
-  opts: ImageBitmapOptions,
-  resourceManager: ResourceManager
-): Promise<ImageBitmap> {
+async function rasterizeBlob(blob: Blob, opts: ImageBitmapOptions): Promise<ImageBitmap> {
   const url = URL.createObjectURL(blob);
   try {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.src = url;
     await img.decode();
-    const bitmap = await createImageBitmap(img, opts);
-    resourceManager.trackBitmap(bitmap);
-    return bitmap;
+    return await createImageBitmap(img, opts);
   } catch (error) {
     throw createError.decodingFailed(
-      'Blob (ImageElement fallback)',
-      'Failed to decode blob via ImageElement',
+      'Blob via ImageElement',
+      'createImageBitmap failed via ImageElement (main thread)',
       error
     );
   } finally {
@@ -47,35 +41,30 @@ async function loadBitmapOnMainThread(
 
 async function loadBitmapFromBlob(
   blob: Blob,
-  options: OffscreenCanvasDecoderOptions | undefined,
-  resourceManager: ResourceManager
+  options: OffscreenCanvasDecoderOptions | undefined
 ): Promise<ImageBitmap> {
   const bitmapOptions = imageBitmapOptions(options);
   try {
-    const bitmap = await createImageBitmap(blob, bitmapOptions);
-    resourceManager.trackBitmap(bitmap);
-    return bitmap;
+    return await createImageBitmap(blob, bitmapOptions);
   } catch (error) {
     if (isWorker()) {
       throw createError.decodingFailed('Blob', 'createImageBitmap failed in worker', error);
     }
-    return loadBitmapOnMainThread(blob, bitmapOptions, resourceManager);
+    return rasterizeBlob(blob, bitmapOptions);
   }
 }
 
-async function convertToBlobAndLoad(
-  input: RawWorkerInput,
-  options: OffscreenCanvasDecoderOptions | undefined,
-  resourceManager: ResourceManager
+async function convertToBlobAndLoadBitmap(
+  input: WorkerTransportData,
+  options: OffscreenCanvasDecoderOptions | undefined
 ): Promise<ImageBitmap> {
   const blob = await toBlob(input, options);
-  return loadBitmapFromBlob(blob, options, resourceManager);
+  return loadBitmapFromBlob(blob, options);
 }
 
-async function createBitmapFromEncodedInput(
-  input: EncodedBrowserInput,
-  options: OffscreenCanvasDecoderOptions | undefined,
-  resourceManager: ResourceManager
+async function createBitmapFromEncodedImageSource(
+  input: EncodedImageSource,
+  options: OffscreenCanvasDecoderOptions | undefined
 ): Promise<ImageBitmap> {
   const opts = imageBitmapOptions(options);
 
@@ -86,100 +75,96 @@ async function createBitmapFromEncodedInput(
     ) {
       throw createError.runtimeError('Video element not ready for frame capture');
     }
-    const bitmap = await createImageBitmap(input, opts);
-    resourceManager.trackBitmap(bitmap);
-    return bitmap;
+    return await createImageBitmap(input, opts);
   }
 
   if (typeof SVGElement !== 'undefined' && input instanceof SVGElement) {
     const blob = new Blob([input.outerHTML], { type: 'image/svg+xml' });
-    return loadBitmapFromBlob(blob, options, resourceManager);
+    return loadBitmapFromBlob(blob, options);
   }
 
   if (isRawData(input)) {
-    return convertToBlobAndLoad(input, options, resourceManager);
+    return convertToBlobAndLoadBitmap(input, options);
   }
 
   if (input instanceof Response) {
     if (!input.body) {
       throw createError.runtimeError('Response has no body');
     }
-    return convertToBlobAndLoad(input.body, options, resourceManager);
+    return convertToBlobAndLoadBitmap(input.body, options);
   }
 
   if (input instanceof ReadableStream) {
-    return convertToBlobAndLoad(input, options, resourceManager);
+    return convertToBlobAndLoadBitmap(input, options);
   }
 
   throw createError.invalidInput(
-    'Unsupported or unhandled EncodedBrowserInput subtype',
+    'Unsupported or unhandled EncodedImageSource subtype',
     typeof input
   );
 }
 
+const DISABLE_DECODED_INPUT_ENCODING: boolean = false as const;
+
 async function createBitmapFromDecodedInput(
-  input: DecodedBrowserInput,
-  options: OffscreenCanvasDecoderOptions | undefined,
-  resources: ResourceManager
+  input: DecodedImageData,
+  options: OffscreenCanvasDecoderOptions | undefined
 ): Promise<ImageBitmap> {
-  const opts = imageBitmapOptions(options);
-  try {
-    const bitmap = await createImageBitmap(input, opts);
-    resources.trackBitmap(bitmap);
-    return bitmap;
-  } catch (error) {
-    throw createError.decodingFailed(
-      input.constructor.name,
-      `createImageBitmap failed for ${input.constructor.name}`,
-      error
-    );
-  } finally {
-    if (input instanceof VideoFrame) {
-      input.close();
+  const bitmapOptions = imageBitmapOptions(options);
+
+  if (input instanceof ImageData) {
+    const [canvas, context] = createCanvasAndContext(input.width, input.height, options);
+    context.putImageData(input, 0, 0);
+    return await createImageBitmap(canvas, bitmapOptions);
+  }
+
+  if (input instanceof OffscreenCanvas) {
+    return await createImageBitmap(input, bitmapOptions);
+  }
+
+  if (input instanceof ImageBitmap) {
+    if (DISABLE_DECODED_INPUT_ENCODING) {
+      return input;
+    } else {
+      return await createImageBitmap(input, bitmapOptions);
     }
   }
+
+  if (input instanceof VideoFrame) {
+    return withAutoClose(input, (frame) => createImageBitmap(frame, bitmapOptions));
+  }
+
+  return createImageBitmap(input, bitmapOptions);
 }
 
 async function toBitmap(
-  input: BrowserInput,
-  options: OffscreenCanvasDecoderOptions | undefined,
-  resources: ResourceManager
+  input: BrowserImageInput,
+  options: OffscreenCanvasDecoderOptions | undefined
 ): Promise<ImageBitmap> {
   if (isDecodedInput(input)) {
-    return createBitmapFromDecodedInput(input, options, resources);
+    return createBitmapFromDecodedInput(input, options);
   }
 
   if (isEncodedInput(input)) {
-    return createBitmapFromEncodedInput(input, options, resources);
+    return createBitmapFromEncodedImageSource(input, options);
   }
 
   throw createError.invalidInput(
-    'Unsupported or unhandled BrowserInput subtype',
+    'Unsupported or unhandled BrowserImageInput subtype',
     typeof input
   );
 }
 
-export function pixelDataFromBitmap(
-  bitmap: ImageBitmap,
-  options?: OffscreenCanvasDecoderOptions
-) {
-  const [canvas, context] = createCanvasAndContext(bitmap.width, bitmap.height, options);
-  context.drawImage(bitmap, 0, 0);
-  const imgData = context.getImageData(0, 0, canvas.width, canvas.height, {
-    colorSpace: 'srgb'
-  });
-  return createPixelData(imgData.data, imgData.width, imgData.height);
-}
-
 export async function decode(
-  input: BrowserInput,
+  input: BrowserImageInput,
   options?: OffscreenCanvasDecoderOptions
 ): Promise<PixelData> {
-  const resourceManager = new ResourceManager();
-  try {
-    const bitmap = await toBitmap(input, options, resourceManager);
-    return pixelDataFromBitmap(bitmap, options);
-  } finally {
-    resourceManager.closeAll();
-  }
+  return withAutoClose(await toBitmap(input, options), async (bitmap) => {
+    const [canvas, context] = createCanvasAndContext(bitmap.width, bitmap.height, options);
+    context.drawImage(bitmap, 0, 0);
+    const imgData = context.getImageData(0, 0, canvas.width, canvas.height, {
+      colorSpace: 'srgb'
+    });
+    return createPixelData(imgData.data, imgData.width, imgData.height);
+  });
 }

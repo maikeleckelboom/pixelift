@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Progress Bar Test</title>
+  <style>
+      #progress-container {
+          width: 80%;
+          background: #eee;
+          height: 20px;
+          border-radius: 4px;
+          margin: 20px auto;
+          overflow: hidden;
+          border: 1px solid #ccc;
+      }
+
+      #progress-bar {
+          height: 100%;
+          width: 0%;
+          background: #4caf50;
+          transition: width 0.2s ease;
+      }
+  </style>
+</head>
+<body>
+
+<div id="progress-container">
+  <div id="progress-bar"></div>
+</div>
+<button id="start-btn">Start Processing</button>
+
+<script type="module">
+  /**
+   * @typedef {Object} CanvasConfig
+   * @property {number} [chunkHeight]
+   * @property {(progress: number) => void} [onProgress]
+   * @property {AbortSignal} [signal]
+   * @property {'srgb'|'display-p3'} [colorSpace]
+   */
+
+    //  ImageBitmap stub
+  class FakeBitmap {
+    constructor(width, height) {
+      this.width = width;
+      this.height = height;
+    }
+  }
+
+  /** Simulated chunked processing function */
+  async function processLargeImageInChunks(bitmap, canvas, ctx, cfg) {
+    const width = canvas.width;
+    const height = canvas.height;
+    const chunkHeight = Math.max(cfg.chunkHeight ?? 1024, 1);
+    const fullData = new Uint8ClampedArray(width * height * 4);
+
+    for (let y = 0; y < height; y += chunkHeight) {
+      if (cfg.signal?.aborted) {
+        throw new Error('Aborted');
+      }
+
+      const currentHeight = Math.min(chunkHeight, height - y);
+
+      // Simulate work by delaying a bit
+      await new Promise(r => setTimeout(r, 100));
+
+      // Fake chunk data filling
+      for (let i = 0; i < width * currentHeight * 4; i++) {
+        fullData[y * width * 4 + i] = 255;
+      }
+
+      if (cfg.onProgress) {
+        const progress = Math.min((y + currentHeight) / height, 1);
+        cfg.onProgress(progress);
+      }
+    }
+
+    return {
+      data: fullData,
+      width,
+      height,
+      colorSpace: cfg.colorSpace ?? 'srgb'
+    };
+  }
+
+  // Set up DOM references
+  const progressBar = document.getElementById('progress-bar');
+  const startBtn = document.getElementById('start-btn');
+
+  startBtn.onclick = async () => {
+    startBtn.disabled = true;
+    progressBar.style.width = '0%';
+
+    const width = 800;
+    const height = 600;
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    // Use fake bitmap
+    const fakeBitmap = new FakeBitmap(width, height);
+
+    try {
+      await processLargeImageInChunks(fakeBitmap, canvas, ctx, {
+        chunkHeight: 60,
+        onProgress: (progress) => {
+          progressBar.style.width = `${(progress * 100).toFixed(2)}%`;
+        }
+      });
+      alert('Processing complete!');
+    } catch (err) {
+      alert('Processing aborted or error: ' + err.message);
+    } finally {
+      startBtn.disabled = false;
+    }
+  };
+</script>
+</body>
+</html>

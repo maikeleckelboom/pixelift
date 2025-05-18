@@ -1,6 +1,6 @@
 import type { ServerInput } from '../server';
-import type { BrowserInput } from '../browser';
-import type { DecodedBrowserInput, EncodedBrowserInput } from '../browser/types';
+import type { BrowserImageInput } from '../browser';
+import type { DecodedImageData, EncodedImageSource } from '../browser/types';
 
 /**
  * Determines if the provided input is either a string or an instance of URL.
@@ -72,9 +72,9 @@ export function isRenderableGraphic(
  * Determines whether the given input is an encoded input that matches specific criteria.
  *
  * @param {unknown} input - The input to be evaluated.
- * @return {boolean} - Returns true if the input is an EncodedBrowserInput; otherwise, false.
+ * @return {boolean} - Returns true if the input is an EncodedImageSource; otherwise, false.
  */
-export function isEncodedInput(input: unknown): input is EncodedBrowserInput {
+export function isEncodedInput(input: unknown): input is EncodedImageSource {
   return (
     isRawData(input) ||
     isRenderableGraphic(input) ||
@@ -89,7 +89,7 @@ export function isEncodedInput(input: unknown): input is EncodedBrowserInput {
  * @param {unknown} input - The input to evaluate for matching specific decoded browser input types.
  * @return {boolean} Returns true if the input is an instance of one of the supported decoded input types; otherwise, false.
  */
-export function isDecodedInput(input: unknown): input is DecodedBrowserInput {
+export function isDecodedInput(input: unknown): input is DecodedImageData {
   return (
     (typeof ImageBitmap !== 'undefined' && input instanceof ImageBitmap) ||
     (typeof ImageData !== 'undefined' && input instanceof ImageData) ||
@@ -99,12 +99,12 @@ export function isDecodedInput(input: unknown): input is DecodedBrowserInput {
 }
 
 /**
- * Validates whether the provided input is a valid BrowserInput.
+ * Validates whether the provided input is a valid BrowserImageInput.
  *
- * @param {unknown} input - The input to be validated as a BrowserInput.
- * @return {boolean} Returns true if the input is a valid BrowserInput, otherwise false.
+ * @param {unknown} input - The input to be validated as a BrowserImageInput.
+ * @return {boolean} Returns true if the input is a valid BrowserImageInput, otherwise false.
  */
-export function isValidBrowserInput(input: unknown): input is BrowserInput {
+export function isValidBrowserInput(input: unknown): input is BrowserImageInput {
   return isEncodedInput(input) || isDecodedInput(input);
 }
 
@@ -123,5 +123,12 @@ export function isValidServerInput(input: unknown): input is ServerInput {
     (typeof Buffer !== 'undefined' && Buffer.isBuffer(input)) ||
     input instanceof ArrayBuffer ||
     ArrayBuffer.isView(input)
+  );
+}
+
+export function isBufferSource(input: unknown): input is BufferSource {
+  return (
+    typeof ArrayBuffer !== 'undefined' &&
+    (input instanceof ArrayBuffer || ArrayBuffer.isView(input))
   );
 }

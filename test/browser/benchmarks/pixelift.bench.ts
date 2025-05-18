@@ -26,8 +26,7 @@ describe('Browser Benchmarks', () => {
           await pixelift(urls[format]);
         },
         {
-          iterations: 50,
-          warmupTime: 0.5
+          iterations: 100
         }
       );
     }

@@ -7,7 +7,7 @@ import type {
   PixeliftOptions
 } from './types';
 import type { ServerInput, ServerOptions } from './server';
-import type { BrowserInput, BrowserOptions } from './browser';
+import type { BrowserImageInput, BrowserOptions } from './browser';
 import { isValidBrowserInput, isValidServerInput } from './shared/guards';
 
 interface Decoder<Input extends PixeliftInput, Options extends CommonDecoderOptions> {
@@ -20,7 +20,7 @@ export interface EnvironmentConfig<I extends PixeliftInput, O extends PixeliftOp
   expected: string;
 }
 
-export const browserConfig: EnvironmentConfig<BrowserInput, BrowserOptions> = {
+export const browserConfig: EnvironmentConfig<BrowserImageInput, BrowserOptions> = {
   validate: isValidBrowserInput,
   expected:
     'string, URL, Blob, BufferSource, SVGElement, HTMLImageElement, HTMLVideoElement, VideoFrame, ImageBitmap or ImageData,',
@@ -34,7 +34,7 @@ export const serverConfig: EnvironmentConfig<ServerInput, ServerOptions> = {
 };
 
 export async function pixelift(
-  input: BrowserInput,
+  input: BrowserImageInput,
   options?: BrowserOptions
 ): Promise<PixelData>;
 export async function pixelift(

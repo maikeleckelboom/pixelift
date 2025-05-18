@@ -33,7 +33,6 @@
   },
   "sideEffects": false,
   "engines": {
-    "node": ">=20.0.0",
     "npm": ">=9.0.0",
     "bun": ">=1.0.0",
     "sharp": ">=0.34.1"
@@ -89,7 +88,7 @@
   "devDependencies": {
     "@eslint/js": "^9.25.1",
     "@playwright/test": "^1.52.0",
-    "@types/node": "22.15.3",
+    "@types/bun": "latest",
     "@typescript-eslint/eslint-plugin": "^8.31.1",
     "@typescript-eslint/parser": "^8.31.1",
     "@vitest/browser": "^3.1.2",

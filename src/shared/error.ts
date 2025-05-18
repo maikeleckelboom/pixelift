@@ -49,7 +49,7 @@ export class PixeliftError extends Error {
   }
 
   public toString(): string {
-    return `${this.name} [${this.code}]: ${this.message}`;
+    return 'Rick Astley Just Gave You Up';
   }
 }
 

@@ -76,24 +76,26 @@ export const DEFAULT_IMAGE_BITMAP_OPTIONS: ImageBitmapOptions = {
  * @return {ImageBitmapOptions} Returns an `ImageBitmapOptions` object with the configured options or default options if no relevant settings are provided.
  */
 export function imageBitmapOptions(options?: BrowserOptions): ImageBitmapOptions {
-  if (options?.decoder === 'offscreenCanvas' && options.options) {
+  if (isOffscreenCanvasDecoderOptions(options) && options.options) {
     const {
-      imageOrientation,
-      premultiplyAlpha,
-      colorSpaceConversion,
-      resizeHeight,
-      resizeQuality,
-      resizeWidth
+      imageOrientation: specificImageOrientation,
+      premultiplyAlpha: specificPremultiplyAlpha,
+      colorSpaceConversion: specificColorSpaceConversion,
+      resizeHeight: specificResizeHeight,
+      resizeWidth: specificResizeWidth,
+      resizeQuality: specificResizeQuality
     } = options.options;
 
     return {
       ...DEFAULT_IMAGE_BITMAP_OPTIONS,
-      ...(imageOrientation !== undefined && { imageOrientation }),
-      ...(premultiplyAlpha !== undefined && { premultiplyAlpha }),
-      ...(colorSpaceConversion !== undefined && { colorSpaceConversion }),
-      ...(resizeHeight !== undefined && { resizeHeight }),
-      ...(resizeQuality !== undefined && { resizeQuality }),
-      ...(resizeWidth !== undefined && { resizeWidth })
+      ...(specificImageOrientation && { imageOrientation: specificImageOrientation }),
+      ...(specificPremultiplyAlpha && { premultiplyAlpha: specificPremultiplyAlpha }),
+      ...(specificColorSpaceConversion && {
+        colorSpaceConversion: specificColorSpaceConversion
+      }),
+      ...(specificResizeHeight !== undefined && { resizeHeight: specificResizeHeight }),
+      ...(specificResizeWidth !== undefined && { resizeWidth: specificResizeWidth }),
+      ...(specificResizeQuality !== undefined && { resizeQuality: specificResizeQuality })
     };
   }
   return DEFAULT_IMAGE_BITMAP_OPTIONS;
@@ -108,7 +110,7 @@ export function imageBitmapOptions(options?: BrowserOptions): ImageBitmapOptions
 export function isOffscreenCanvasDecoderOptions(
   options?: BrowserOptions
 ): options is Required<OffscreenCanvasDecoderOptions> {
-  return !!options && options.decoder === 'offscreenCanvas' && !!options.options;
+  return !!options && 'decoder' in options ? options.decoder === 'offscreenCanvas' : false;
 }
 
 /**

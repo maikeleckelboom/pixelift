@@ -1,8 +1,8 @@
-import type { BrowserInput } from '../index';
+import type { BrowserImageInput } from '../index';
 import { isStringOrURL } from '../../shared/guards';
 import { lookup } from './registry';
 
-export function detectMimeType(input: BrowserInput) {
+export function detectMimeType(input: BrowserImageInput) {
   if (isStringOrURL(input)) {
     return lookup(input.toString());
   }
@@ -19,10 +19,17 @@ export function detectMimeType(input: BrowserInput) {
   }
 
   let src: string | undefined;
-  if (typeof HTMLImageElement !== 'undefined' && input instanceof HTMLImageElement) {
-    src = input.src;
-  } else if (typeof HTMLVideoElement !== 'undefined' && input instanceof HTMLVideoElement) {
+
+  if (typeof HTMLCanvasElement !== 'undefined' && input instanceof HTMLCanvasElement) {
+    src = input.toDataURL();
+  }
+
+  if (typeof HTMLAudioElement !== 'undefined' && input instanceof HTMLAudioElement) {
     src = input.currentSrc;
+  }
+
+  if (typeof HTMLSourceElement !== 'undefined' && input instanceof HTMLSourceElement) {
+    src = input.src;
   }
 
   return src ? lookup(src) : undefined;

@@ -2,7 +2,7 @@
   "compilerOptions": {
     "lib": [
       "ES2022",
-      "dom",
+      "DOM",
       "WebWorker"
     ],
     "target": "ESNext",
@@ -24,7 +24,8 @@
     "types": [
       "@vitest/browser/providers/playwright",
       "node",
-      "sharp"
+      "sharp",
+      "bun-types"
     ]
   },
   "exclude": [

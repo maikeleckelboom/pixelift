@@ -1,5 +1,5 @@
 import { beforeAll, bench, describe } from 'vitest';
-import { detectMimeType } from '../../../src/browser/mime/detect-mime-type';
+import { detectMimeType } from '../../../src/browser/mime/detect';
 import { mockMediaElements } from '../../fixtures/mock-media-elements';
 
 const BENCH_CONFIG = {

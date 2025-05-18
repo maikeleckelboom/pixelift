@@ -1,5 +1,21 @@
 import type { CommonDecoderOptions } from '../types';
 
+// type AllPossibleInputTypes =
+//   | string
+//   | URL
+//   | Blob
+//   | BufferSource
+//   | ReadableStream<Uint8Array>
+//   | Response
+//   | ImageBitmap
+//   | ImageData
+//   | VideoFrame
+//   | OffscreenCanvas
+//   | HTMLImageElement
+//   | HTMLVideoElement
+//   | HTMLCanvasElement
+//   | SVGElement;
+
 /**
  * Represents the raw input that can be provided to a web worker or other similar processing utility.
  * This type accommodates a variety of input formats, allowing flexibility in handling different source data.
@@ -12,7 +28,7 @@ import type { CommonDecoderOptions } from '../types';
  * - `ReadableStream<Uint8Array>`: A stream of binary data, usually for handling dynamic or continuous input.
  * - `Response`: A fetch API Response instance, typically containing HTTP payloads.
  */
-export type RawWorkerInput =
+export type WorkerTransportData =
   | string
   | URL
   | Blob
@@ -21,7 +37,7 @@ export type RawWorkerInput =
   | Response;
 
 /**
- * Defines a type union, `TransferableDecodedInput`, that represents various input types
+ * Defines a type union, `DecodedImageData`, that represents various input types
  * that can be transferred across threads or contexts for processing in operations
  * involving decoded data.
  *
@@ -29,26 +45,22 @@ export type RawWorkerInput =
  * - `ImageBitmap`: Represents an efficiently created and handled bitmap of image data.
  * - `ImageData`: Represents raw pixel data and dimensions of an image.
  * - `VideoFrame`: Represents a frame of video data, typically used with modern video APIs.
- * - `OffscreenCanvas`: Represents a canvas that can be rendered off the main thread.
+ * - `OffscreenCanvas`: Represents a canvas that can be rendered off the main thread. // Contains decoded pixel data
  */
-export type TransferableDecodedInput =
-  | ImageBitmap
-  | ImageData
-  | VideoFrame
-  | OffscreenCanvas;
+export type DecodedImageData = ImageBitmap | ImageData | VideoFrame | OffscreenCanvas;
 
 /**
- * Type definition for a DOMSource.
+ * Type definition for a ElementSource.
  *
  * Represents a source type that can be used as input in various DOM-related operations.
  * The supported sources include:
  *
- * - HTMLImageElement: Represents an image element.
- * - HTMLVideoElement: Represents a video element.
- * - HTMLCanvasElement: Represents a canvas element.
- * - SVGElement: Represents an SVG element.
+ * - HTMLImageElement: Represents an image element. // Typically holds encoded data
+ * - HTMLVideoElement: Represents a video element. // Typically holds encoded data
+ * - HTMLCanvasElement: Represents a canvas element. // Contains decoded pixel data
+ * - SVGElement: Represents an SVG element. // Vector format, requires rasterization (not bitmap decoding)
  */
-export type DOMSource =
+export type ElementSource =
   | HTMLImageElement
   | HTMLVideoElement
   | HTMLCanvasElement
@@ -56,45 +68,38 @@ export type DOMSource =
 
 /**
  * Represents an input type that is compatible with a worker.
- * This type is a union of `RawWorkerInput` and `TransferableDecodedInput`.
+ * This type is a union of `WorkerTransportData` and `DecodedImageData`.
  *
- * - `RawWorkerInput`: A type that typically includes raw data or information
- *   that can be directly consumed or processed by the worker.
- * - `TransferableDecodedInput`: A type that includes decoded or structured
- *   information, often involving data that can be transferred efficiently between
- *   threads or processes using transferable objects.
+ * - `WorkerTransportData`: A type that typically includes raw data or information
+ * that can be directly consumed or processed by the worker.
+ * - `DecodedImageData`: A type that includes decoded or structured
+ * information, often involving data that can be transferred efficiently between
+ * threads or processes using transferable objects.
  */
-export type WorkerCompatibleInput = RawWorkerInput | TransferableDecodedInput;
+export type WorkerImageInput = WorkerTransportData | DecodedImageData;
 
 /**
  * Represents the possible input types for a browser environment.
  * This can be one of two types:
- * - `WorkerCompatibleInput`: Represents input that is compatible with a web worker.
- * - `DOMSource`: Represents a source related to the Document Object Model.
+ * - `WorkerImageInput`: Represents input that is compatible with a web worker.
+ * - `ElementSource`: Represents a source related to the Document Object Model.
  *
- * The `BrowserInput` type abstracts the input mechanisms for browser-based processes.
+ * The `BrowserImageInput` type abstracts the input mechanisms for browser-based processes.
  * It aids in handling worker-compatible inputs or DOM-related resources seamlessly.
  */
-export type BrowserInput = WorkerCompatibleInput | DOMSource;
+export type BrowserImageInput = WorkerImageInput | ElementSource;
 
 /**
- * EncodedBrowserInput represents a type that can either be `RawWorkerInput` or `DOMSource`.
+ * EncodedImageSource represents a type that can either be `WorkerTransportData` or `ElementSource`.
  * It is used to specify the input type for handling encoded data in a browser environment.
  *
- * - `RawWorkerInput`: Refers to data input obtained from a worker thread, typically raw or preprocessed content.
- * - `DOMSource`: Refers to a browser-based Document Object Model (DOM) source, such as HTML elements or other DOM-related data.
- */
-export type EncodedBrowserInput = RawWorkerInput | DOMSource;
-
-/**
- * Represents a type alias of `TransferableDecodedInput` for browser input that has been decoded.
+ * NOTE: This type name is potentially misleading as it includes `HTMLCanvasElement` which contains
+ * decoded pixel data, not encoded data. It represents a union of initial browser source types.
  *
- * This type is used to define inputs after they have been processed from a raw transferable state into
- * a decoded format suitable for further manipulation within a browser-based environment.
- *
- * It encapsulates all properties and behaviors contained within `TransferableDecodedInput`.
+ * - `WorkerTransportData`: Refers to data input obtained from a worker thread, typically raw or preprocessed content.
+ * - `ElementSource`: Refers to a browser-based Document Object Model (DOM) source, such as HTML elements or other DOM-related data.
  */
-export type DecodedBrowserInput = TransferableDecodedInput;
+export type EncodedImageSource = WorkerTransportData | ElementSource;
 
 /**
  * Interface representing configuration options for a `CanvasRenderingContext`.
@@ -102,9 +107,9 @@ export type DecodedBrowserInput = TransferableDecodedInput;
  *
  * This interface extends:
  * - `CanvasRenderingContext2DSettings`: Provides configurable options for a 2D rendering context,
- *   such as alpha compositing, desynchronized rendering, and more.
+ * such as alpha compositing, desynchronized rendering, and more.
  * - `CanvasImageSmoothing`: Includes properties to control image smoothing behavior
- *   when resizing images within the canvas.
+ * when resizing images within the canvas.
  *
  * Use this interface to specify options when creating and manipulating 2D rendering contexts
  * for a `HTMLCanvasElement`.
@@ -136,8 +141,8 @@ export interface WebCodecsOptions extends ImageDecodeOptions, PartialImageEncode
  * quality and other canvas-related settings.
  *
  * @property {number} [quality] - A number specifying the desired quality for the rendering context.
- *                                The interpretation of this value may vary depending on the
- *                                implemented rendering context.
+ * The interpretation of this value may vary depending on the
+ * implemented rendering context.
  */
 export interface OffscreenCanvasOptions
   extends ImageBitmapOptions,
@@ -155,7 +160,10 @@ export interface OffscreenCanvasOptions
  * @property {string} [type] Specifies the type or format of the decoding process.
  */
 export interface BrowserDecoderOptions extends CommonDecoderOptions {
-  /** The mime `type` of the input data. */
+  /**
+   * @expected MIME type hint for input data
+   * @example 'image/png'
+   */
   type?: string;
 }
 
@@ -196,16 +204,19 @@ export interface OffscreenCanvasDecoderOptions extends BrowserDecoderOptions {
  *
  * This type can take the form of one of the following:
  * - `WebCodecsDecoderOptions`: Specific configuration options for a decoder
- *   using the WebCodecs API.
+ * using the WebCodecs API.
  * - `OffscreenCanvasDecoderOptions`: Specific configuration options for a
- *   decoder using the OffscreenCanvas API.
+ * decoder using the OffscreenCanvas API.
  * - A combination of `BrowserDecoderOptions` with `decoder` and `options`
- *   properties explicitly omitted to avoid conflicts when specifying custom
- *   decoder configurations.
+ * properties explicitly omitted to avoid conflicts when specifying custom
+ * decoder configurations.
  */
 export type BrowserOptions =
   | WebCodecsDecoderOptions
   | OffscreenCanvasDecoderOptions
-  | (BrowserDecoderOptions & { decoder?: never; options?: never });
+  | (BrowserDecoderOptions & {
+      decoder?: never;
+      options?: never;
+    });
 
 export type BrowserDecoder = 'webCodecs' | 'offscreenCanvas';
