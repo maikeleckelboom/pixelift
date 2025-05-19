@@ -1,8 +1,7 @@
 import { expect, it } from 'vitest';
-import { LOSSLESS_TEST_FORMATS } from './fixtures/constants';
+import { LOSSLESS_TEST_FORMATS, snapshotTestCaseKey } from './fixtures/constants';
 import { existsSync } from 'node:fs';
 import { resolve } from 'path';
-import { snapshotTestCaseKey } from './fixtures/snapshot-test-case-key';
 
 async function waitForSnapshots(paths: string[], seconds: number = 30) {
   const retries = Math.floor((seconds * 1000) / 200);

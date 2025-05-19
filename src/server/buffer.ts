@@ -37,10 +37,6 @@ export async function getSourceData(
   if (typeof ReadableStream !== 'undefined' && input instanceof ReadableStream) {
     return input;
   }
-  // Handle Web ReadableStream
-  if (typeof ReadableStream !== 'undefined' && input instanceof ReadableStream) {
-    return input as ReadableStream<Uint8Array>;
-  }
 
   // Add handling for Node.js Readable streams
   if (input instanceof Readable) {

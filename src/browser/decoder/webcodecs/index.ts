@@ -47,7 +47,6 @@ export async function decode(
 
   const signal = options?.signal;
 
-  // Helper promise for aborting long-running ImageDecoder operations
   const abortOperationPromise = new Promise<never>((_, reject) => {
     if (!signal) return;
     if (signal.aborted) {
@@ -58,7 +57,6 @@ export async function decode(
       reject(createError.aborted('WebCodecs decoding aborted by signal.'));
     };
     signal.addEventListener('abort', abortHandler, { once: true });
-    // No need to remove listener here as Promise resolves/rejects once.
   });
 
   const raceWithAbort = <T>(promise: Promise<T>): Promise<T> => {
@@ -127,10 +125,10 @@ export async function decode(
       const decoderOptions: ImageDecoderInit = {
         data: dataForDecoder as ReadableStream | BufferSource,
         type: typeForDecoder
-        // Supported ImageDecoderInit options from WebCodecsOptions
         // colorSpaceConversion: options?.options?.colorSpaceConversion ?? 'default',
-        // premultiplyAlpha: options?.options?.premultiplyAlpha ?? 'default',
         // preferAnimation: options?.options?.preferAnimation ?? false
+        // desiredWidth: options?.options?.desiredWidth,
+        // desiredHeight: options?.options?.desiredHeight
       };
       imageDecoder = new ImageDecoder(decoderOptions);
 
@@ -139,11 +137,6 @@ export async function decode(
       const decodeOpts: ImageDecodeOptions = {
         frameIndex: options?.options?.frameIndex ?? 0,
         completeFramesOnly: options?.options?.completeFramesOnly ?? false
-        // desiredWidth & desiredHeight are part of ImageDecodeOptions if supported
-        // Check current spec; MDN (Feb 2024) doesn't list them for ImageDecoder.decode()
-        // but they are in VideoFrame constructor. If they become part of ImageDecodeOptions:
-        // desiredWidth: options?.options?.desiredWidth,
-        // desiredHeight: options?.options?.desiredHeight,
       };
       const result = await raceWithAbort(imageDecoder.decode(decodeOpts));
       frame = result.image;

@@ -7,7 +7,6 @@ export default defineConfig({
     sequence: {
       sequencer: SnapshotLastSequencer
     },
-    setupFiles: ['./test/setup.ts'],
     workspace: [
       {
         test: {
@@ -24,6 +23,7 @@ export default defineConfig({
       {
         test: {
           name: 'browser',
+          setupFiles: './test/setup.ts',
           include: ['**/browser/**/*.test.ts', '**/*.universal.test.ts'],
           exclude: ['**/server/**/*.test.ts', '**/decode-consistency.test.ts'],
           benchmark: {
@@ -36,9 +36,9 @@ export default defineConfig({
             headless: true,
             screenshotFailures: false,
             instances: [
-              { browser: 'chromium' }
-              // { browser: 'firefox' },
-              // { browser: 'webkit' }
+              { browser: 'chromium' },
+              { browser: 'firefox' },
+              { browser: 'webkit' }
             ]
           }
         }

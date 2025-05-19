@@ -53,7 +53,11 @@ export function trackStreamProgress(
     bytesRead += chunkSize;
 
     onProgress({
-      loaded: bytesRead
+      loaded: bytesRead,
+      total: stream.readableLength + bytesRead,
+      progress: stream.readableLength
+        ? bytesRead / (stream.readableLength + bytesRead)
+        : 1.0
     });
 
     const canContinue = trackingStream.push(chunk);

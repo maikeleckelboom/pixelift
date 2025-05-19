@@ -2,24 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { decode } from '../../../src/server/decoder';
 import { createReadStream, readFileSync } from 'node:fs';
 import { Readable } from 'node:stream';
-import sharp from 'sharp';
-
-async function generateTestImage() {
-  return sharp({
-    create: {
-      width: 2,
-      height: 2,
-      channels: 4,
-      background: { r: 255, g: 0, b: 0, alpha: 1 }
-    }
-  })
-    .png()
-    .toBuffer();
-}
+import { generateTestImageBuffer } from '../../fixtures/utils/image-test-helpers';
+import {
+  createSlowReadableStream,
+  createNeverEndingStream
+} from '../../fixtures/utils/stream-test-helpers';
+import { getFixtureAssetPath } from '../../fixtures/utils/asset-helpers';
 
 describe('Decoder - streaming input handling', () => {
   it('should decode real NodeJS file stream', async () => {
-    const fileStream = createReadStream('test/fixtures/assets/pixelift.png');
+    const fileStream = createReadStream(getFixtureAssetPath('png')); // Using asset helper
     const decodedImage = await decode(fileStream);
 
     expect(decodedImage).toMatchObject({
@@ -30,8 +22,8 @@ describe('Decoder - streaming input handling', () => {
     expect(decodedImage.data.length).toBeGreaterThan(0);
   });
 
-  it('should decode Web ReadableStream input', async () => {
-    const buffer = readFileSync('test/fixtures/assets/pixelift.png');
+  it('should decode Web ReadableStream input when Node.js stream is provided', async () => {
+    const buffer = readFileSync(getFixtureAssetPath('png')); // Using asset helper
 
     const nodeStream = Readable.from(buffer);
     const decodedImage = await decode(nodeStream);
@@ -40,47 +32,25 @@ describe('Decoder - streaming input handling', () => {
   }, 0);
 
   it('should handle slow streams with backpressure', async () => {
-    const buffer = await generateTestImage();
-    let bytesSent = 0;
-
-    const slowStream = new Readable({
-      read() {
-        if (bytesSent >= buffer.length) {
-          this.push(null);
-          return;
-        }
-
-        const CHUNK_SIZE = 1024;
-        const chunkEnd = bytesSent + CHUNK_SIZE;
-        const chunk = buffer.subarray(bytesSent, chunkEnd);
-        bytesSent += chunk.length;
-        setTimeout(() => this.push(chunk), 10);
-      }
-    });
+    const buffer = await generateTestImageBuffer();
+    const slowStream = createSlowReadableStream(buffer);
 
     const decodedImage = await decode(slowStream);
-    expect(decodedImage.data).toHaveLength(2 * 2 * 4);
+    expect(decodedImage.data).toHaveLength(2 * 2 * 4); // Assuming default 2x2 image from helper
   }, 0);
 
   it('should abort processing mid-stream', async () => {
-    const buffer = await generateTestImage();
-    let sentData = false;
-    const neverEndingStream = new Readable({
-      read() {
-        if (!sentData) {
-          this.push(buffer);
-          sentData = true;
-        }
-      }
-    });
+    const buffer = await generateTestImageBuffer();
+    const neverEndingStreamInstance = createNeverEndingStream(buffer);
 
     const abortController = new AbortController();
 
-    const decodePromise = decode(neverEndingStream, {
+    const decodePromise = decode(neverEndingStreamInstance, {
       signal: abortController.signal
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    // Delay to allow stream processing to start
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
     abortController.abort();
 
@@ -88,11 +58,11 @@ describe('Decoder - streaming input handling', () => {
       'Operation aborted cause: Operation aborted'
     );
 
-    expect(neverEndingStream.destroyed).toBe(true);
+    expect(neverEndingStreamInstance.destroyed).toBe(true);
   });
 
-  it('should decode Web ReadableStream input', async () => {
-    const buffer = readFileSync('test/fixtures/assets/pixelift.png');
+  it('should decode Web ReadableStream input directly', async () => {
+    const buffer = readFileSync(getFixtureAssetPath('png'));
 
     const webStream = Readable.toWeb(
       Readable.from(buffer)

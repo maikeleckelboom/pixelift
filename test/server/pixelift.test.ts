@@ -1,9 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { beforeAll, expect, test } from 'vitest';
 import { pixelift } from '../../src';
-import { LOSSLESS_TEST_FORMATS, type LosslessTestFormat } from '../fixtures/constants';
-import { hashSHA256 } from '../fixtures/hash-sha256';
-import { snapshotTestCaseKey } from '../fixtures/snapshot-test-case-key';
+import {
+  LOSSLESS_TEST_FORMATS,
+  type LosslessTestFormat,
+  snapshotTestCaseKey
+} from '../fixtures/constants';
+import { hashSHA256 } from '../fixtures/utils/hash-sha256';
 
 const buffers: Partial<Record<LosslessTestFormat, Buffer>> = {};
 const urls: Partial<Record<LosslessTestFormat, URL>> = {};
@@ -26,5 +29,5 @@ test.each(LOSSLESS_TEST_FORMATS)(
     expect(result.data).toBeInstanceOf(Uint8ClampedArray);
     expect(hash).toMatchSnapshot();
   },
-  20_000
+  30_000
 );

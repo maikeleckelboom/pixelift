@@ -33,6 +33,16 @@ export const serverConfig: EnvironmentConfig<ServerInput, ServerOptions> = {
   importDecoder: () => import('./server/decoder')
 };
 
+/**
+ * Decodes an image input into pixel data in browser or server environments.
+ * @param input - The image source (e.g., URL, Blob, Buffer, HTML element).
+ * @param options - Configuration options for decoding.
+ * @returns A promise resolving to pixel data (width, height, RGBA bytes).
+ * @throws {PixeliftError} If decoding fails or input is invalid.
+ * @example
+ * const data = await pixelift('https://example.com/image.png');
+ * console.log(data.width, data.height, data.data);
+ */
 export async function pixelift(
   input: BrowserInput,
   options?: BrowserOptions

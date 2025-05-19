@@ -35,7 +35,7 @@
   "engines": {
     "npm": ">=9.0.0",
     "bun": ">=1.0.0",
-    "sharp": ">=0.34.1"
+    "node" : ">=20.0.0"
   },
   "packageManager": "bun@1.2.5",
   "publishConfig": {
@@ -86,21 +86,20 @@
     "url": "https://github.com/maikeleckelboom/pixelift/issues"
   },
   "devDependencies": {
-    "@eslint/js": "^9.25.1",
-    "@playwright/test": "^1.52.0",
+    "@eslint/js": "^9.27.0",
     "@types/bun": "latest",
-    "@typescript-eslint/eslint-plugin": "^8.31.1",
-    "@typescript-eslint/parser": "^8.31.1",
-    "@vitest/browser": "^3.1.2",
-    "eslint": "^9.25.1",
-    "eslint-config-prettier": "^10.1.2",
+    "@typescript-eslint/eslint-plugin": "^8.32.1",
+    "@typescript-eslint/parser": "^8.32.1",
+    "@vitest/browser": "3",
+    "eslint": "^9.27.0",
+    "eslint-config-prettier": "^10.1.5",
     "pixelmatch": "^7.1.0",
     "playwright": "^1.52.0",
     "prettier": "^3.5.3",
-    "tsup": "^8.4.0",
-    "typescript": "^5",
-    "typescript-eslint": "^8.31.1",
-    "vitest": "3.1.2"
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.32.1",
+    "vitest": "3"
   },
   "optionalDependencies": {
     "sharp": "^0.34.1"

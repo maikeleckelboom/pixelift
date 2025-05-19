@@ -1,6 +1,5 @@
 import { beforeAll, bench, describe } from 'vitest';
 import { detectMimeType } from '../../../src/browser/mime/detect';
-import { mockMediaElements } from '../../fixtures/mock-media-elements';
 
 const BENCH_CONFIG = {
   iterations: 1000,
@@ -9,10 +8,6 @@ const BENCH_CONFIG = {
 };
 
 describe('File Type Inference Benchmarks', () => {
-  beforeAll(() => {
-    mockMediaElements();
-  });
-
   describe('Core Operations', () => {
     const complexUrl =
       'https://cdn.example.com/images/2023/final.prod.v2.export-1.tar.gz?cache=v3';

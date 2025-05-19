@@ -1,18 +1,33 @@
-import { bench, describe } from 'vitest';
-import { pixelift } from '../../../src/server';
-import { PIXELIFT_SERVER_DECODERS, LOSSLESS_TEST_FORMATS } from '../../fixtures/constants';
+import { beforeAll, bench, describe } from 'vitest';
+import { pixelift } from '../../../src';
+import {
+  LOSSLESS_TEST_FORMATS,
+  type LosslessTestFormat,
+  PIXELIFT_BROWSER_DECODERS
+} from '../../fixtures/constants';
+import { getFixtureAssetUrl } from '../../fixtures/utils/asset-helpers';
 
-describe('Server Benchmarks', () => {
-  for (const decoder of PIXELIFT_SERVER_DECODERS) {
+let testAssetUrls: Record<LosslessTestFormat, URL>;
+
+beforeAll(() => {
+  testAssetUrls = Object.fromEntries(
+    LOSSLESS_TEST_FORMATS.map((format) => [
+      format,
+      getFixtureAssetUrl(format, window.location.href)
+    ])
+  ) as Record<LosslessTestFormat, URL>;
+});
+
+describe('Browser Benchmarks', () => {
+  for (const decoder of PIXELIFT_BROWSER_DECODERS) {
     for (const format of LOSSLESS_TEST_FORMATS) {
       bench(
         `${decoder} - ${format}`,
         async () => {
-          await pixelift(`./test/fixtures/assets/pixelift.${format}`, { decoder });
+          await pixelift(testAssetUrls[format], { decoder });
         },
         {
-          iterations: 100,
-          warmupTime: 0.5
+          iterations: 100
         }
       );
     }

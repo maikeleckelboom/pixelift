@@ -71,7 +71,9 @@ const strategies = {
       if (await isWebCodecsSupported(options.type)) {
         return await strategies.webCodecs(input, options);
       }
-    } catch {}
+    } catch {
+      // Ignore errors from isWebCodecsSupported
+    }
     return strategies.offscreenCanvas(input, options);
   }
 };
