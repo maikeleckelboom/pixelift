@@ -75,7 +75,7 @@ export async function getSourceData(
   try {
     url = new URL(str);
   } catch {
-    /* empty: will be treated as a local path if not a valid URL structure */
+    /* Will be treated as a local path if not a valid URL structure */
   }
 
   if (url) {

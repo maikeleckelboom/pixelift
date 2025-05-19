@@ -71,12 +71,7 @@ const strategies = {
       if (await isWebCodecsSupported(options.type)) {
         return await strategies.webCodecs(input, options);
       }
-    } catch (error) {
-      const env = Bun.env.MODE ?? process.env.NODE_ENV;
-      if (env === 'development') {
-        console.warn('🍂️ Falling back to Canvas:', error);
-      }
-    }
+    } catch {}
     return strategies.offscreenCanvas(input, options);
   }
 };

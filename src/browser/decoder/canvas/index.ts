@@ -58,11 +58,15 @@ async function createBitmapFromEncodedImageSource(
     ) {
       throw createError.runtimeError('Video element not ready for frame capture');
     }
+    if (input instanceof HTMLImageElement && !input.complete) {
+      throw createError.runtimeError('Image element not fully loaded');
+    }
     return await createImageBitmap(input, opts);
   }
 
   if (typeof SVGElement !== 'undefined' && input instanceof SVGElement) {
-    const blob = new Blob([input.outerHTML], { type: 'image/svg+xml' });
+    const serializedString = new XMLSerializer().serializeToString(input);
+    const blob = new Blob([serializedString], { type: 'image/svg+xml' });
     return loadBitmapFromBlob(blob, options);
   }
 
@@ -137,7 +141,8 @@ export async function decode(
   input: BrowserInput,
   options?: OffscreenCanvasDecoderOptions
 ): Promise<PixelData> {
-  return withAutoClose(await bitmapFromInput(input, options), async (bitmap) => {
+  const imageBitmap = await bitmapFromInput(input, options);
+  return withAutoClose(imageBitmap, async (bitmap) => {
     const [canvas, context] = createCanvasAndContext(bitmap.width, bitmap.height, options);
     context.drawImage(bitmap, 0, 0);
     const { data, width, height } = context.getImageData(

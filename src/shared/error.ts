@@ -49,7 +49,7 @@ export class PixeliftError extends Error {
   }
 
   public toString(): string {
-    return 'Rick Astley Just Gave You Up';
+    return `${this.name} (${this.code}): ${this.message}`;
   }
 }
 
@@ -70,8 +70,14 @@ export const createError = {
   fetchFailed: (url: string, status: number, statusText: string): PixeliftError =>
     new PixeliftError(ErrorCode.fetchFailed, { url, status, statusText }),
 
-  invalidInput: (expected: string, received: string): PixeliftError =>
-    new PixeliftError(ErrorCode.invalidInput, { expected, received }),
+  invalidInput: (expected: string, received: unknown): PixeliftError =>
+    new PixeliftError(ErrorCode.invalidInput, {
+      expected,
+      received:
+        typeof received === 'string'
+          ? received
+          : received?.constructor?.name || typeof received
+    }),
 
   networkError: (detail: string, cause?: unknown): PixeliftError =>
     new PixeliftError(ErrorCode.networkError, { detail }, { cause }),

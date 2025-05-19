@@ -1,4 +1,4 @@
-import type { ServerInput, ServerOptions } from '../types';
+import type { ServerInput, ServerOptions, ProgressCallback } from '../types';
 import type { PixelData } from '../../types';
 import { getSourceData } from '../buffer';
 import { getSharp } from './sharp';
@@ -6,6 +6,11 @@ import { createError } from '../../shared/error';
 import type * as SharpNS from 'sharp';
 import { Readable } from 'node:stream';
 import { Buffer } from 'node:buffer';
+import {
+  trackBufferProgress,
+  trackStreamProgress,
+  trackWebStreamProgress
+} from '../../shared/streams/progress';
 
 function isWebReadableStream(stream: unknown): stream is ReadableStream<Uint8Array> {
   return (
@@ -22,9 +27,18 @@ function isNodeReadableStream(stream: unknown): stream is Readable {
   return typeof stream === 'object' && stream !== null && stream instanceof Readable;
 }
 
+/**
+ * Decodes an image from various input sources
+ *
+ * @param input - Image source (Buffer, streams, URL, etc.)
+ * @param options - Decoder options
+ * @param onProgress - Optional callback for tracking decoding progress
+ * @returns Promise resolving to decoded image data
+ */
 export async function decode(
   input: ServerInput,
-  options?: ServerOptions
+  options?: ServerOptions,
+  onProgress?: ProgressCallback
 ): Promise<PixelData> {
   const source = await getSourceData(input, options);
 
@@ -42,7 +56,6 @@ export async function decode(
   let sharpInstance: SharpNS.Sharp | undefined;
   let sourceStream: Readable | undefined;
 
-  // Return a promise that rejects when aborted
   let rejectWithAbort: ((error: Error) => void) | undefined;
   const abortPromise = options?.signal
     ? new Promise<never>((_, reject) => {
@@ -50,7 +63,6 @@ export async function decode(
       })
     : null;
 
-  // Set up abort handling
   const cleanupResources = () => {
     if (sharpInstance && !sharpInstance.destroyed) {
       sharpInstance.destroy(createError.aborted());
@@ -60,30 +72,22 @@ export async function decode(
     }
   };
 
-  // Track if we've already handled an abort
   let abortHandled = false;
 
-  // AbortSignal handler that destroys all resources immediately
   const handleAbort = () => {
-    // Prevent multiple handling of the same abort
     if (abortHandled) return;
     abortHandled = true;
 
-    // Clean up resources
     cleanupResources();
 
-    // Reject the abortPromise to ensure the Promise.race below resolves
     if (rejectWithAbort) {
       rejectWithAbort(createError.aborted());
     }
   };
 
-  // Set up abort signal listener if provided
   if (options?.signal) {
-    // Use addEventListener for abort event
     options.signal.addEventListener('abort', handleAbort, { once: true });
 
-    // Also check if already aborted
     if (options.signal.aborted) {
       handleAbort();
     }
@@ -91,13 +95,22 @@ export async function decode(
 
   try {
     if (source instanceof Buffer) {
+      // For buffers, report progress once (100%)
+      if (onProgress) {
+        trackBufferProgress(source, onProgress);
+      }
       sharpInstance = sharpFunction(source);
     } else if (isWebReadableStream(source)) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      sourceStream = Readable.fromWeb(source as any);
+      // Track progress on web stream if callback provided
+      if (onProgress) {
+        sourceStream = trackWebStreamProgress(source, onProgress);
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        sourceStream = Readable.fromWeb(source as any);
+      }
+
       sharpInstance = sharpFunction();
 
-      // Listen for errors on the source stream
       sourceStream.on('error', (err) => {
         if (sharpInstance && !sharpInstance.destroyed) {
           sharpInstance.destroy(
@@ -108,10 +121,15 @@ export async function decode(
 
       sourceStream.pipe(sharpInstance);
     } else if (isNodeReadableStream(source)) {
-      sourceStream = source;
+      // Track progress on Node.js stream if callback provided
+      if (onProgress) {
+        sourceStream = trackStreamProgress(source, onProgress);
+      } else {
+        sourceStream = source;
+      }
+
       sharpInstance = sharpFunction();
 
-      // Listen for errors on the source stream
       sourceStream.on('error', (err) => {
         if (sharpInstance && !sharpInstance.destroyed) {
           sharpInstance.destroy(createError.rethrow(err, 'Source Node.js stream errored'));
@@ -122,7 +140,7 @@ export async function decode(
     } else {
       throw createError.invalidInput(
         'Buffer, Node.js Readable stream, or Web API ReadableStream',
-        `Received type: ${source?.constructor?.name || typeof source}`
+        source
       );
     }
 
@@ -130,23 +148,25 @@ export async function decode(
       throw createError.runtimeError('Sharp instance was not initialized.');
     }
 
-    // This is needed else, sharp will throw an error on the stream
-    sharpInstance.on('error', (_err) => {});
+    sharpInstance.on('error', () => {
+      if (abortHandled) {
+        return;
+      }
+      cleanupResources();
+    });
 
     const processingPipeline = sharpInstance
       .toColorspace('srgb')
       .ensureAlpha()
       .raw({ depth: 'uchar' });
 
-    // Check for abort before proceeding
     if (options?.signal?.aborted) {
       throw createError.aborted();
     }
 
-    // Use Promise.race to allow abortion during the buffer operation
+    // Promise.race to allow for aborting
     const bufferPromise = processingPipeline.toBuffer({ resolveWithObject: true });
 
-    // If we have an abort signal, race the buffer promise against the abort promise
     const result = abortPromise
       ? await Promise.race([bufferPromise, abortPromise])
       : await bufferPromise;
@@ -156,7 +176,6 @@ export async function decode(
       info: { width: number; height: number };
     };
 
-    // Remove abort listener after successful processing
     if (options?.signal) {
       options.signal.removeEventListener('abort', handleAbort);
     }
@@ -167,25 +186,18 @@ export async function decode(
       height: info.height
     };
   } catch (error) {
-    // Remove abort listener in the error case too
     if (options?.signal) {
       options.signal.removeEventListener('abort', handleAbort);
     }
-
-    // If already aborted or this is an abort error, throw a clean abort error
     if (
       options?.signal?.aborted ||
       (error instanceof Error && error.message.includes('aborted'))
     ) {
       throw createError.aborted();
     }
-
-    // Clean up resources in case of any error
     cleanupResources();
-
     throw createError.rethrow(error, 'Image processing failed');
   } finally {
-    // Final cleanup - ensure all resources are destroyed
     if (!abortHandled) {
       cleanupResources();
     }

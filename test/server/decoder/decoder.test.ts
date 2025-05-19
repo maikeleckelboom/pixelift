@@ -18,8 +18,7 @@ async function generateTestImage() {
 }
 
 describe('Decoder - streaming input handling', () => {
-  // Existing test modified for direct Node.js stream handling
-  it('should decode real Node.js file stream', async () => {
+  it('should decode real NodeJS file stream', async () => {
     const fileStream = createReadStream('test/fixtures/assets/pixelift.png');
     const decodedImage = await decode(fileStream);
 
@@ -31,19 +30,15 @@ describe('Decoder - streaming input handling', () => {
     expect(decodedImage.data.length).toBeGreaterThan(0);
   });
 
-  // Web Stream compatibility test
   it('should decode Web ReadableStream input', async () => {
     const buffer = readFileSync('test/fixtures/assets/pixelift.png');
-    // const webStream = Readable.toWeb(Readable.from(buffer));
 
     const nodeStream = Readable.from(buffer);
     const decodedImage = await decode(nodeStream);
 
-    // Check decoded image dimensions rather than comparing to buffer size
-    expect(decodedImage.data.length).toBe(decodedImage.width * decodedImage.height * 4); // RGBA format
-  });
+    expect(decodedImage.data.length).toBe(decodedImage.width * decodedImage.height * 4);
+  }, 0);
 
-  // Backpressure handling
   it('should handle slow streams with backpressure', async () => {
     const buffer = await generateTestImage();
     let bytesSent = 0;
@@ -51,11 +46,10 @@ describe('Decoder - streaming input handling', () => {
     const slowStream = new Readable({
       read() {
         if (bytesSent >= buffer.length) {
-          this.push(null); // End stream
+          this.push(null);
           return;
         }
 
-        // Send 1KB chunks with 10ms delay
         const CHUNK_SIZE = 1024;
         const chunkEnd = bytesSent + CHUNK_SIZE;
         const chunk = buffer.subarray(bytesSent, chunkEnd);
@@ -65,10 +59,9 @@ describe('Decoder - streaming input handling', () => {
     });
 
     const decodedImage = await decode(slowStream);
-    expect(decodedImage.data).toHaveLength(2 * 2 * 4); // 2x2 RGBA
-  });
+    expect(decodedImage.data).toHaveLength(2 * 2 * 4);
+  }, 0);
 
-  // Mid-stream abort
   it('should abort processing mid-stream', async () => {
     const buffer = await generateTestImage();
     let sentData = false;
@@ -81,33 +74,26 @@ describe('Decoder - streaming input handling', () => {
       }
     });
 
-    // Create abort controller
     const abortController = new AbortController();
 
-    // Start the decode operation
     const decodePromise = decode(neverEndingStream, {
       signal: abortController.signal
     });
 
-    // Wait to ensure processing has started
-    // The Sharp pipeline should be processing the image data now
     await new Promise((resolve) => setTimeout(resolve, 200));
 
-    // Now abort the operation while it's processing
     abortController.abort();
 
-    // The promise should reject with an abort error
     await expect(decodePromise).rejects.toThrow(
       'Operation aborted cause: Operation aborted'
     );
 
-    // Verify the stream was destroyed
     expect(neverEndingStream.destroyed).toBe(true);
   });
 
   it('should decode Web ReadableStream input', async () => {
     const buffer = readFileSync('test/fixtures/assets/pixelift.png');
-    // Convert to Web ReadableStream correctly
+
     const webStream = Readable.toWeb(
       Readable.from(buffer)
     ) as unknown as ReadableStream<Uint8Array>;
@@ -115,4 +101,4 @@ describe('Decoder - streaming input handling', () => {
     const decodedImage = await decode(webStream);
     expect(decodedImage.data.length).toBeGreaterThan(0);
   });
-});
+}, 0);

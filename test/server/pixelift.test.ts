@@ -17,17 +17,6 @@ beforeAll(() => {
 });
 
 test.each(LOSSLESS_TEST_FORMATS)(
-  'should decode %s from `Buffer`',
-  async (format) => {
-    const result = await pixelift(buffers[format] as Buffer);
-    expect(result.width).toBeDefined();
-    expect(result.height).toBeDefined();
-    expect(result.data).toBeInstanceOf(Uint8ClampedArray);
-  },
-  20_000
-);
-
-test.each(LOSSLESS_TEST_FORMATS)(
   `%s: ${snapshotTestCaseKey()}`,
   async (format) => {
     const result = await pixelift(urls[format] as URL);

@@ -2,11 +2,11 @@ import { isStringOrURL } from '../shared/guards';
 import type { BrowserInput, BrowserOptions } from './types';
 import { createError } from '../shared/error';
 import { isArrayBuffer } from './guards';
-import { blobFromReadableStream } from './blob/stream';
 import { blobFromRemoteResource } from './blob/fetch';
 import { blobFromImageBitmap } from './blob/bitmap';
 import { blobFromCanvas } from './blob/canvas';
 import { blobFromArrayBuffer } from './blob/buffer';
+import { streamToBlob } from './blob/stream';
 
 export function createArrayBuffer(data: BufferSource): ArrayBuffer {
   return isArrayBuffer(data)
@@ -37,15 +37,21 @@ export async function toBlob(input: BrowserInput, options?: BrowserOptions): Pro
     return blobFromCanvas(input, options);
   }
 
-  if (input instanceof ReadableStream) {
-    return blobFromReadableStream(input, options);
-  }
-
   if (input instanceof Response) {
     if (!input.body) {
       throw createError.runtimeError('Response body unavailable');
     }
-    return input.blob();
+    return streamToBlob(input.body, {
+      type: options?.type || input.headers.get('content-type') || undefined,
+      signal: options?.signal
+    });
+  }
+
+  if (input instanceof ReadableStream) {
+    return streamToBlob(input, {
+      type: options?.type,
+      signal: options?.signal
+    });
   }
 
   if (input instanceof SVGElement) {
