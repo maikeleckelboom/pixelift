@@ -1,6 +1,40 @@
 import { describe, expect, test } from 'vitest';
-import { getBuffer } from '../../../src/server/buffer';
+import { getSourceData } from '../../../src/server/buffer';
+import { Readable } from 'node:stream';
+import { Buffer } from 'node:buffer';
 import path from 'node:path';
+
+async function convertResultToBuffer(
+  result: Buffer | Readable | ReadableStream<Uint8Array>
+): Promise<Buffer> {
+  if (result instanceof Buffer) {
+    return result;
+  }
+
+  if (result instanceof Readable) {
+    return new Promise((resolve, reject) => {
+      const chunks: Buffer[] = [];
+      result.on('data', (chunk: Buffer) => chunks.push(chunk));
+      result.on('error', reject);
+      result.on('end', () => resolve(Buffer.concat(chunks)));
+    });
+  }
+
+  if (typeof (result as ReadableStream<Uint8Array>).getReader === 'function') {
+    const reader = (result as ReadableStream<Uint8Array>).getReader();
+    const chunks: Uint8Array[] = [];
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) chunks.push(value);
+    }
+
+    return Buffer.concat(chunks);
+  }
+
+  throw new Error(`Unsupported result type: ${typeof result}`);
+}
 
 describe('Buffer Security', () => {
   const SAFE_IMAGE_BUFFER = new URL('../../fixtures/assets/pixelift.png', import.meta.url);
@@ -8,25 +42,23 @@ describe('Buffer Security', () => {
 
   describe('Valid Path Handling', () => {
     test('reads actual test image from valid path', async () => {
-      const result = await getBuffer(SAFE_IMAGE_BUFFER);
-      expect(result).toBeInstanceOf(Buffer);
-      expect(result.length).toBeGreaterThan(0);
+      const result = await getSourceData(SAFE_IMAGE_BUFFER);
+      const buffer = await convertResultToBuffer(result);
+      expect(buffer.length).toBeGreaterThan(0);
     });
   });
 
   describe('Path Traversal Prevention', () => {
     test('rejects encoded path traversal', async () => {
       const encodedTraversal = path.join(fixturesDir, '..%2F..%2F..%2F..%2Fetc%2Fpasswd');
-
-      await expect(() => getBuffer(encodedTraversal)).rejects.toMatchObject({
+      await expect(() => getSourceData(encodedTraversal)).rejects.toMatchObject({
         code: 'path-traversal'
       });
     });
 
     test('rejects relative path traversal', async () => {
       const maliciousPath = path.join(fixturesDir, '../../../../etc/passwd');
-
-      await expect(() => getBuffer(maliciousPath)).rejects.toMatchObject({
+      await expect(() => getSourceData(maliciousPath)).rejects.toMatchObject({
         code: 'path-traversal'
       });
     });
@@ -34,7 +66,8 @@ describe('Buffer Security', () => {
 
   describe('File Handling', () => {
     test('reads actual PNG file correctly', async () => {
-      const buffer = await getBuffer(SAFE_IMAGE_BUFFER);
+      const result = await getSourceData(SAFE_IMAGE_BUFFER);
+      const buffer = await convertResultToBuffer(result);
       expect(buffer.subarray(0, 4).toString('hex')).toBe('89504e47');
     });
   });

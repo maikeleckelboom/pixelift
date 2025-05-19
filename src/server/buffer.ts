@@ -4,6 +4,8 @@ import type { ServerInput, ServerOptions } from './types';
 import { createError } from '../shared/error';
 import { fileURLToPath } from 'node:url';
 import { isAbortError } from '../shared/guards';
+import fsSync from 'node:fs';
+import { Readable } from 'node:stream';
 
 function sanitizeFilePath(url: URL): string {
   const decoded = fileURLToPath(url);
@@ -27,41 +29,53 @@ function resolveLocalPath(inputPath: string): string {
   return resolved;
 }
 
-export async function getBuffer(
+export async function getSourceData(
   input: ServerInput,
   options: ServerOptions = {}
-): Promise<Buffer> {
-  const { signal, headers, credentials, mode } = options;
+): Promise<Readable | ReadableStream<Uint8Array> | Buffer> {
+  // This is a Web API ReadableStream from fetch or passed in
+  if (typeof ReadableStream !== 'undefined' && input instanceof ReadableStream) {
+    return input;
+  }
+  // Handle Web ReadableStream
+  if (typeof ReadableStream !== 'undefined' && input instanceof ReadableStream) {
+    return input as ReadableStream<Uint8Array>;
+  }
+
+  // Add handling for Node.js Readable streams
+  if (input instanceof Readable) {
+    return input;
+  }
+
+  const { signal, headers, credentials, mode } = options; // `mode` is from CommonDecoderOptions
   signal?.throwIfAborted();
 
-  // 1) Already a Buffer
+  // 2. Already a Buffer
   if (Buffer.isBuffer(input)) return input;
 
-  // 2) ArrayBuffer or TypedArray
+  // 3. ArrayBuffer or TypedArray
   if (input instanceof ArrayBuffer || ArrayBuffer.isView(input)) {
     return Buffer.from(input as ArrayBufferLike);
   }
 
-  // 3) Blob/File
+  // 4. Blob/File (Note: Blob.stream() could also return a ReadableStream)
   if (typeof Blob !== 'undefined' && input instanceof Blob) {
-    signal?.throwIfAborted();
-    const arr = await input.arrayBuffer();
-    return Buffer.from(arr);
+    return input.stream(); // Web ReadableStream
   }
 
-  // 4) Data URL
+  // 5. Data URL
   const str = String(input);
   const dataMatch = /^data:([^;]+);base64,(.*)$/.exec(str);
   if (dataMatch) {
     return Buffer.from(dataMatch[2] || '', 'base64');
   }
 
-  // 5) URL
+  // 6. URL (file:, http:, https:)
   let url: URL | null = null;
   try {
     url = new URL(str);
   } catch {
-    /* empty */
+    /* empty: will be treated as a local path if not a valid URL structure */
   }
 
   if (url) {
@@ -85,23 +99,25 @@ export async function getBuffer(
         if (!res.ok) {
           throw createError.fetchFailed(url.toString(), res.status, res.statusText);
         }
-        const buf = await res.arrayBuffer();
-        return Buffer.from(buf);
+        if (!res.body) {
+          throw createError.runtimeError(`Response from ${url.toString()} has no body.`);
+        }
+        return res.body;
       }
       default:
         throw createError.invalidInput(
-          '"file:", "http:", or "https:" URL',
-          `Buffer, ArrayBuffer, Blob, File, or a valid URL`
+          'URL protocol must be "file:", "http:", or "https:"',
+          `Received protocol: ${url.protocol}`
         );
     }
   }
 
-  // 6) Local filesystem path
+  // 7. Local filesystem path
   signal?.throwIfAborted();
   const local = resolveLocalPath(str);
-
   try {
-    return fs.readFile(local, { signal });
+    return fsSync.createReadStream(local, { signal });
+    // return fs.readFile(local, { signal });
   } catch (error) {
     if (isAbortError(error)) {
       throw createError.aborted();

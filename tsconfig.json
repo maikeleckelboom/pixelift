@@ -24,8 +24,8 @@
     "types": [
       "@vitest/browser/providers/playwright",
       "node",
-      "sharp",
-      "bun-types"
+      "bun-types",
+      "sharp"
     ]
   },
   "exclude": [

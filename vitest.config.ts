@@ -7,6 +7,7 @@ export default defineConfig({
     sequence: {
       sequencer: SnapshotLastSequencer
     },
+    setupFiles: ['./test/setup.ts'],
     workspace: [
       {
         test: {
