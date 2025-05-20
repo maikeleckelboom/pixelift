@@ -2,31 +2,35 @@ import { beforeAll, expect, test } from 'vitest';
 import { pixelift } from '../../src';
 import { hashSHA256 } from '../fixtures/utils/hash-sha256';
 import {
-  ALL_TEST_FORMATS,
+  listTestFormats,
   LOSSLESS_TEST_FORMATS,
-  snapshotTestCaseKey
+  makeSnapshotKey
 } from '../fixtures/constants';
 import { getFixtureAssetUrl } from '../fixtures/utils/asset-helpers';
 
 const testAssetUrls: Partial<Record<string, URL>> = {};
 
 beforeAll(async () => {
-  for (const format of ALL_TEST_FORMATS) {
+  for (const format of listTestFormats()) {
     testAssetUrls[format] = getFixtureAssetUrl(format, import.meta.url);
   }
 });
 
-test.each(LOSSLESS_TEST_FORMATS)(
-  `%s: ${snapshotTestCaseKey()}`,
-  async (format) => {
+const browserFormatCases = LOSSLESS_TEST_FORMATS.map((fmt, idx) => [fmt, idx + 1] as const);
+
+test.each(browserFormatCases)(
+  '[browser] %s | case %d',
+  async (format, caseIndex) => {
     const imageUrl = testAssetUrls[format];
-    if (!imageUrl) throw new Error(`URL for format ${format} not loaded`);
+    if (!imageUrl) {
+      throw new Error(`URL for format ${format} not loaded`);
+    }
 
     const result = await pixelift(imageUrl);
     expect(result).toBeDefined();
 
     const hash = await hashSHA256(result.data);
-    expect(hash).toMatchSnapshot();
+    expect(hash).toMatchSnapshot(makeSnapshotKey(format, caseIndex));
   },
   30_000
 );

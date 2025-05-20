@@ -25,7 +25,7 @@ export default defineConfig({
           name: 'browser',
           setupFiles: './test/setup.ts',
           include: ['**/browser/**/*.test.ts', '**/*.universal.test.ts'],
-          exclude: ['**/server/**/*.test.ts', '**/decode-consistency.test.ts'],
+          exclude: ['**/server/**/*.test.ts', '**/pixelift-consistent-hash-test.ts'],
           benchmark: {
             include: ['**/browser/**/*.bench.ts'],
             exclude: ['**/server/**/*.bench.ts']

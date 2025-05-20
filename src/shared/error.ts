@@ -114,5 +114,9 @@ export const createError = {
         cause: error
       }
     );
+  },
+
+  isAbortError(e: unknown) {
+    return e instanceof PixeliftError && e.code === ErrorCode.aborted;
   }
 } as const;

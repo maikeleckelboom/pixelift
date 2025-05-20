@@ -98,12 +98,8 @@ export function trackStreamProgress(
  * @returns A Node.js Readable stream with progress tracking
  */
 export function trackWebStreamProgress(
-  stream: ReadableStream<Uint8Array>,
+  stream: import('stream/web').ReadableStream<Uint8Array>,
   onProgress: ProgressCallback
 ): Readable {
-  return trackStreamProgress(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Readable.fromWeb(stream as any),
-    onProgress
-  );
+  return trackStreamProgress(Readable.fromWeb(stream), onProgress);
 }

@@ -35,7 +35,7 @@
   "engines": {
     "npm": ">=9.0.0",
     "bun": ">=1.0.0",
-    "node" : ">=20.0.0"
+    "node": ">=20.0.0"
   },
   "packageManager": "bun@1.2.5",
   "publishConfig": {
@@ -52,7 +52,7 @@
     "test:sequential": "vitest run --project=server && vitest run --project=browser && vitest run --project=snapshot-consistency",
     "test:server": "vitest --project server",
     "test:browser": "vitest --project browser",
-    "test:consistency": "vitest run test/decode-consistency.test.ts",
+    "test:consistency": "vitest run test/pixelift-consistent-hash-test.ts",
     "test:ci": "vitest --reporter dot",
     "bench": "vitest --run bench --reporter verbose",
     "bench:server": "vitest --project server --run bench --reporter verbose",
@@ -88,6 +88,7 @@
   "devDependencies": {
     "@eslint/js": "^9.27.0",
     "@types/bun": "latest",
+    "@types/node": "^22.15.19",
     "@typescript-eslint/eslint-plugin": "^8.32.1",
     "@typescript-eslint/parser": "^8.32.1",
     "@vitest/browser": "3",

@@ -1,10 +1,6 @@
 {
   "compilerOptions": {
-    "lib": [
-      "ES2022",
-      "DOM",
-      "WebWorker"
-    ],
+    "lib": ["ESNext", "DOM", "DOM.Iterable", "WebWorker"],
     "target": "ESNext",
     "module": "ES2022",
     "moduleDetection": "force",
@@ -22,13 +18,12 @@
     "noPropertyAccessFromIndexSignature": false,
     "esModuleInterop": true,
     "types": [
+      "bun-types",
       "@vitest/browser/providers/playwright",
-      "node",
-      "bun-types"
-    ]
+      "bun-types", "@types/node"
+    ],
+    "resolveJsonModule": true,
+    "isolatedModules": true
   },
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "exclude": ["node_modules", "dist"]
 }

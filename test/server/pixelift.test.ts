@@ -4,7 +4,7 @@ import { pixelift } from '../../src';
 import {
   LOSSLESS_TEST_FORMATS,
   type LosslessTestFormat,
-  snapshotTestCaseKey
+  makeSnapshotKey
 } from '../fixtures/constants';
 import { hashSHA256 } from '../fixtures/utils/hash-sha256';
 
@@ -19,15 +19,18 @@ beforeAll(() => {
   }
 });
 
-test.each(LOSSLESS_TEST_FORMATS)(
-  `%s: ${snapshotTestCaseKey()}`,
-  async (format) => {
+const formatCases = LOSSLESS_TEST_FORMATS.map((fmt, idx) => [fmt, idx + 1] as const);
+
+test.each(formatCases)(
+  '[server] %s | case %d',
+  async (format, caseIndex) => {
     const result = await pixelift(urls[format] as URL);
     const hash = await hashSHA256(result.data);
+
     expect(result.width).toBeDefined();
     expect(result.height).toBeDefined();
     expect(result.data).toBeInstanceOf(Uint8ClampedArray);
-    expect(hash).toMatchSnapshot();
+    expect(hash).toMatchSnapshot(makeSnapshotKey(format, caseIndex));
   },
   30_000
 );
