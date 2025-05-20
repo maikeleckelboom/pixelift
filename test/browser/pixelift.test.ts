@@ -21,11 +21,7 @@ const browserFormatCases = LOSSLESS_TEST_FORMATS.map((fmt, idx) => [fmt, idx + 1
 test.each(browserFormatCases)(
   '[browser] %s | case %d',
   async (format, caseIndex) => {
-    const imageUrl = testAssetUrls[format];
-    if (!imageUrl) {
-      throw new Error(`URL for format ${format} not loaded`);
-    }
-
+    const imageUrl = testAssetUrls[format] as URL;
     const result = await pixelift(imageUrl);
     expect(result).toBeDefined();
 

@@ -9,12 +9,10 @@ import {
 import { hashSHA256 } from '../fixtures/utils/hash-sha256';
 
 const buffers: Partial<Record<LosslessTestFormat, Buffer>> = {};
-const urls: Partial<Record<LosslessTestFormat, URL>> = {};
 
 beforeAll(() => {
   for (const format of LOSSLESS_TEST_FORMATS) {
     const resourceUrl = new URL(`../fixtures/assets/pixelift.${format}`, import.meta.url);
-    urls[format] = resourceUrl;
     buffers[format] = readFileSync(resourceUrl);
   }
 });
@@ -24,7 +22,7 @@ const formatCases = LOSSLESS_TEST_FORMATS.map((fmt, idx) => [fmt, idx + 1] as co
 test.each(formatCases)(
   '[server] %s | case %d',
   async (format, caseIndex) => {
-    const result = await pixelift(urls[format] as URL);
+    const result = await pixelift(buffers[format] as Buffer);
     const hash = await hashSHA256(result.data);
 
     expect(result.width).toBeDefined();
