@@ -9,7 +9,7 @@ export function listTestFormats() {
 
 export type LosslessTestFormat = (typeof LOSSLESS_TEST_FORMATS)[number];
 
-export const SNAPSHOT_FIXTURE_FILENAME = 'pixelift-consistent-hash-test.ts';
+export const SNAPSHOT_FIXTURE_FILENAME = 'pixelift-hash.server.test.ts';
 
 /**
  * Generate a unique snapshot key for consistency testing.

@@ -1,11 +1,9 @@
-import type { ProgressCallback, ServerInput, ServerOptions } from '../types';
+import sharp, { type Sharp, type Raw } from 'sharp';
+import type { ServerInput, ServerOptions, ProgressCallback } from '../types';
 import type { PixelData } from '../../types';
-import type { Sharp as SharpInstance } from 'sharp';
-import SharpNS from 'sharp';
-
 import { Readable } from 'node:stream';
+import { pipeline as streamPipeline } from 'node:stream/promises';
 import { Buffer } from 'node:buffer';
-
 import { getSourceData } from '../buffer';
 import { getSharp } from './sharp';
 import { createError } from '../../shared/error';
@@ -14,17 +12,52 @@ import {
   trackStreamProgress,
   trackWebStreamProgress
 } from '../../shared/streams/progress';
+import type { ReadableStream as WebStream } from 'stream/web';
+
+export interface ProgressOptions {
+  onProgress?: ProgressCallback;
+  totalBytes?: number;
+}
+
+export interface DecodeOptions extends ServerOptions, ProgressOptions {}
 
 function isNodeReadable(src: unknown): src is Readable {
   return src instanceof Readable;
 }
 
-function isWebReadable(src: unknown): src is ReadableStream<Uint8Array> {
-  return (
-    typeof src === 'object' &&
-    src !== null &&
-    typeof (src as ReadableStream<Uint8Array>).getReader === 'function'
-  );
+function isWebReadable(src: unknown): src is WebStream {
+  return src instanceof ReadableStream;
+}
+
+/**
+ * Initialize a Sharp pipeline with common transforms
+ */
+function initSharpPipeline(sharpFactory: typeof sharp, input?: Buffer): Sharp & Raw {
+  return (input ? sharpFactory(input) : sharpFactory())
+    .raw({ depth: 'uchar' })
+    .toColorspace('srgb')
+    .ensureAlpha() as Sharp & Raw;
+}
+
+let sharpFactoryPromise: Promise<typeof sharp> | null = null;
+async function getSharpFactory(signal?: AbortSignal): Promise<typeof sharp> {
+  if (sharpFactoryPromise) return sharpFactoryPromise;
+
+  sharpFactoryPromise = (async () => {
+    const sharpModule = await getSharp();
+    signal?.throwIfAborted();
+    if (typeof sharpModule.default !== 'function') {
+      throw createError.dependencyMissing('sharp');
+    }
+    return sharpModule.default;
+  })();
+
+  try {
+    return await sharpFactoryPromise;
+  } catch (err) {
+    sharpFactoryPromise = null;
+    throw err;
+  }
 }
 
 function awaitWithAbort<T>(
@@ -32,11 +65,14 @@ function awaitWithAbort<T>(
   signal?: AbortSignal,
   onAbort?: () => void
 ): Promise<T> {
-  if (!signal) return promise;
+  if (signal?.aborted) {
+    onAbort?.();
+    return Promise.reject(createError.aborted());
+  }
   return Promise.race([
     promise,
     new Promise<T>((_, reject) => {
-      signal.addEventListener(
+      signal?.addEventListener(
         'abort',
         () => {
           onAbort?.();
@@ -48,89 +84,72 @@ function awaitWithAbort<T>(
   ]);
 }
 
-function createPipelineFromBuffer(
-  sharpFactory: typeof SharpNS,
-  buffer: Buffer,
-  onProgress?: ProgressCallback
-): SharpInstance {
-  if (onProgress) {
-    trackBufferProgress(buffer, onProgress);
-  }
-  return sharpFactory(buffer).raw({ depth: 'uchar' }).toColorspace('srgb').ensureAlpha();
-}
-
-function createPipelineFromStream(
-  sharpFactory: typeof SharpNS,
-  source: unknown,
-  onProgress?: ProgressCallback
-): [SharpInstance, Readable] {
-  let stream: Readable;
-
-  if (isWebReadable(source)) {
-    const webStream = <import('stream/web').ReadableStream>(<unknown>source);
-    stream = onProgress
-      ? trackWebStreamProgress(webStream, onProgress)
-      : Readable.fromWeb(webStream);
-  } else if (isNodeReadable(source)) {
-    stream = onProgress ? trackStreamProgress(source, onProgress) : source;
-  } else {
-    throw createError.invalidInput(
-      'Buffer, Node.js Readable, or Web ReadableStream',
-      source
-    );
-  }
-
-  const pipeline = sharpFactory().raw({ depth: 'uchar' });
-
-  stream.on('error', (err) =>
-    pipeline.destroy(createError.rethrow(err, 'Source stream error'))
-  );
-
-  pipeline.on('error', (err) =>
-    stream.destroy(createError.rethrow(err, 'Sharp pipeline error'))
-  );
-
-  stream.pipe(pipeline);
-
-  return [pipeline, stream];
-}
-
 export async function decode(
   input: ServerInput,
-  options?: ServerOptions,
-  onProgress?: ProgressCallback
+  options?: DecodeOptions
 ): Promise<PixelData> {
-  const sourceData = await getSourceData(input, options);
-
-  if (options?.signal?.aborted) {
-    throw createError.aborted();
-  }
-
-  const sharpModule = await getSharp();
-  const sharpFactory = sharpModule.default;
-  if (typeof sharpFactory !== 'function') {
-    throw createError.dependencyMissing('sharp');
-  }
-
-  let pipeline: ReturnType<typeof sharpFactory> | undefined;
-  let stream: Readable | undefined;
-
+  const { signal, totalBytes, onProgress } = options || {};
   try {
+    signal?.throwIfAborted();
+
+    const [sourceData, sharpFactory] = await Promise.all([
+      getSourceData(input, options),
+      getSharpFactory(signal)
+    ]);
+
+    signal?.throwIfAborted();
+
+    let pipeline: Sharp & Raw;
+    let stream: Readable | undefined;
+    let pipePromise: Promise<void> | undefined;
+
     if (sourceData instanceof Buffer) {
-      pipeline = createPipelineFromBuffer(sharpFactory, sourceData, onProgress);
+      const bufferCopy = Buffer.from(sourceData);
+      if (onProgress) trackBufferProgress(bufferCopy, onProgress);
+      pipeline = initSharpPipeline(sharpFactory, bufferCopy);
+      pipeline.on('error', (err) => {
+        throw createError.rethrow(err, 'Buffer processing error');
+      });
     } else {
-      [pipeline, stream] = createPipelineFromStream(sharpFactory, sourceData, onProgress);
+      if (isWebReadable(sourceData)) {
+        stream = onProgress
+          ? trackWebStreamProgress(sourceData, { onProgress, totalBytes, signal })
+          : Readable.fromWeb(sourceData, { signal });
+      } else if (isNodeReadable(sourceData)) {
+        stream = onProgress
+          ? trackStreamProgress(sourceData, { onProgress, totalBytes })
+          : sourceData;
+      } else {
+        throw createError.invalidInput(
+          'Buffer, Node.js Readable, or Web ReadableStream',
+          sourceData
+        );
+      }
+
+      pipeline = initSharpPipeline(sharpFactory);
+
+      pipeline.on('error', (err) =>
+        stream?.destroy(createError.rethrow(err, 'Sharp pipeline error'))
+      );
+      stream.once('error', (err) =>
+        pipeline.destroy(createError.rethrow(err, 'Source stream error'))
+      );
+
+      pipePromise = streamPipeline(stream, pipeline).catch((err) => {
+        throw createError.rethrow(err, 'Stream pipeline error');
+      });
     }
 
-    const bufferResult = pipeline
-      .toColorspace('srgb')
-      .ensureAlpha()
-      .toBuffer({ resolveWithObject: true });
+    // Perform transform and extract buffer
+    const resultPromise = pipeline.toBuffer({ resolveWithObject: true });
 
-    const { data, info } = await awaitWithAbort(bufferResult, options?.signal, () => {
-      if (stream && !stream.destroyed) {
-        stream.destroy(createError.aborted());
-      }
+    const mainPromise = pipePromise
+      ? Promise.all([resultPromise, pipePromise]).then(([res]) => res)
+      : resultPromise;
+
+    const { data, info } = await awaitWithAbort(mainPromise, signal, () => {
+      pipeline.destroy(createError.aborted());
+      stream?.destroy(createError.aborted());
     });
 
     return {
@@ -138,15 +157,13 @@ export async function decode(
       width: info.width,
       height: info.height
     };
-  } catch (err) {
-    if (createError.isAbortError(err)) {
-      if (stream && !stream.destroyed) {
-        stream.destroy(createError.aborted());
-      }
+  } catch (error: unknown) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
       throw createError.aborted();
     }
-    throw createError.rethrow(err, 'Transcoding error');
-  } finally {
-    pipeline?.destroy();
+    throw createError.rethrow(
+      error instanceof Error ? error : new Error(String(error)),
+      'Transcoding error'
+    );
   }
 }

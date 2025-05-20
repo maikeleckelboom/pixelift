@@ -6,13 +6,13 @@ import {
   LOSSLESS_TEST_FORMATS,
   makeSnapshotKey
 } from '../fixtures/constants';
-import { getFixtureAssetUrl } from '../fixtures/utils/asset-helpers';
+import { getFixtureAssetUrl } from '../fixtures/utils/browser-asset-helpers';
 
 const testAssetUrls: Partial<Record<string, URL>> = {};
 
 beforeAll(async () => {
   for (const format of listTestFormats()) {
-    testAssetUrls[format] = getFixtureAssetUrl(format, import.meta.url);
+    testAssetUrls[format] = getFixtureAssetUrl(format, window.location.origin);
   }
 });
 

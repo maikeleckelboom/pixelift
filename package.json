@@ -52,7 +52,7 @@
     "test:sequential": "vitest run --project=server && vitest run --project=browser && vitest run --project=snapshot-consistency",
     "test:server": "vitest --project server",
     "test:browser": "vitest --project browser",
-    "test:consistency": "vitest run test/pixelift-consistent-hash-test.ts",
+    "test:consistency": "vitest run test/pixelift-hash.server.test.ts",
     "test:ci": "vitest --reporter dot",
     "bench": "vitest --run bench --reporter verbose",
     "bench:server": "vitest --project server --run bench --reporter verbose",
@@ -91,7 +91,7 @@
     "@types/node": "^22.15.19",
     "@typescript-eslint/eslint-plugin": "^8.32.1",
     "@typescript-eslint/parser": "^8.32.1",
-    "@vitest/browser": "3",
+    "@vitest/browser":"^3.2.0-beta.2",
     "eslint": "^9.27.0",
     "eslint-config-prettier": "^10.1.5",
     "pixelmatch": "^7.1.0",
@@ -100,7 +100,7 @@
     "tsup": "^8.5.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.32.1",
-    "vitest": "3"
+    "vitest": "^3.2.0-beta.2"
   },
   "optionalDependencies": {
     "sharp": "^0.34.1"

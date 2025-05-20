@@ -4,31 +4,41 @@ import SnapshotLastSequencer from './test/fixtures/snapshot-last-sequencer';
 export default defineConfig({
   test: {
     globals: true,
-    sequence: {
-      sequencer: SnapshotLastSequencer
-    },
-    workspace: [
+    isolate: false,
+    sequence: { sequencer: SnapshotLastSequencer },
+    projects: [
       {
+        extends: true,
         test: {
           name: 'server',
           environment: 'node',
-          include: ['**/*.test.ts', '**/*.universal.test.ts'],
-          exclude: ['**/browser/**/*.test.ts'],
+          include: [
+            'test/server/**/*.test.ts',
+            'test/**/*.server.test.ts',
+            'test/**/*.universal.test.ts'
+          ],
           benchmark: {
-            include: ['**/server/**/*.bench.ts'],
-            exclude: ['**/browser/**/*.bench.ts']
+            include: ['test/server/**/*.bench.ts']
+            //   include: ['test/server/unit/**/*.bench.ts'],
+            //   exclude: ['test/server/integration/**/*.bench.ts']
           }
         }
       },
       {
+        extends: true,
         test: {
           name: 'browser',
-          setupFiles: './test/setup.ts',
-          include: ['**/browser/**/*.test.ts', '**/*.universal.test.ts'],
-          exclude: ['**/server/**/*.test.ts', '**/pixelift-consistent-hash-test.ts'],
+          environment: 'happy‑dom',
+          setupFiles: ['test/setup.ts'],
+          include: [
+            'test/browser/**/*.test.ts',
+            'test/**/*.browser.test.ts',
+            'test/**/*.universal.test.ts'
+          ],
           benchmark: {
-            include: ['**/browser/**/*.bench.ts'],
-            exclude: ['**/server/**/*.bench.ts']
+            include: ['test/browser/**/*.bench.ts']
+            //   include: ['test/browser/unit/**/*.bench.ts'],
+            //   exclude: ['test/browser/integration/**/*.bench.ts']
           },
           browser: {
             provider: 'playwright',

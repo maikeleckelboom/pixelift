@@ -1,6 +1,7 @@
 import { Readable } from 'node:stream';
 import { Buffer } from 'node:buffer';
 import type { ProgressCallback, ProgressData } from '../../server/types';
+import type { ProgressOptions } from '../../server/decoder';
 
 /**
  * Wraps a Buffer with progress tracking
@@ -23,15 +24,12 @@ export function trackBufferProgress(buffer: Buffer, onProgress: ProgressCallback
  * Wraps a Node.js Readable stream with progress tracking
  *
  * @param stream - Input stream to track
- * @param onProgress - Progress callback
- * @param totalBytes
+ * @param options
  * @returns A new stream that tracks progress
  */
-export function trackStreamProgress(
-  stream: Readable,
-  onProgress: ProgressCallback,
-  totalBytes?: number
-): Readable {
+export function trackStreamProgress(stream: Readable, options: ProgressOptions): Readable {
+  const { onProgress, totalBytes } = options;
+
   let bytesRead: number = 0;
 
   const trackingStream = new Readable({
@@ -66,7 +64,7 @@ export function trackStreamProgress(
       progressData.progress = Math.min(bytesRead / totalBytes, 1);
     }
 
-    onProgress(progressData);
+    onProgress?.(progressData);
 
     if (!trackingStream.push(chunk)) {
       stream.pause();
@@ -74,7 +72,7 @@ export function trackStreamProgress(
   });
 
   stream.on('end', () => {
-    onProgress({
+    onProgress?.({
       loaded: bytesRead,
       total: bytesRead,
       progress: 1.0
@@ -97,8 +95,8 @@ export function trackStreamProgress(
 
 export function trackWebStreamProgress(
   stream: import('stream/web').ReadableStream<Uint8Array>,
-  onProgress: ProgressCallback,
-  totalBytes?: number
+  options: ProgressOptions & { signal?: AbortSignal }
 ): Readable {
-  return trackStreamProgress(Readable.fromWeb(stream), onProgress, totalBytes);
+  const { signal, ...progressOptions } = options;
+  return trackStreamProgress(Readable.fromWeb(stream, { signal }), progressOptions);
 }

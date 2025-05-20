@@ -11,7 +11,7 @@ interface MockDecodeOptions {
   expectedTotalSize?: number;
 }
 
-async function decode(
+async function mockSharpDecode(
   stream: Readable,
   options: MockDecodeOptions,
   onProgress?: ProgressCallback
@@ -77,7 +77,7 @@ it('should report progress accurately in multiple chunks', async () => {
   const stream = Readable.from(chunksArray);
   const progressSpy = vi.fn();
 
-  const decodedImage = await decode(
+  const decodedImage = await mockSharpDecode(
     stream,
     { expectedTotalSize: TOTAL_BUFFER_SIZE },
     progressSpy
@@ -127,7 +127,7 @@ it('should report progress consistently for a single buffer/chunk stream', async
   const stream = Readable.from([singleBuffer]);
   const progressSpy = vi.fn();
 
-  const decodedImage = await decode(
+  const decodedImage = await mockSharpDecode(
     stream,
     { expectedTotalSize: SINGLE_BUFFER_SIZE },
     progressSpy
@@ -137,8 +137,9 @@ it('should report progress consistently for a single buffer/chunk stream', async
   expect(progressSpy).toHaveBeenCalled();
 
   const calls = progressSpy.mock.calls;
-  expect(calls.length).toBe(1 + 1);
+  expect(calls.length).toBe(2);
 
+  // Because it calls onProgress on data and on end
   const firstCallArgs = calls[0]?.[0] as ProgressData;
   expect(firstCallArgs).toEqual(
     expect.objectContaining({
@@ -163,13 +164,15 @@ it('should report progress correctly without expected total size', async () => {
   const stream = Readable.from([buffer]);
   const progressSpy = vi.fn();
 
-  const decodedImage = await decode(stream, {}, progressSpy);
+  const decodedImage = await mockSharpDecode(stream, {}, progressSpy);
 
   expect(decodedImage.data.length).toBe(50);
   expect(progressSpy).toHaveBeenCalled();
+
   const calls = progressSpy.mock.calls;
   calls.forEach((call) => {
     const progress = call[0] as ProgressData;
+    // total is set equal to loaded, progress = 1
     expect(progress.total).toBe(progress.loaded);
     expect(progress.progress).toBeCloseTo(1.0);
   });
@@ -180,7 +183,7 @@ it('should handle zero-length buffer without errors', async () => {
   const stream = Readable.from([emptyBuffer]);
   const progressSpy = vi.fn();
 
-  const decodedImage = await decode(stream, { expectedTotalSize: 0 }, progressSpy);
+  const decodedImage = await mockSharpDecode(stream, { expectedTotalSize: 0 }, progressSpy);
 
   expect(decodedImage.data.length).toBe(0);
   expect(decodedImage.width).toBe(0);
@@ -192,7 +195,7 @@ it('should handle zero-length buffer without errors', async () => {
   });
 });
 
-it('should calculate progress without expected total size', async () => {
+it('should calculate progress with many small chunks', async () => {
   const CHUNK_SIZE = 10;
   const NUM_CHUNKS = 300;
   const TOTAL_SIZE = CHUNK_SIZE * NUM_CHUNKS;
@@ -205,23 +208,18 @@ it('should calculate progress without expected total size', async () => {
   const stream = Readable.from(chunks);
   const progressSpy = vi.fn();
 
-  const decodedImage = await decode(stream, { expectedTotalSize: TOTAL_SIZE }, progressSpy);
+  const decodedImage = await mockSharpDecode(
+    stream,
+    { expectedTotalSize: TOTAL_SIZE },
+    progressSpy
+  );
 
   expect(decodedImage.data.length).toBe(TOTAL_SIZE);
   expect(progressSpy).toHaveBeenCalled();
+
   const calls = progressSpy.mock.calls;
+  expect(calls.length).toBe(NUM_CHUNKS + 1);
 
-  // Check that the last call (or all calls if needed, but usually last is sufficient for this scenario)
-  // reflects the final state correctly.
-  // If you need to check intermediate states, you can do so without logging everything.
-
-  // Example: Check the number of calls if specific call counts are important.
-  // For instance, if onProgress is called for each chunk + one for 'end' event from the mock decode.
-  // The mock 'decode' calls onProgress on 'data' and on 'end'.
-  // So, NUM_CHUNKS calls for 'data' + 1 call for 'end'.
-  expect(calls.length).toBe(NUM_CHUNKS + 1); // Or just NUM_CHUNKS if your mock only calls it on data and the last data call is 1.0
-
-  // Verify the state of the calls as needed
   let loaded = 0;
   for (let i = 0; i < NUM_CHUNKS; i++) {
     loaded += CHUNK_SIZE;
@@ -235,19 +233,20 @@ it('should calculate progress without expected total size', async () => {
     }
   }
 
-  // Check the final call from the 'end' event in the mock decode
-  const finalCallArgs = calls[NUM_CHUNKS]?.[0];
-  expect(finalCallArgs.loaded).toBe(TOTAL_SIZE);
-  expect(finalCallArgs.total).toBe(TOTAL_SIZE);
-  expect(finalCallArgs.progress).toBeCloseTo(1.0);
+  const lastCallArgs = calls[NUM_CHUNKS]?.[0];
+  expect(lastCallArgs).toEqual(
+    expect.objectContaining({
+      loaded: TOTAL_SIZE,
+      total: TOTAL_SIZE,
+      progress: 1.0
+    })
+  );
 });
 
 it('should process stream without onProgress callback', async () => {
   const buffer = await generateTestImageBuffer(40);
   const stream = Readable.from([buffer]);
-
-  const decodedImage = await decode(stream, { expectedTotalSize: 40 });
-
+  const decodedImage = await mockSharpDecode(stream, { expectedTotalSize: 40 });
   expect(decodedImage.data.length).toBe(40);
   expect(decodedImage.width).toBeGreaterThan(0);
   expect(decodedImage.height).toBeGreaterThan(0);

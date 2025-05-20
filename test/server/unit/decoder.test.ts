@@ -7,7 +7,7 @@ import {
   createSlowReadableStream,
   createNeverEndingStream
 } from '../../fixtures/utils/stream-test-helpers';
-import { getFixtureAssetPath } from '../../fixtures/utils/asset-helpers';
+import { getFixtureAssetPath } from '../../fixtures/utils/shared-asset-helpers';
 
 describe('Decoder - streaming input handling', () => {
   it('should decode real NodeJS file stream', async () => {

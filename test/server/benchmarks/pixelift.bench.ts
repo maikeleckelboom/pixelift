@@ -1,35 +1,41 @@
-import { beforeAll, bench, describe } from 'vitest';
-import { pixelift } from '../../../src';
-import {
-  LOSSLESS_TEST_FORMATS,
-  type LosslessTestFormat,
-  PIXELIFT_BROWSER_DECODERS
-} from '../../fixtures/constants';
-import { getFixtureAssetUrl } from '../../fixtures/utils/asset-helpers';
+import { bench, describe, beforeAll } from 'vitest';
+import { readFile } from 'fs/promises';
+import { pixelift } from '../../../src/server';
+import { PIXELIFT_SERVER_DECODERS, LOSSLESS_TEST_FORMATS } from '../../fixtures/constants';
+import { getFixtureAssetPath } from '../../fixtures/utils/shared-asset-helpers';
 
-let testAssetUrls: Record<LosslessTestFormat, URL>;
+const buffers = new Map<string, Buffer>();
 
-beforeAll(() => {
-  testAssetUrls = Object.fromEntries(
-    LOSSLESS_TEST_FORMATS.map((format) => [
-      format,
-      getFixtureAssetUrl(format, window.location.href)
-    ])
-  ) as Record<LosslessTestFormat, URL>;
+beforeAll(async () => {
+  // Preload every format once
+  await Promise.all(
+    LOSSLESS_TEST_FORMATS.map(async (format) => {
+      const filePath = getFixtureAssetPath(format);
+      const buf = await readFile(filePath);
+      buffers.set(format, buf);
+    })
+  );
 });
 
-describe('Browser Benchmarks', () => {
-  for (const decoder of PIXELIFT_BROWSER_DECODERS) {
-    for (const format of LOSSLESS_TEST_FORMATS) {
-      bench(
-        `${decoder} - ${format}`,
-        async () => {
-          await pixelift(testAssetUrls[format], { decoder });
-        },
-        {
-          iterations: 100
-        }
-      );
-    }
+describe('Server Benchmarks', () => {
+  for (const decoder of PIXELIFT_SERVER_DECODERS) {
+    describe(decoder, () => {
+      for (const format of LOSSLESS_TEST_FORMATS) {
+        bench(
+          `${format} • ${decoder}`,
+          async () => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            await pixelift(buffers.get(format)!, { decoder });
+          },
+          {
+            // Run for ~500 ms, with a 200 ms warm‑up phase
+            time: 500,
+            warmupTime: 200
+            // Optionally clear caches between runs:
+            // setup: () => { clearPixeliftCache(); },
+          }
+        );
+      }
+    });
   }
 });
