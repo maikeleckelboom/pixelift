@@ -49,7 +49,6 @@ describe('Decoder - streaming input handling', () => {
       signal: abortController.signal
     });
 
-    // Delay to allow stream processing to start
     await new Promise((resolve) => setTimeout(resolve, 50));
 
     abortController.abort();

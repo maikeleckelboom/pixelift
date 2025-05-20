@@ -1,7 +1,7 @@
 import { expect, it, vi } from 'vitest';
 import { Readable } from 'node:stream';
 import type { PixelData } from '../../../src';
-import type { ProgressCallback, ProgressInfo } from '../../../src/server/types';
+import type { ProgressCallback, ProgressData } from '../../../src/server/types';
 
 const generateTestImageBuffer = async (size: number = 60): Promise<Buffer> => {
   return Buffer.alloc(size, 1);
@@ -91,7 +91,7 @@ it('should report progress accurately in multiple chunks', async () => {
 
   let expectedLoadedBytes = 0;
   for (let i = 0; i < NUM_CHUNKS; i++) {
-    const callArgs = calls[i]?.[0] as ProgressInfo;
+    const callArgs = calls[i]?.[0] as ProgressData;
     expectedLoadedBytes += CHUNK_SIZE;
 
     expect(callArgs.loaded).toBe(expectedLoadedBytes);
@@ -104,7 +104,7 @@ it('should report progress accurately in multiple chunks', async () => {
     }
   }
 
-  const lastCallArgs = calls[NUM_CHUNKS]?.[0] as ProgressInfo;
+  const lastCallArgs = calls[NUM_CHUNKS]?.[0] as ProgressData;
   expect(lastCallArgs).toEqual(
     expect.objectContaining({
       loaded: TOTAL_BUFFER_SIZE,
@@ -114,8 +114,8 @@ it('should report progress accurately in multiple chunks', async () => {
   );
 
   for (let i = 0; i < calls.length - 1; i++) {
-    const currentCallLoaded = (calls[i]?.[0] as ProgressInfo).loaded;
-    const nextCallLoaded = (calls[i + 1]?.[0] as ProgressInfo).loaded;
+    const currentCallLoaded = (calls[i]?.[0] as ProgressData).loaded;
+    const nextCallLoaded = (calls[i + 1]?.[0] as ProgressData).loaded;
     expect(nextCallLoaded).toBeGreaterThanOrEqual(currentCallLoaded);
   }
 });
@@ -139,7 +139,7 @@ it('should report progress consistently for a single buffer/chunk stream', async
   const calls = progressSpy.mock.calls;
   expect(calls.length).toBe(1 + 1);
 
-  const firstCallArgs = calls[0]?.[0] as ProgressInfo;
+  const firstCallArgs = calls[0]?.[0] as ProgressData;
   expect(firstCallArgs).toEqual(
     expect.objectContaining({
       loaded: SINGLE_BUFFER_SIZE,
@@ -148,7 +148,7 @@ it('should report progress consistently for a single buffer/chunk stream', async
     })
   );
 
-  const secondCallArgs = calls[1]?.[0] as ProgressInfo;
+  const secondCallArgs = calls[1]?.[0] as ProgressData;
   expect(secondCallArgs).toEqual(
     expect.objectContaining({
       loaded: SINGLE_BUFFER_SIZE,
@@ -169,7 +169,7 @@ it('should report progress correctly without expected total size', async () => {
   expect(progressSpy).toHaveBeenCalled();
   const calls = progressSpy.mock.calls;
   calls.forEach((call) => {
-    const progress = call[0] as ProgressInfo;
+    const progress = call[0] as ProgressData;
     expect(progress.total).toBe(progress.loaded);
     expect(progress.progress).toBeCloseTo(1.0);
   });

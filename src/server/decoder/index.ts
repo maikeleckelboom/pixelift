@@ -15,12 +15,10 @@ import {
   trackWebStreamProgress
 } from '../../shared/streams/progress';
 
-/** Detect Node.js Readable streams. */
 function isNodeReadable(src: unknown): src is Readable {
   return src instanceof Readable;
 }
 
-/** Detect Web ReadableStream<Uint8Array>. */
 function isWebReadable(src: unknown): src is ReadableStream<Uint8Array> {
   return (
     typeof src === 'object' &&
@@ -29,10 +27,6 @@ function isWebReadable(src: unknown): src is ReadableStream<Uint8Array> {
   );
 }
 
-/**
- * Wraps a Promise so it rejects with `createError.aborted()` if the
- * provided AbortSignal fires first.
- */
 function awaitWithAbort<T>(
   promise: Promise<T>,
   signal?: AbortSignal,
@@ -54,9 +48,6 @@ function awaitWithAbort<T>(
   ]);
 }
 
-/**
- * Build a raw‐pixel Sharp pipeline from a Buffer.
- */
 function createPipelineFromBuffer(
   sharpFactory: typeof SharpNS,
   buffer: Buffer,
@@ -65,30 +56,23 @@ function createPipelineFromBuffer(
   if (onProgress) {
     trackBufferProgress(buffer, onProgress);
   }
-  // sharpFactory(buffer) returns a SharpInstance
-  return sharpFactory(buffer).raw({ depth: 'uchar' });
+  return sharpFactory(buffer).raw({ depth: 'uchar' }).toColorspace('srgb').ensureAlpha();
 }
 
-/**
- * Build a raw‐pixel Sharp pipeline from a Readable source.
- * Includes the exact `<import('stream/web').ReadableStream>` casts
- * your original code required.
- */
 function createPipelineFromStream(
   sharpFactory: typeof SharpNS,
   source: unknown,
   onProgress?: ProgressCallback
-): { pipeline: SharpInstance; stream: Readable } {
-  let nodeStream: Readable;
+): [SharpInstance, Readable] {
+  let stream: Readable;
 
   if (isWebReadable(source)) {
     const webStream = <import('stream/web').ReadableStream>(<unknown>source);
-    nodeStream = Readable.fromWeb(webStream);
-    if (onProgress) {
-      nodeStream = trackWebStreamProgress(webStream, onProgress);
-    }
+    stream = onProgress
+      ? trackWebStreamProgress(webStream, onProgress)
+      : Readable.fromWeb(webStream);
   } else if (isNodeReadable(source)) {
-    nodeStream = onProgress ? trackStreamProgress(source, onProgress) : source;
+    stream = onProgress ? trackStreamProgress(source, onProgress) : source;
   } else {
     throw createError.invalidInput(
       'Buffer, Node.js Readable, or Web ReadableStream',
@@ -98,81 +82,70 @@ function createPipelineFromStream(
 
   const pipeline = sharpFactory().raw({ depth: 'uchar' });
 
-  nodeStream.on('error', (err) =>
+  stream.on('error', (err) =>
     pipeline.destroy(createError.rethrow(err, 'Source stream error'))
   );
+
   pipeline.on('error', (err) =>
-    nodeStream.destroy(createError.rethrow(err, 'Sharp pipeline error'))
+    stream.destroy(createError.rethrow(err, 'Sharp pipeline error'))
   );
 
-  nodeStream.pipe(pipeline);
-  return { pipeline, stream: nodeStream };
+  stream.pipe(pipeline);
+
+  return [pipeline, stream];
 }
 
-/**
- * Decode any ServerInput into raw RGBA pixel data.
- */
 export async function decode(
   input: ServerInput,
   options?: ServerOptions,
   onProgress?: ProgressCallback
 ): Promise<PixelData> {
-  // 1. Retrieve the raw source (Buffer or stream)
   const sourceData = await getSourceData(input, options);
+
   if (options?.signal?.aborted) {
     throw createError.aborted();
   }
 
-  // 2. Dynamically load and validate sharp
   const sharpModule = await getSharp();
   const sharpFactory = sharpModule.default;
   if (typeof sharpFactory !== 'function') {
     throw createError.dependencyMissing('sharp');
   }
 
-  // 3. Prepare for pipeline + possible stream
   let pipeline: ReturnType<typeof sharpFactory> | undefined;
-  let activeStream: Readable | undefined;
+  let stream: Readable | undefined;
 
   try {
-    // 4. Branch on Buffer vs stream
     if (sourceData instanceof Buffer) {
       pipeline = createPipelineFromBuffer(sharpFactory, sourceData, onProgress);
     } else {
-      const result = createPipelineFromStream(sharpFactory, sourceData, onProgress);
-      pipeline = result.pipeline;
-      activeStream = result.stream;
+      [pipeline, stream] = createPipelineFromStream(sharpFactory, sourceData, onProgress);
     }
 
-    // 5. Apply colorspace & alpha, then get a Buffer+info
     const bufferResult = pipeline
       .toColorspace('srgb')
       .ensureAlpha()
       .toBuffer({ resolveWithObject: true });
 
-    // 6. Await completion, respecting abort
     const { data, info } = await awaitWithAbort(bufferResult, options?.signal, () => {
-      if (activeStream && !activeStream.destroyed) {
-        activeStream.destroy(createError.aborted());
+      if (stream && !stream.destroyed) {
+        stream.destroy(createError.aborted());
       }
     });
 
-    // 7. Return identical PixelData shape
     return {
       data: new Uint8ClampedArray(data.buffer, data.byteOffset, data.byteLength),
       width: info.width,
       height: info.height
     };
   } catch (err) {
-    const aborted =
-      options?.signal?.aborted || (err instanceof Error && err.message.includes('aborted'));
-    if (aborted) {
-      if (activeStream && !activeStream.destroyed) {
-        activeStream.destroy(createError.aborted());
+    if (createError.isAbortError(err)) {
+      if (stream && !stream.destroyed) {
+        stream.destroy(createError.aborted());
       }
       throw createError.aborted();
     }
-    throw createError.rethrow(err as Error, 'Image processing failed');
+    throw createError.rethrow(err, 'Transcoding error');
   } finally {
     pipeline?.destroy();
   }

@@ -10,16 +10,16 @@ export interface ServerOptions extends CommonDecoderOptions {
 /**
  * Progress information for streaming data
  */
-export interface ProgressInfo {
+export interface ProgressData {
   /** Number of bytes processed so far */
   loaded: number;
   /** Total bytes to process (if known) */
-  total: number;
+  total: number | undefined;
   /** Progress as a value between 0-1 (if total is known) */
-  progress: number;
+  progress: number | undefined;
 }
 
 /**
  * Callback function for tracking progress
  */
-export type ProgressCallback = (info: ProgressInfo) => void;
+export type ProgressCallback = (info: ProgressData) => void;

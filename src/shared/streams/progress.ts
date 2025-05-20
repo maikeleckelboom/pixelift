@@ -1,6 +1,6 @@
 import { Readable } from 'node:stream';
 import { Buffer } from 'node:buffer';
-import type { ProgressCallback } from '../../server/types';
+import type { ProgressCallback, ProgressData } from '../../server/types';
 
 /**
  * Wraps a Buffer with progress tracking
@@ -24,13 +24,15 @@ export function trackBufferProgress(buffer: Buffer, onProgress: ProgressCallback
  *
  * @param stream - Input stream to track
  * @param onProgress - Progress callback
+ * @param totalBytes
  * @returns A new stream that tracks progress
  */
 export function trackStreamProgress(
   stream: Readable,
-  onProgress: ProgressCallback
+  onProgress: ProgressCallback,
+  totalBytes?: number
 ): Readable {
-  let bytesRead = 0;
+  let bytesRead: number = 0;
 
   const trackingStream = new Readable({
     objectMode: stream.readableObjectMode,
@@ -48,24 +50,25 @@ export function trackStreamProgress(
         ? chunk.byteLength
         : typeof chunk === 'string'
           ? Buffer.byteLength(chunk)
-          : 0;
+          : stream.readableObjectMode
+            ? 1 // Count objects instead of bytes in object mode
+            : 0;
 
     bytesRead += chunkSize;
 
-    const progressValue = bytesRead / (stream.readableLength + chunkSize);
-
-    const progress = {
+    const progressData: ProgressData = {
       loaded: bytesRead,
-      total: stream.readableLength + chunkSize,
-      progress: progressValue
+      total: totalBytes,
+      progress: undefined
     };
 
-    onProgress(progress);
+    if (typeof totalBytes === 'number' && totalBytes > 0) {
+      progressData.progress = Math.min(bytesRead / totalBytes, 1);
+    }
 
-    const canContinue = trackingStream.push(chunk);
+    onProgress(progressData);
 
-    // Handle backpressure
-    if (!canContinue) {
+    if (!trackingStream.push(chunk)) {
       stream.pause();
     }
   });
@@ -93,9 +96,9 @@ export function trackStreamProgress(
 }
 
 export function trackWebStreamProgress(
-  webStream: import('stream/web').ReadableStream<Uint8Array>,
-  onProgress: ProgressCallback
+  stream: import('stream/web').ReadableStream<Uint8Array>,
+  onProgress: ProgressCallback,
+  totalBytes?: number
 ): Readable {
-  const nodeStream = Readable.fromWeb(webStream);
-  return trackStreamProgress(nodeStream, onProgress);
+  return trackStreamProgress(Readable.fromWeb(stream), onProgress, totalBytes);
 }
