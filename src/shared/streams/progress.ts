@@ -52,13 +52,15 @@ export function trackStreamProgress(
 
     bytesRead += chunkSize;
 
-    onProgress({
+    const progressValue = bytesRead / (stream.readableLength + chunkSize);
+
+    const progress = {
       loaded: bytesRead,
-      total: stream.readableLength + bytesRead,
-      progress: stream.readableLength
-        ? bytesRead / (stream.readableLength + bytesRead)
-        : 1.0
-    });
+      total: stream.readableLength + chunkSize,
+      progress: progressValue
+    };
+
+    onProgress(progress);
 
     const canContinue = trackingStream.push(chunk);
 
@@ -90,16 +92,10 @@ export function trackStreamProgress(
   return trackingStream;
 }
 
-/**
- * Wraps a Web ReadableStream with progress tracking
- *
- * @param stream - Node.js or Web ReadableStream to track
- * @param onProgress - Progress callback
- * @returns A Node.js Readable stream with progress tracking
- */
 export function trackWebStreamProgress(
-  stream: import('stream/web').ReadableStream<Uint8Array>,
+  webStream: import('stream/web').ReadableStream<Uint8Array>,
   onProgress: ProgressCallback
 ): Readable {
-  return trackStreamProgress(Readable.fromWeb(stream), onProgress);
+  const nodeStream = Readable.fromWeb(webStream);
+  return trackStreamProgress(nodeStream, onProgress);
 }

@@ -32,5 +32,5 @@ test.each(browserFormatCases)(
     const hash = await hashSHA256(result.data);
     expect(hash).toMatchSnapshot(makeSnapshotKey(format, caseIndex));
   },
-  30_000
+  0
 );

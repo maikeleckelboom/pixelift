@@ -20,7 +20,7 @@
     "types": [
       "bun-types",
       "@vitest/browser/providers/playwright",
-      "bun-types", "@types/node"
+      "@types/node"
     ],
     "resolveJsonModule": true,
     "isolatedModules": true
