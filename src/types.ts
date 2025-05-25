@@ -8,8 +8,7 @@ export interface PixelData {
   height: number;
 }
 
-export interface CommonDecoderOptions {
-  signal?: AbortSignal;
+export interface CommonDecoderOptions extends StreamToBlobOptions {
   decoder?: string;
 }
 

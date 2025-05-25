@@ -1,6 +1,6 @@
 import type { PixelData, PixeliftInput, PixeliftOptions } from '../types';
 
-export type PixeliftEnvPlatform = 'node' | 'browser' | 'edge' | 'worker';
+export type PixeliftEnvPlatform = 'browser' | 'web-worker' | 'node' | 'node-worker';
 
 export interface PixelDecoderMetadata {
   version?: string;

@@ -2,7 +2,7 @@ import { type StreamControlOptions, streamWithControls } from './stream-with-con
 import { throwIfAborted } from './abort';
 
 export interface StreamToBlobOptions extends StreamControlOptions {
-  type?: string;
+  mimeType?: string;
 }
 
 /**
@@ -20,9 +20,9 @@ export async function streamToBlob(
     | undefined,
   options: StreamToBlobOptions = {}
 ): Promise<Blob> {
-  const { type: optionsType = 'application/octet-stream', ...controlOptions } = options;
+  const { mimeType = 'application/octet-stream', ...controlOptions } = options;
 
-  let resolvedType = optionsType;
+  let resolvedType = mimeType;
 
   if (stream == null) {
     throw new TypeError('streamToBlob: stream is null or undefined.');
@@ -38,7 +38,7 @@ export async function streamToBlob(
     }
     resolvedStream = stream.body;
     const contentType = stream.headers.get('content-type');
-    if (!options.type && contentType) {
+    if (!options.mimeType && contentType) {
       resolvedType = contentType;
     }
   } else {
