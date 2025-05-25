@@ -1,5 +1,5 @@
-import type {PixelData} from '../types';
-import type {BrowserInput, BrowserOptions} from './types';
+import type { PixelData } from '../types';
+import type { BrowserInput, BrowserOptions } from './types';
 
 /**
  * Server-side entry point for the Pixelift library.
@@ -9,11 +9,11 @@ import type {BrowserInput, BrowserOptions} from './types';
  * @return {Promise<PixelData>} A promise that resolves to the processed pixel data.
  */
 export async function pixelift(
-    input: BrowserInput,
-    options?: BrowserOptions
+  input: BrowserInput,
+  options?: BrowserOptions
 ): Promise<PixelData> {
-    const decoder = await import('./decoder');
-    return await decoder.decode(input, options);
+  const decoder = await import('./decoder');
+  return await decoder.decode(input, options);
 }
 
-export type {BrowserInput, BrowserOptions} from './types';
+export type { BrowserInput, BrowserOptions } from './types';

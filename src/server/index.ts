@@ -9,11 +9,11 @@ import type { ServerInput, ServerOptions } from './types';
  * @return {Promise<PixelData>} A promise that resolves to the processed pixel data.
  */
 export async function pixelift(
-    input: ServerInput,
-    options?: ServerOptions
+  input: ServerInput,
+  options?: ServerOptions
 ): Promise<PixelData> {
-    const decoder = await import('./decoder');
-    return await decoder.decode(input, options);
+  const decoder = await import('./decoder');
+  return await decoder.decode(input, options);
 }
 
 export type { ServerInput, ServerOptions } from './types';

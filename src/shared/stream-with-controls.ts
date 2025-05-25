@@ -1,4 +1,4 @@
-import {throwIfAborted} from "./error.ts";
+import { throwIfAborted } from './error.ts';
 
 export interface StreamControlOptions {
   signal?: AbortSignal;
@@ -8,7 +8,7 @@ export interface StreamControlOptions {
 }
 
 export function streamWithControls(
-    options: StreamControlOptions = {}
+  options: StreamControlOptions = {}
 ): TransformStream<Uint8Array, Uint8Array> {
   const { signal, maxBytes, chunkSize, onProgress } = options;
   const enforceChunkSize = Number.isFinite(chunkSize) && chunkSize! > 0;
@@ -22,7 +22,9 @@ export function streamWithControls(
   const ensureWithinBounds = (bytes: number): void => {
     const nextTotal = total + bytes;
     if (maxBytes !== undefined && nextTotal > maxBytes) {
-      throw new RangeError(`streamWithControls exceeded maxBytes: ${nextTotal} > ${maxBytes}`);
+      throw new RangeError(
+        `streamWithControls exceeded maxBytes: ${nextTotal} > ${maxBytes}`
+      );
     }
   };
 
@@ -81,6 +83,6 @@ export function streamWithControls(
       if (onAbort && signal) {
         signal.removeEventListener('abort', onAbort);
       }
-    },
+    }
   });
 }

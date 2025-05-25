@@ -3,20 +3,11 @@
     // Base options
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "src/*"
-      ],
-      "@test/*": [
-        "test/*"
-      ]
+      "@/*": ["src/*"],
+      "@test/*": ["test/*"]
     },
     // Environment setup & latest features
-    "lib": [
-      "ESNext",
-      "DOM",
-      "DOM.AsyncIterable",
-      "WebWorker"
-    ],
+    "lib": ["ESNext", "DOM", "DOM.AsyncIterable", "WebWorker"],
     "target": "ESNext",
     "module": "ESNext",
     "moduleDetection": "force",
@@ -37,10 +28,6 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
-    "types": [
-      "@types/node",
-      "@vitest/browser/matchers",
-      "vitest/globals"
-    ]
+    "types": ["@types/node", "@vitest/browser/matchers", "vitest/globals"]
   }
 }

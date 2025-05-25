@@ -3,8 +3,5 @@ export function isBrowser(): boolean {
 }
 
 export function isWebWorker(): boolean {
-  return (
-      typeof WorkerGlobalScope !== 'undefined' &&
-      self instanceof WorkerGlobalScope
-  );
+  return typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope;
 }
