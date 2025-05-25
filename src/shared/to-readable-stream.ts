@@ -1,7 +1,7 @@
-import { isNode } from '../../src/shared/env.ts';
-import { isStreamResponse, isValidUrl } from '../../src/shared/guards.ts';
-import { rethrowIfAbortError, throwIfAborted } from '../../src/shared/abort.ts';
-import { getTypeName } from '../../src/shared/helpers.ts';
+import { isNode } from '@/shared/env.ts';
+import { isStreamResponse, isValidUrl } from '@/shared/guards.ts';
+import { rethrowIfAbortError, throwIfAborted } from '@/shared/abort.ts';
+import { getTypeName } from '@/shared/helpers.ts';
 
 export interface FetchWithControlsOptions extends RequestInit {
   signal?: AbortSignal;

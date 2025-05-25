@@ -1,17 +1,16 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig, type UserConfigExport } from 'vitest/config';
 import viteConfig from './vite.config';
 
 export default defineConfig({
-  ...viteConfig,
-
   test: {
     alias: viteConfig.resolve?.alias ?? {},
     testTimeout: 30000,
     workspace: [
       {
+        ...viteConfig,
+
         test: {
           globals: true,
-
           name: 'browser',
           include: ['test/browser/**', 'test/shared/**'],
           exclude: ['**/__screenshots__/**', '**/__snapshots__/**'],
@@ -34,6 +33,8 @@ export default defineConfig({
         }
       },
       {
+        ...viteConfig,
+
         test: {
           globals: true,
           name: 'server',
@@ -44,4 +45,4 @@ export default defineConfig({
       }
     ]
   }
-});
+} satisfies UserConfigExport);

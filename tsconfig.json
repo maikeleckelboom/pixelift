@@ -39,6 +39,7 @@
     "noPropertyAccessFromIndexSignature": false,
     "types": [
       "@types/node",
+      "node",
       "@vitest/browser/matchers",
       "vitest/globals"
     ]
