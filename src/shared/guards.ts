@@ -21,16 +21,18 @@ export function isImageBitmapSource(value: unknown): value is ImageBitmapSource 
   return imageBitmapSourceConstructors.some((ctor) => isInstance(value, ctor));
 }
 
-export function assertImageBitmapSource(
-  value: unknown
-): asserts value is ImageBitmapSource {
-  if (!isImageBitmapSource(value)) {
-    throw new TypeError('Expected a valid ImageBitmapSource');
-  }
-}
-
 export function isStreamResponse(value: unknown): value is Response & {
   body: ReadableStream<Uint8Array>;
 } {
   return value instanceof Response && typeof value.body === 'object' && value.body !== null;
+}
+
+export function isValidUrl(value: unknown): value is string {
+  if (typeof value !== 'string') return false;
+  try {
+    new URL(value);
+    return true;
+  } catch {
+    return false;
+  }
 }

@@ -1,6 +1,7 @@
 import { isNode } from '../../src/shared/env.ts';
-import { isStreamResponse } from '../../src/shared/guards.ts';
+import { isStreamResponse, isValidUrl } from '../../src/shared/guards.ts';
 import { rethrowIfAbortError, throwIfAborted } from '../../src/shared/abort.ts';
+import { getTypeName } from '../../src/shared/helpers.ts';
 
 export interface FetchWithControlsOptions extends RequestInit {
   signal?: AbortSignal;
@@ -19,6 +20,8 @@ export const DEFAULT_FETCH_OPTIONS: FetchWithControlsOptions = {
   mode: 'cors',
   credentials: 'same-origin'
 };
+
+export const DEFAULT_CHUNK_SIZE = 16 * 1024; // 16KB
 
 export async function fetchWithError(
   input: RequestInfo,
@@ -69,9 +72,6 @@ export async function fetchWithControls(
   return response;
 }
 
-/**
- * Enhanced stream detection with proper type guards
- */
 export function isStreamable(
   input: unknown
 ): input is
@@ -80,13 +80,10 @@ export function isStreamable(
   | { stream(): ReadableStream<Uint8Array> } {
   if (typeof input !== 'object' || input == null) return false;
 
-  // Web ReadableStream check
   if (typeof ReadableStream !== 'undefined' && input instanceof ReadableStream) return true;
 
-  // Stream-able object with .stream() method
   if (typeof (input as any).stream === 'function') return true;
 
-  // Node.js stream detection with more rigorous checks
   if (isNode()) {
     const nodeStream = input as NodeJS.ReadableStream;
     return (
@@ -97,13 +94,9 @@ export function isStreamable(
     );
   }
 
-  // Fallback for other stream-like objects
   return false;
 }
 
-/**
- * Robust stream conversion with proper error handling and backpressure management
- */
 export async function toReadableStream(
   input: unknown,
   options?: FetchWithControlsOptions
@@ -123,7 +116,6 @@ export async function toReadableStream(
     try {
       const response = await fetchWithControls(input, options);
       if (!response.body) throw new Error('Empty response body');
-      // Always return the body stream directly
       return response.body;
     } catch (err) {
       return Promise.reject(err);
@@ -162,9 +154,6 @@ export async function toReadableStream(
   return Promise.reject(new TypeError(`Unsupported input type: ${getTypeName(input)}`));
 }
 
-/**
- * Converts Node.js streams to Web Streams with backpressure support
- */
 export function nodeToWebStream(
   nodeStream: NodeJS.ReadableStream
 ): ReadableStream<Uint8Array> {
@@ -197,12 +186,9 @@ export function nodeToWebStream(
   });
 }
 
-/**
- * Converts buffers to streams with chunking for better memory management
- */
 function chunkedBufferToStream(
   data: Uint8Array,
-  chunkSize = 16384 // 16KB chunks
+  chunkSize: number = DEFAULT_CHUNK_SIZE
 ): ReadableStream<Uint8Array> {
   let offset = 0;
   return new ReadableStream({
@@ -216,23 +202,4 @@ function chunkedBufferToStream(
       }
     }
   });
-}
-
-/**
- * Security-focused URL validation
- */
-function isValidUrl(input: string): boolean {
-  try {
-    const url = new URL(input);
-    return url.protocol === 'http:' || url.protocol === 'https:';
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Enhanced type detection for error messages
- */
-function getTypeName(input: unknown): string {
-  return Object.prototype.toString.call(input).slice(8, -1);
 }

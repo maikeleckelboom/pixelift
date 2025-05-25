@@ -42,5 +42,9 @@
       "@vitest/browser/matchers",
       "vitest/globals"
     ]
-  }
+  },
+  "include": [
+    "src/**/*",
+    "test/**/*"
+  ]
 }
