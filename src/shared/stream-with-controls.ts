@@ -4,13 +4,33 @@ export interface StreamControlOptions {
   signal?: AbortSignal;
   maxBytes?: number;
   chunkSize?: number;
-  onProgress?: (bytesProcessed: number) => void;
+  totalBytes?: number;
+  onProgress?: (bytesProcessed: number, totalBytes?: number) => void;
+}
+
+export function extractTotalBytes(input: unknown): number | undefined {
+  if (!input) return undefined;
+
+  // Response: check Content-Length header
+  if (input instanceof Response) {
+    const len = input.headers.get('content-length');
+    if (len) return Number(len);
+  }
+
+  // Blob or File (browser)
+  if (typeof Blob !== 'undefined' && input instanceof Blob) {
+    return input.size;
+  }
+
+  // Node.js ReadableStream with known length is tricky; usually unknown
+
+  return undefined;
 }
 
 export function streamWithControls(
   options: StreamControlOptions = {}
 ): TransformStream<Uint8Array, Uint8Array> {
-  const { signal, maxBytes, chunkSize, onProgress } = options;
+  const { signal, maxBytes, chunkSize, totalBytes: userTotalBytes, onProgress } = options;
   const enforceChunkSize = Number.isFinite(chunkSize) && chunkSize! > 0;
   const enforcedSize = enforceChunkSize ? chunkSize! : 0;
 
@@ -19,12 +39,21 @@ export function streamWithControls(
   let total = 0;
   let onAbort: (() => void) | undefined;
 
+  // Use totalBytes provided by user or attempt to infer it (once)
+  const totalBytes = userTotalBytes ?? undefined;
+
   const ensureWithinBounds = (bytes: number): void => {
     const nextTotal = total + bytes;
     if (maxBytes !== undefined && nextTotal > maxBytes) {
       throw new RangeError(
         `streamWithControls exceeded maxBytes: ${nextTotal} > ${maxBytes}`
       );
+    }
+  };
+
+  const reportProgress = (): void => {
+    if (onProgress) {
+      onProgress(total, totalBytes);
     }
   };
 
@@ -42,7 +71,7 @@ export function streamWithControls(
         ensureWithinBounds(chunk.byteLength);
         controller.enqueue(chunk);
         total += chunk.byteLength;
-        onProgress?.(total);
+        reportProgress();
         return;
       }
 
@@ -62,7 +91,7 @@ export function streamWithControls(
           ensureWithinBounds(enforcedSize);
           controller.enqueue(buffer);
           total += enforcedSize;
-          onProgress?.(total);
+          reportProgress();
           buffer = new Uint8Array(enforcedSize);
           offset = 0;
         }
@@ -77,7 +106,7 @@ export function streamWithControls(
         ensureWithinBounds(finalChunk.byteLength);
         controller.enqueue(finalChunk);
         total += finalChunk.byteLength;
-        onProgress?.(total);
+        reportProgress();
       }
 
       if (onAbort && signal) {

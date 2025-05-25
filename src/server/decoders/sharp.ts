@@ -11,7 +11,7 @@ export const sharpDecoder: PixelDecoder = {
   name: 'sharp',
   priority: 1000,
   metadata: {
-    runtimes: ['node'],
+    supportedEnvs: ['node'],
     description:
       'Sharp decoder for Node.js, supports Buffer, string (file path), and Readable streams.'
   },

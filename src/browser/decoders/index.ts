@@ -1,20 +1,20 @@
 import type { BrowserInput, BrowserOptions } from '@/browser';
 import type { PixelData } from '@/types';
 import { getDecoders } from '@/plugin/registry';
-import { detectRuntime } from '@/shared/env.ts';
+import { detectEnvironment } from '@/shared/env.ts';
 
 export async function decode(
   input: BrowserInput,
   options?: BrowserOptions
 ): Promise<PixelData> {
-  const runtime = detectRuntime();
+  const environment = detectEnvironment();
 
   const decoders = getDecoders().filter(
-    (d) => !d.metadata?.runtimes || d.metadata.runtimes.includes(runtime)
+    (d) => !d.metadata?.supportedEnvs || d.metadata.supportedEnvs.includes(environment)
   );
 
   if (decoders.length === 0) {
-    throw new Error(`No decoders registered for current runtime "${runtime}"`);
+    throw new Error(`No decoders registered for current runtime "${environment}"`);
   }
 
   const canHandleResults = await Promise.all(
@@ -48,7 +48,6 @@ export async function decode(
 
       return await decoder.decode(preparedInput, options);
     } catch (error) {
-      console.warn(`Decoder "${decoder.name}" failed:`, error);
       lastError = error instanceof Error ? error : new Error(String(error));
     }
   }

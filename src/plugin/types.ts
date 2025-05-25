@@ -1,13 +1,11 @@
 import type { PixelData, PixeliftInput, PixeliftOptions } from '../types';
-
-export type PixeliftEnvPlatform = 'browser' | 'web-worker' | 'node' | 'node-worker';
+import type { PixeliftEnv } from '@/shared/env.ts';
 
 export interface PixelDecoderMetadata {
   version?: string;
-  runtimes?: PixeliftEnvPlatform[];
-  supportedMimeTypes?: string[];
   description?: string;
-  capabilities?: string[];
+  supportedEnvs?: PixeliftEnv[];
+  supportedMimes?: string[];
 }
 
 export interface PixelDecoder<

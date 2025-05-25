@@ -72,6 +72,18 @@ console.log(`Decoded ${width}×${height}, ${data.length} bytes`);
 * Requires `sharp`
 * Uses native bindings for speed
 
+### Modular Usage
+
+Pixelift is split into three packages:
+
+```ts
+import {pixelift} from 'pixelift';           // universal (auto-selects)
+import {pixelift} from 'pixelift/browser';   // browser-only
+import {pixelift} from 'pixelift/server';    // Node.js only
+```
+
+Use the specific import if you want to reduce bundle size or avoid environment checks.
+
 ---
 
 ## 🔧 Input Types
@@ -82,24 +94,43 @@ await pixelift(input, options ?);
 
 **Accepted `input`:**
 
-* `string` (URL or file path)
-* `URL`
-* `Blob`, `File`, `Buffer`, `ArrayBuffer`, `Uint8Array`
-* `HTMLImageElement`, `HTMLVideoElement`, `HTMLCanvasElement`
-* `ReadableStream`, `Response`
+```ts
+export type BrowserInput =
+    | string
+    | URL
+    | Blob
+    | Response
+    | ReadableStream | null
+    | ArrayBuffer
+    | ArrayBufferView
+    | SVGElement
+    | HTMLImageElement
+    | SVGImageElement
+    | HTMLVideoElement
+    | HTMLCanvasElement
+    | ImageBitmap
+    | OffscreenCanvas
+    | VideoFrame
+    | ImageData;
+```
+
+> 💡 `ReadableStream | null` is supported — `null` will be ignored for ease of use.
 
 **Options:**
 
 ```ts
 interface PixeliftOptions {
-    headers?: Record<string, string>;
+    decoder?: 'offscreen-canvas' | 'sharp'
     signal?: AbortSignal;
-    decoder?: 'offscreen-canvas' | 'sharp';
+    headers?: Record<string, string>;
     onProgress?: (bytesProcessed: number) => void;
     maxBytes?: number;
     chunkSize?: number;
 }
 ```
+
+> ⚠️ `maxBytes` applies **only to streaming sources** like `ReadableStream`, `Response`, and `Blob.stream()`.
+> Non-streaming sources (e.g. `File`, `ArrayBuffer`, DOM elements) load into memory directly and are not affected.
 
 **Returns:**
 
@@ -113,7 +144,7 @@ interface PixelData {
 
 ---
 
-## 🔁 Utility Conversions
+## ↻ Utility Conversions
 
 ### `argbFromRgbaBytes(buffer, options?)`
 
@@ -151,7 +182,7 @@ const inverted = pixels.map((c) => {
 
 ---
 
-## 🌐 Real World Usage: Streams + Progress (Cross-Env)
+## 🌐 Real World Usage: Streams + Response (Cross-Env)
 
 Pixelift provides native support for streaming sources and `Response` objects in both browser and Node.js. The same
 interface works identically in either environment.
@@ -187,6 +218,18 @@ const result = await pixelift(file.stream(), {
 });
 ```
 
+### Decode from ReadableStream | null (browser or Node)
+
+```ts
+const response = await fetch('/image.jpg');
+const result = await pixelift(response.body, {
+    onProgress: (b) => console.log(`Read ${b} bytes`),
+});
+```
+
+> ✅ `ReadableStream` input is fully supported in browsers and Node.js — even if the stream is `null`, Pixelift will skip
+> decoding gracefully.
+
 ### Pipe from Node.js FileSystem
 
 ```ts
@@ -198,6 +241,64 @@ const result = await pixelift(stream, {
     onProgress: (bytes) => console.log(`Streaming ${bytes} bytes from disk`),
     signal: AbortSignal.timeout(5000),
 });
+```
+
+### Decode with Abort + Byte Limit
+
+```ts
+const controller = new AbortController();
+setTimeout(() => controller.abort(), 5000);
+
+const result = await pixelift(fetch('/big-image.jpg'), {
+    signal: controller.signal,
+    maxBytes: 5 * 1024 * 1024, // 5MB limit
+    onProgress: (b) => console.log(`Read ${b} bytes`),
+});
+```
+
+### Pipe to CLI Progress Bar (Node.js)
+
+```ts
+import {createReadStream} from 'node:fs';
+import {pixelift} from 'pixelift';
+import ProgressBar from 'progress';
+
+const stream = createReadStream('./big-image.jpg');
+const total = 5 * 1024 * 1024; // 5MB cap
+const bar = new ProgressBar('decoding [:bar] :percent :etas', {
+    total,
+    width: 30,
+});
+
+const result = await pixelift(stream, {
+    maxBytes: total,
+    onProgress: (b) => bar.tick(b - bar.curr),
+});
+```
+
+### Decode an HTML Element
+
+```ts
+const image = document.querySelector('img');
+const result = await pixelift(image);
+```
+
+### Decode from ArrayBuffer or TypedArray
+
+```ts
+const buffer = await file.arrayBuffer();
+const result = await pixelift(new Uint8Array(buffer), {
+    onProgress: (bytes) => console.log(`Processed ${bytes} bytes`),
+});
+```
+
+### Decode OffscreenCanvas
+
+```ts
+const canvas = new OffscreenCanvas(128, 128);
+const ctx = canvas.getContext('2d');
+ctx.fillRect(0, 0, 128, 128);
+const result = await pixelift(canvas);
 ```
 
 ---
@@ -219,4 +320,7 @@ not be accepted.
 
 ## 📄 License
 
-MIT © [Maike Leckelboom](https://github.com/maikeleckelboom)
+MIT © [Maikel Eckelboom](https://github.com/maikeleckelboom)
+
+---
+
