@@ -8,8 +8,9 @@ export interface PixelData {
   height: number;
 }
 
-export interface CommonDecoderOptions extends StreamToBlobOptions {
+export interface CommonDecoderOptions {
   signal?: AbortSignal;
+  decoder?: string;
 }
 
 export type PixeliftInput = BrowserInput | ServerInput;

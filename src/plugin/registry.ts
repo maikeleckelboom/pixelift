@@ -1,44 +1,48 @@
-import type { PixeliftInput, PixeliftOptions } from '@/types';
+import type { CommonDecoderOptions, PixeliftInput, PixeliftOptions } from '@/types';
 import type { PixelDecoder } from '@/plugin/types';
 import { validateDecoderConfig } from '@/plugin/validate';
 
-const decoders: PixelDecoder<
-  PixeliftInput,
-  any,
-  any,
-  PixeliftOptions,
-  PixeliftOptions,
-  PixeliftOptions
->[] = [];
+// Internal decoder registry — type-erased to any
+const decoders: PixelDecoder<any, any, any>[] = [];
 
+/**
+ * Register a new decoder if it doesn't exist by name yet.
+ * Generic params keep inference for the user, but are erased internally.
+ */
 export function registerDecoder<
-  TIn extends PixeliftInput = PixeliftInput,
-  THandled extends TIn = TIn,
-  TMid = THandled
->(decoder: PixelDecoder<TIn, THandled, TMid>): void {
+  TRawInput = any,
+  TPreparedInput = any,
+  TOptions extends object = PixeliftOptions
+>(decoder: PixelDecoder<TRawInput, TPreparedInput, TOptions>): void {
   if (!decoders.find((d) => d.name === decoder.name)) {
-    decoders.push(decoder as PixelDecoder<PixeliftInput, any, any>);
+    decoders.push(decoder as PixelDecoder<any, any, any>);
   }
 }
 
+/** Return a shallow copy of all registered decoders, typed loosely */
 export function getDecoders(): PixelDecoder<PixeliftInput, any, any>[] {
   return [...decoders];
 }
 
-function sortByPriority(
-  decoders: PixelDecoder<PixeliftInput, any, any>[]
-): PixelDecoder<PixeliftInput, any, any>[] {
-  return decoders.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+/** Sort decoders by descending priority without mutating original array */
+function sortByPriority<T extends PixelDecoder>(list: T[]): T[] {
+  return [...list].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
 }
 
+/**
+ * Define and register a new decoder with optional validation.
+ * Keeps full typing and returns the decoder with inferred generics.
+ */
 export function defineDecoder<
-  TIn extends PixeliftInput,
+  TIn extends PixeliftInput = any,
   THandled extends TIn = TIn,
-  TMid = THandled,
+  TMid extends THandled = THandled,
   TOptions extends PixeliftOptions = PixeliftOptions
 >(
-  decoder: PixelDecoder<TIn, THandled, TMid, TOptions>
-): PixelDecoder<TIn, THandled, TMid, TOptions> {
+  decoder: PixelDecoder<TIn, TMid, TOptions> & {
+    prepareForDecode?: (input: TIn, options?: TOptions) => Promise<TMid>;
+  }
+): PixelDecoder<TIn, TMid, TOptions> {
   if (process.env.NODE_ENV !== 'production') {
     try {
       validateDecoderConfig(decoder);
@@ -51,22 +55,42 @@ export function defineDecoder<
     }
   }
 
-  registerDecoder(decoder as PixelDecoder<TIn, THandled, TMid, TOptions>);
-  return decoder as PixelDecoder<TIn, THandled, TMid, TOptions>;
+  registerDecoder(decoder);
+  return decoder;
 }
 
-export async function resolveDecoder<TIn extends PixeliftInput = PixeliftInput>(
-  input: TIn,
-  options?: { decoder?: string; [key: string]: any }
-): Promise<PixelDecoder<TIn, any, any>> {
+/**
+ * Cast a decoder from erased type to typed generic.
+ * Use when you are sure of the underlying types.
+ */
+export function asDecoder<TRawInput, TPreparedInput, TOptions extends object>(
+  decoder: PixelDecoder<any, any, any>
+): PixelDecoder<TRawInput, TPreparedInput, TOptions> {
+  return decoder as PixelDecoder<TRawInput, TPreparedInput, TOptions>;
+}
+
+/**
+ * Resolve a decoder for given input and options.
+ * Tries specific decoder if requested, else auto-resolves by priority.
+ */
+export async function resolveDecoder<
+  TRawInput = any,
+  TPreparedInput = any,
+  TOptions extends CommonDecoderOptions = CommonDecoderOptions
+>(
+  input: TRawInput,
+  options?: TOptions
+): Promise<PixelDecoder<TRawInput, TPreparedInput, TOptions>> {
+  // Try specific decoder by name first
   if (options?.decoder) {
     const specificDecoder = decoders.find((d) => d.name === options.decoder);
     if (specificDecoder) {
-      if (specificDecoder?.isHandledInput?.(input)) {
-        return specificDecoder;
-      }
-      if (await specificDecoder?.canHandle(input)) {
-        return specificDecoder;
+      try {
+        if (await specificDecoder.canHandle(input, options)) {
+          return asDecoder<TRawInput, TPreparedInput, TOptions>(specificDecoder);
+        }
+      } catch (e) {
+        console.warn(`Error in canHandle of decoder "${specificDecoder.name}":`, e);
       }
     }
     console.warn(
@@ -74,14 +98,11 @@ export async function resolveDecoder<TIn extends PixeliftInput = PixeliftInput>(
     );
   }
 
+  // Auto-resolve by priority
   for (const decoder of sortByPriority(decoders)) {
     try {
-      if ('isHandledInput' in decoder && decoder.isHandledInput?.(input)) {
-        return decoder;
-      }
-      const canHandleResult = await Promise.resolve(decoder.canHandle(input));
-      if (canHandleResult) {
-        return decoder;
+      if (await decoder.canHandle(input, options)) {
+        return asDecoder<TRawInput, TPreparedInput, TOptions>(decoder);
       }
     } catch (error) {
       console.warn(`Error checking if decoder ${decoder.name} can handle input:`, error);

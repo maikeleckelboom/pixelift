@@ -1,15 +1,15 @@
 import { isImageBitmapSource } from '@/shared/guards.ts';
 import { defineDecoder } from '@/plugin/registry.ts';
 
-export const offscreenCanvasDecoder = defineDecoder({
+export const offscreenCanvasDecoder = defineDecoder<ImageBitmapSource>({
   name: 'offscreen-canvas',
   priority: 10,
-
-  async canHandle(input) {
-    return isImageBitmapSource(input);
+  metadata: {
+    version: '1.0.0',
+    runtimes: ['browser', 'worker']
   },
 
-  isHandledInput(input): input is ImageBitmapSource {
+  async canHandle(input) {
     return isImageBitmapSource(input);
   },
 

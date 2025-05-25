@@ -16,7 +16,7 @@ export const sharpDecoder: PixelDecoder = {
       'Sharp decoder for Node.js, supports Buffer, string (file path), and Readable streams.'
   },
 
-  async canHandle(input: unknown): Promise<boolean> {
+  async canHandle(input: unknown, _options?: ServerOptions): Promise<boolean> {
     return (
       input instanceof Buffer ||
       typeof input === 'string' ||

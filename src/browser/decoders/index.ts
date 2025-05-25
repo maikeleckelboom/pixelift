@@ -1,41 +1,37 @@
 import type { BrowserInput, BrowserOptions } from '@/browser';
 import type { PixelData } from '@/types';
 import { getDecoders } from '@/plugin/registry';
+import { detectRuntime } from '@/shared/env.ts';
 
-/**
- * Decodes an input using available decoders, trying them in priority order.
- *
- * @param input - The input to decode
- * @param options - Optional decoding options
- * @returns Promise resolving to decoded pixel data
- * @throws Error if no suitable decoder is found or all decoders fail
- */
 export async function decode(
   input: BrowserInput,
   options?: BrowserOptions
 ): Promise<PixelData> {
-  const allDecoders = getDecoders();
+  const runtime = detectRuntime();
 
-  const canHandlePromises = allDecoders.map(async (decoder) => {
-    try {
-      const canHandle = await Promise.resolve(decoder.canHandle(input));
-      return {
-        decoder,
-        canHandle
-      };
-    } catch (error) {
-      console.warn(`Error checking if decoder ${decoder.name} can handle input:`, error);
-      return {
-        decoder,
-        canHandle: false
-      };
-    }
-  });
+  const decoders = getDecoders().filter(
+    (d) => !d.metadata?.runtimes || d.metadata.runtimes.includes(runtime)
+  );
 
-  const results = await Promise.all(canHandlePromises);
-  const compatibleDecoders = results
-    .filter((result) => result.canHandle)
-    .map((result) => result.decoder);
+  if (decoders.length === 0) {
+    throw new Error(`No decoders registered for current runtime "${runtime}"`);
+  }
+
+  const canHandleResults = await Promise.all(
+    decoders.map(async (decoder) => {
+      try {
+        const canHandle = await decoder.canHandle(input, options);
+        return { decoder, canHandle };
+      } catch (error) {
+        console.warn(`canHandle error in decoder "${decoder.name}":`, error);
+        return { decoder, canHandle: false };
+      }
+    })
+  );
+
+  const compatibleDecoders = canHandleResults
+    .filter(({ canHandle }) => canHandle)
+    .map(({ decoder }) => decoder);
 
   if (compatibleDecoders.length === 0) {
     throw new Error(`No suitable decoder found for input type: ${typeof input}`);
@@ -44,18 +40,15 @@ export async function decode(
   compatibleDecoders.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
 
   let lastError: Error | null = null;
-
   for (const decoder of compatibleDecoders) {
     try {
-      if (await decoder.canHandle(input)) {
-        const preparedInput = decoder.prepareForDecode
-          ? await decoder.prepareForDecode(input, options)
-          : input;
+      const preparedInput = decoder.prepareForDecode
+        ? await decoder.prepareForDecode(input, options)
+        : input;
 
-        return await decoder.decode(preparedInput, options);
-      }
+      return await decoder.decode(preparedInput, options);
     } catch (error) {
-      console.warn(`Decoder ${decoder.name} failed:`, error);
+      console.warn(`Decoder "${decoder.name}" failed:`, error);
       lastError = error instanceof Error ? error : new Error(String(error));
     }
   }
