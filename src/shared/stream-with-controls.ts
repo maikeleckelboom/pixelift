@@ -1,4 +1,4 @@
-import { throwIfAborted } from './error.ts';
+import { throwIfAborted } from './abort';
 
 export interface StreamControlOptions {
   signal?: AbortSignal;

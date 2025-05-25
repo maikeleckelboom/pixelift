@@ -1,5 +1,5 @@
-import { type StreamControlOptions, streamWithControls } from './stream-with-controls.ts';
-import { throwIfAborted } from './error.ts';
+import { type StreamControlOptions, streamWithControls } from './stream-with-controls';
+import { throwIfAborted } from './abort';
 
 export interface StreamToBlobOptions extends StreamControlOptions {
   type?: string;
@@ -16,6 +16,14 @@ export async function streamToBlob(
 ): Promise<Blob> {
   const { type = 'application/octet-stream', ...controlOptions } = options;
 
+  if (stream == null) {
+    throw new TypeError('streamToBlob: stream is null or undefined.');
+  }
+
+  if (typeof stream.getReader !== 'function') {
+    throw new TypeError('streamToBlob: Not a valid ReadableStream.');
+  }
+
   throwIfAborted(controlOptions.signal);
 
   const transformPipe = streamWithControls(controlOptions);
@@ -23,15 +31,11 @@ export async function streamToBlob(
 
   const chunks: Uint8Array[] = [];
 
-  try {
-    for await (const chunk of controlledStream) {
-      chunks.push(chunk);
-    }
-
-    throwIfAborted(controlOptions.signal);
-
-    return new Blob(chunks, { type });
-  } catch (error) {
-    throw error;
+  for await (const chunk of controlledStream) {
+    chunks.push(chunk);
   }
+
+  throwIfAborted(controlOptions.signal);
+
+  return new Blob(chunks, { type });
 }
