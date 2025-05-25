@@ -1,22 +1,82 @@
 {
-  "name": "decodex",
-  "module": "src/index.ts",
+  "name": "pixelift",
+  "version": "0.1.0",
+  "description": "Cross-platform image decoder: convert any image source (URL, Blob, HTML element, etc.) into consistent 8-bit RGBA pixel data, with a single lightweight API for browser & Node.js.",
+  "author": "Maikel Eckelboom",
   "type": "module",
-  "packageManager": "pnpm@10.11.0",
-  "devDependencies": {
-    "@types/node": "^20.11.0",
-    "@vitest/browser": "^3.1.4",
-    "vitest": "^3.1.4",
-    "happy-dom": "^17.4.7",
-    "playwright": "^1.52.0"
+  "license": "MIT",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.js"
+    },
+    "./browser": {
+      "types": "./dist/browser/index.d.ts",
+      "require": "./dist/browser/index.cjs",
+      "import": "./dist/browser/index.js"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "require": "./dist/server/index.cjs",
+      "import": "./dist/server/index.js"
+    }
   },
-  "peerDependencies": {
-    "typescript": "^5"
+  "files": [
+    "dist"
+  ],
+  "browser": {
+    "sharp": false
+  },
+  "sideEffects": false,
+  "engines": {
+    "npm": ">=9.0.0",
+    "node": ">=20.0.0"
+  },
+  "packageManager": "pnpm@10.11.0",
+  "keywords": [
+    "image-decoder",
+    "raw-pixels",
+    "rgba",
+    "cross-platform",
+    "browser",
+    "nodejs",
+    "ssr",
+    "webcodecs",
+    "offscreen-canvas",
+    "sharp",
+    "canvas",
+    "typescript"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maikeleckelboom/pixelift.git"
+  },
+  "homepage": "https://github.com/maikeleckelboom/pixelift#readme",
+  "bugs": {
+    "url": "https://github.com/maikeleckelboom/pixelift/issues"
   },
   "scripts": {
     "dev": "vitest --watch",
     "test": "vitest --run",
     "test:browser": "vitest --project browser",
     "test:server": "vitest --project server"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@vitest/browser": "^3.1.4",
+    "vitest": "^3.1.4",
+    "happy-dom": "^17.4.7",
+    "playwright": "^1.52.0",
+    "sharp": "^0.34.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "optionalDependencies": {
+    "sharp": "^0.34.1"
   }
 }
