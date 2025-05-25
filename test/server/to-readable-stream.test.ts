@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Readable } from 'stream';
-import { nodeToWebStream } from '../../src/shared/to-readable-stream.ts';
+import { nodeToWebStream } from '@/shared/to-readable-stream.ts';
 
 describe('nodeToWebStream', () => {
   it('converts a Node.js readable stream to a Web ReadableStream and reads data correctly', async () => {

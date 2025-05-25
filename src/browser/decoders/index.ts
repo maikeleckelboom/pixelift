@@ -2,6 +2,8 @@ import type { BrowserInput, BrowserOptions } from '@/browser';
 import type { PixelData } from '@/types';
 import { getDecoders } from '@/plugin/registry';
 import { detectEnvironment } from '@/shared/env.ts';
+import './offscreen-canvas';
+import './offscreen-canvas-worker';
 
 export async function decode(
   input: BrowserInput,

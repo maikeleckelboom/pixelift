@@ -1,5 +1,3 @@
-export type PixeliftEnv = 'browser' | 'web-worker' | 'node' | 'node-worker';
-
 export function isNodeWorker(): boolean {
   try {
     return (
@@ -30,7 +28,7 @@ export function isWebWorker(): boolean {
     return (
       typeof globalThis !== 'undefined' &&
       typeof importScripts === 'function' &&
-      typeof Window === 'undefined' // web workers have no Window constructor
+      typeof Window === 'undefined'
     );
   } catch {
     return false;
@@ -40,13 +38,13 @@ export function isWebWorker(): boolean {
 export function isBrowser(): boolean {
   try {
     const win = typeof window !== 'undefined' ? window : globalThis;
-    return (
-      typeof win.document !== 'undefined' && typeof importScripts === 'undefined' // exclude web workers
-    );
+    return typeof win.document !== 'undefined' && typeof importScripts === 'undefined';
   } catch {
     return false;
   }
 }
+
+export type PixeliftEnv = 'browser' | 'web-worker' | 'node' | 'node-worker';
 
 export function detectEnvironment(): PixeliftEnv {
   if (isNodeWorker()) return 'node-worker';
@@ -55,7 +53,16 @@ export function detectEnvironment(): PixeliftEnv {
   if (isBrowser()) return 'browser';
 
   throw new Error(
-    `Unknown runtime environment. Globals: ` +
-      `window=${typeof window}, document=${typeof document}, process=${typeof process}, importScripts=${typeof importScripts}`
+    [
+      'Unable to detect environment.',
+      '',
+      'Supported environments:',
+      '  • Browser',
+      '  • Web Worker',
+      '  • Node.js',
+      '  • Node Worker',
+      '',
+      'If you are using a custom environment, please ensure it is compatible with Pixelift.'
+    ].join('\n')
   );
 }
