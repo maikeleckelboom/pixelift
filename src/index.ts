@@ -1,5 +1,10 @@
 import type { PixelData, PixeliftInput, PixeliftOptions } from './types';
 import { resolveDecoder } from './plugin/registry';
+import { autoloadDecoders } from '@/plugin/autoload.ts';
+
+autoloadDecoders().then(() => {
+  console.log('✅ Pixelift decoders are loaded successfully');
+});
 
 export async function pixelift(
   input: PixeliftInput,
@@ -9,6 +14,5 @@ export async function pixelift(
   return decoder.decode(input, options);
 }
 
-// Re-export for plugin authors
 export { registerDecoder, getDecoders } from './plugin/registry';
 export type { PixelDecoder } from './plugin/types';

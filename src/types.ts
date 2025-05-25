@@ -18,7 +18,13 @@ export type PixeliftOptions = BrowserOptions | ServerOptions;
 
 export interface PixelDecoder<Input = unknown, Options = unknown> {
   name: string;
-  priority?: number; // Higher = more preferred
+  priority?: number;
+  metadata?: {
+    runtimes?: ('browser' | 'node' | 'worker')[];
+    description?: string;
+    [key: string]: any; // For additional metadata
+  };
+
   canHandle(input: unknown): Promise<boolean> | boolean;
 
   decode(input: Input, options?: Options): Promise<PixelData>;
