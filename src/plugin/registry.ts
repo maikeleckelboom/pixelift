@@ -1,51 +1,63 @@
-import type { CommonDecoderOptions, PixeliftInput, PixeliftOptions } from '@/types';
+import type { CommonDecoderOptions, PixeliftOptions } from '@/types';
 import type { PixelDecoder } from '@/plugin/types';
 import { validateDecoderConfig } from '@/plugin/validate';
 
-// Internal registry
+// Internal registry storage, generic erased here.
 const decoders: PixelDecoder<any, any, any>[] = [];
 
-/** Register a decoder if not already present by name. */
+/**
+ * Register a decoder if not already present by name.
+ * Enforces uniqueness and keeps decoder list sorted by priority descending.
+ */
 export function registerDecoder<
-  TRaw = any,
-  TPrep = any,
-  TOpt extends object = PixeliftOptions
->(decoder: PixelDecoder<TRaw, TPrep, TOpt>): void {
-  if (!decoders.find((d) => d.name === decoder.name)) {
+  InputType = any,
+  ProcessedType = any,
+  DecoderOptions extends object = PixeliftOptions
+>(decoder: PixelDecoder<InputType, ProcessedType, DecoderOptions>): void {
+  if (!decoders.some((d) => d.name === decoder.name)) {
     decoders.push(decoder as PixelDecoder<any, any, any>);
+    decoders.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
   }
 }
 
-/** Return shallow clone of registered decoders (loose type) */
-export function getDecoders(): PixelDecoder<PixeliftInput, any, any>[] {
+/**
+ * Get a shallow clone of all registered decoders,
+ * sorted by descending priority (highest priority first).
+ */
+export function getDecoders(): PixelDecoder<any, any, any>[] {
   return [...decoders];
 }
 
-/** Sort decoders by descending priority */
-function sortByPriority<T extends PixelDecoder>(list: T[]): T[] {
-  return [...list].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
-}
-
-/** Helper: cast from type-erased decoder to typed form */
-export function asDecoder<TRaw, TPrep, TOpt extends object>(
+/**
+ * Helper: cast a generic decoder to a strongly typed decoder.
+ * Use carefully; avoid if possible by typing your code strictly upstream.
+ */
+export function asDecoder<InputType, ProcessedType, DecoderOptions extends object>(
   decoder: PixelDecoder<any, any, any>
-): PixelDecoder<TRaw, TPrep, TOpt> {
-  return decoder as PixelDecoder<TRaw, TPrep, TOpt>;
+): PixelDecoder<InputType, ProcessedType, DecoderOptions> {
+  return decoder as PixelDecoder<InputType, ProcessedType, DecoderOptions>;
 }
 
-/** Validate and define a typed decoder */
+/**
+ * Validate and define a typed decoder.
+ * Registers the decoder and returns it.
+ */
 export function defineDecoder<
-  TIn extends PixeliftInput = any,
-  THandled extends TIn = TIn,
-  TMid extends THandled = THandled,
-  TOpt extends PixeliftOptions = PixeliftOptions
->(decoder: PixelDecoder<TIn, TMid, TOpt>): PixelDecoder<TIn, TMid, TOpt> {
+  InputType = any,
+  HandledInputType extends InputType = InputType,
+  ProcessedType extends HandledInputType = HandledInputType,
+  DecoderOptions extends PixeliftOptions = PixeliftOptions
+>(
+  decoder: PixelDecoder<InputType, ProcessedType, DecoderOptions>
+): PixelDecoder<InputType, ProcessedType, DecoderOptions> {
   if (process.env.NODE_ENV !== 'production') {
     try {
       validateDecoderConfig(decoder);
     } catch (err) {
       throw new TypeError(
-        `Invalid decoder "${decoder.name}": ${err instanceof Error ? err.message : String(err)}`
+        `Invalid decoder "${decoder.name}": ${
+          err instanceof Error ? err.message : String(err)
+        }`
       );
     }
   }
@@ -71,6 +83,10 @@ async function tryResolveSpecificDecoder<TRaw, TPrep, TOpt extends object>(
   }
 
   return null;
+}
+
+function sortByPriority<T extends PixelDecoder<any, any, any>>(decoders: T[]): T[] {
+  return [...decoders].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
 }
 
 async function autoResolveDecoder<TRaw, TPrep, TOpt extends object>(

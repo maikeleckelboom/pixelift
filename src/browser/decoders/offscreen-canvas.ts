@@ -6,7 +6,7 @@ export const offscreenCanvasDecoder = defineDecoder<ImageBitmapSource>({
   priority: 10,
   metadata: {
     version: '1.0.0',
-    supportedEnvs: ['browser', 'web-worker']
+    supportedEnvs: ['browser']
   },
 
   async canHandle(input) {

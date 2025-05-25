@@ -28,3 +28,9 @@ export function assertImageBitmapSource(
     throw new TypeError('Expected a valid ImageBitmapSource');
   }
 }
+
+export function isStreamResponse(value: unknown): value is Response & {
+  body: ReadableStream<Uint8Array>;
+} {
+  return value instanceof Response && typeof value.body === 'object' && value.body !== null;
+}

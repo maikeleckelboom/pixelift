@@ -10,3 +10,10 @@ export function throwIfAborted(signal?: AbortSignal): void {
     throw new DOMException('Aborted', 'AbortError');
   }
 }
+
+export function rethrowIfAbortError(error: unknown, signal?: AbortSignal) {
+  if (error instanceof DOMException && error.name === 'AbortError' && signal?.aborted) {
+    throw new DOMException(signal?.reason ?? 'Request aborted', 'AbortError');
+  }
+  throw error;
+}
