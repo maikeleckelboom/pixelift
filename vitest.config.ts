@@ -1,31 +1,28 @@
 import { defineConfig } from 'vitest/config';
-import tsconfigPaths from 'vite-tsconfig-paths';
-import * as path from 'node:path';
+import viteConfig from './vite.config';
 
 export default defineConfig({
-  plugins: [
-    tsconfigPaths({
-      root: path.resolve(__dirname, 'src'),
-      projects: [path.resolve(__dirname, 'tsconfig.json')],
-      loose: true,
-      ignoreConfigErrors: true
-    })
-  ],
+  ...viteConfig,
   test: {
-    alias: {
-      '@': path.resolve(__dirname, 'src')
-    },
+    alias: viteConfig.resolve?.alias ?? {},
+    testTimeout: 30000,
     workspace: [
       {
         test: {
           globals: true,
           name: 'browser',
           include: ['test/browser/**', 'test/shared/**'],
+          exclude: ['**/__screenshots__/**', '**/__snapshots__/**'],
           environment: 'browser',
           browser: {
             enabled: true,
             headless: true,
+            screenshotFailures: false,
             provider: 'playwright',
+            viewport: {
+              width: 1280,
+              height: 720
+            },
             instances: [
               { browser: 'chromium' }
               // { browser: 'firefox' },
@@ -39,6 +36,7 @@ export default defineConfig({
           globals: true,
           name: 'server',
           include: ['test/server/**', 'test/shared/**'],
+          exclude: ['**/__screenshots__/**', '**/__snapshots__/**'],
           environment: 'node'
         }
       }

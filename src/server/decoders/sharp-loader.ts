@@ -1,6 +1,8 @@
-import type * as SharpNS from 'sharp';
+import SharpDefaultExport from 'sharp';
 
-let sharpPromise: Promise<typeof SharpNS> | null = null;
+type SharpConstructor = typeof SharpDefaultExport;
+
+let sharpPromise: Promise<SharpConstructor> | null = null;
 
 const SHARP_IS_MISSING_ERROR_MESSAGE = [
   '❌ Failed to load the required `sharp` package for server-side image processing.',
@@ -16,10 +18,20 @@ const SHARP_IS_MISSING_ERROR_MESSAGE = [
   '   This may happen if it was skipped during Pixelift installation (it’s optional).'
 ] as const;
 
-export async function importSharp(): Promise<typeof SharpNS> {
-  sharpPromise ??= import('sharp').catch((importError) => {
-    sharpPromise = null;
-    throw new Error(SHARP_IS_MISSING_ERROR_MESSAGE.join('\n'), { cause: importError });
-  });
+export async function importSharp(): Promise<SharpConstructor> {
+  sharpPromise ??= import('sharp')
+    .then((sharpModule) => {
+      const sharpFunction = (sharpModule as any).default ?? sharpModule;
+      if (typeof sharpFunction !== 'function') {
+        throw new Error(
+          'Sharp module loaded, but its main export is not a function. Check your Sharp installation and CJS/ESM interop.'
+        );
+      }
+      return sharpFunction as SharpConstructor;
+    })
+    .catch((importError) => {
+      sharpPromise = null;
+      throw new Error(SHARP_IS_MISSING_ERROR_MESSAGE.join('\n'), { cause: importError });
+    });
   return sharpPromise;
 }

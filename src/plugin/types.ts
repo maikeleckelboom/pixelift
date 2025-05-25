@@ -1,18 +1,39 @@
-import type { PixelData, PixeliftInput, PixeliftOptions } from '@/types';
+import type {
+  CommonDecoderOptions,
+  PixelData,
+  PixeliftInput,
+  PixeliftOptions
+} from '../types';
+
+export type PixeliftEnvPlatform = 'node' | 'browser' | 'edge';
+export type PixeliftEnvContext = 'main' | 'worker';
 
 export interface PixelDecoderMetadata {
   version?: string;
-  runtimes?: ('browser' | 'node' | 'worker' | 'edge')[];
-  types?: string[];
+  platforms?: PixeliftEnvPlatform[];
+  contexts?: PixeliftEnvContext[];
+  formats?: string[];
   description?: string;
+  capabilities?: string[];
 }
 
-export interface PixelDecoder {
+export interface PixelDecoder<
+  TAcceptsInput = PixeliftInput,
+  THandledInput extends TAcceptsInput = TAcceptsInput,
+  TDecodesWith = THandledInput,
+  TOptions = PixeliftOptions,
+  TCommonOptions = TOptions extends undefined ? CommonDecoderOptions : TOptions,
+  TDecodeOptions = TOptions extends undefined ? PixeliftOptions : TOptions
+> {
   name: string;
   priority?: number;
   metadata?: PixelDecoderMetadata;
 
-  canHandle(input: unknown, options?: PixeliftOptions): Promise<boolean>;
+  canHandle(input: TAcceptsInput, options?: TCommonOptions): Promise<boolean>;
 
-  decode(input: PixeliftInput, options?: PixeliftOptions): Promise<PixelData>;
+  isHandledInput?(input: TAcceptsInput): input is THandledInput;
+
+  prepareForDecode?(input: THandledInput, options?: TDecodeOptions): Promise<TDecodesWith>;
+
+  decode(input: TDecodesWith, options?: TDecodeOptions): Promise<PixelData>;
 }

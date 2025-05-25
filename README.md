@@ -1,178 +1,145 @@
+# Pixelift
+
+> **Cross-environment raw image decoder.**
+> Decode any image-like source into 8-bit RGBA pixels with a single, consistent API for both browser and Node.js.
+
 [![npm version](https://img.shields.io/npm/v/pixelift.svg)](https://www.npmjs.com/package/pixelift)
 [![bundle size](https://img.shields.io/bundlephobia/minzip/pixelift)](https://bundlephobia.com/package/pixelift)
 [![downloads](https://img.shields.io/npm/dm/pixelift)](https://www.npmjs.com/package/pixelift)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/maikeleckelboom/pixelift/blob/main/LICENSE)
 
-# Pixelift
+---
 
-**Cross-platform image decoder**—convert any image source (URL, file, Blob, HTML element, etc.) into consistent 8-bit
-RGBA pixels via one lightweight API for both browser and Node.js.
+## 🚨 Scope Boundary — DO NOT CROSS
+
+**Pixelift only decodes.** One API, cross-environment, consistent RGBA output — from any image-like source (URL, buffer,
+stream, HTML element).
+
+**✅ Does:**
+
+* Decode to `{ data: Uint8ClampedArray, width: number, height: number }`
+* Run identically in **browser** and **Node.js**
+* Accept: `string`, `URL`, `Buffer`, `Blob`, `File`, `ReadableStream`, `Response`, `HTML element`, etc.
+* Provide RGBA/ARGB conversions
+* Support **streams** as input — with byte-level progress reporting
+
+**❌ Does NOT:**
+
+* ✘ Transform, filter, encode, or render
+* ✘ Resize, crop, or draw
+* ✘ Write to disk or export images
+* ✘ Use WebCodecs (support removed)
+
+Keep it pure. Keep it focused.
 
 ---
 
-## 📋 Table of Contents
-
-1. [Why Pixelift?](#why-pixelift)
-2. [Features](#features)
-3. [Installation](#installation)
-4. [Quick Start](#quick-start)
-5. [Browser vs Server](#browser-vs-server)
-6. [Advanced Usage](#advanced-usage)
-7. [API Reference](#api-reference)
-8. [Contributing](#contributing)
-9. [License](#license)
-
----
-
-## Why Pixelift?
-
-* 🎯 **One API** for **all** image sources (URLs, file paths, buffers, HTML elements, video frames, blobs, …)
-* ⚡️ **High performance**: Leverages WebCodecs/OffscreenCanvas in browser and Sharp on server
-* 🔄 **Consistent output**: Pixel-perfect identical RGBA for lossless formats; near-identical for lossy formats
-* 🔍 **Format-agnostic**: JPEG, PNG, GIF, WebP, AVIF, SVG, etc.
-* 🔧 **Fully typed**: Built in TypeScript with zero dependencies in the browser
-
----
-
-## Features
-
-* ✅ Decode from `string|URL|File|Blob|HTMLImageElement|HTMLVideoElement|Canvas…`
-* ✅ Automatic runtime detection (browser ↔ Node.js)
-* ✅ Pure TypeScript, zero dependencies in browser
-* ✅ Modular exports (`./browser`, `./server`)
-* ✅ Robust error handling with clear codes (throws `PixeliftError`)
-* ✅ Tree-shakable, no side effects
-
----
-
-## Installation
+## 📦 Install
 
 ```bash
-# npm
+# Choose your package manager:
 npm install pixelift
-
-# yarn
 yarn add pixelift
-
-# pnpm
 pnpm add pixelift
-
-# bun
 bun add pixelift
-```
 
-> **Server:** Pixelift uses [sharp](https://github.com/lovell/sharp) for server-side decoding; ensure it's installed.
->
-> ```bash
-> npm install sharp
-> ```
+# Server only: install sharp manually
+npm install sharp
+```
 
 ---
 
-## Quick Start
+## ⚡ Quick Start
 
 ```ts
 import {pixelift} from 'pixelift';
 
-async function run() {
-    const {data, width, height} = await pixelift('path/to/image.jpg');
-    console.log(`Decoded ${width}×${height}, ${data.length} bytes`);
-}
-
-run();
+const {data, width, height} = await pixelift('path/to/image.jpg');
+console.log(`Decoded ${width}×${height}, ${data.length} bytes`);
 ```
 
 ---
 
-## Browser vs Server
+## 🌍 Environment Support
 
 ### Browser
 
-* Defaults to WebCodecs
-* Falls back to OffscreenCanvas
-* No native bindings required
+* Uses **OffscreenCanvas** for high-performance decoding
+* No native dependencies
 
-### Server
+### Node.js
 
 * Requires `sharp`
-* Leverages native bindings for performance
+* Uses native bindings for speed
 
 ---
 
-## Advanced Usage
-
-### Force a specific decoder
+## 🔧 Input Types
 
 ```ts
-pixelift(url, {decoder: 'offscreenCanvas'});
+await pixelift(input, options ?);
 ```
 
-### Abort long requests
+**Accepted `input`:**
+
+* `string` (URL or file path)
+* `URL`
+* `Blob`, `File`, `Buffer`, `ArrayBuffer`, `Uint8Array`
+* `HTMLImageElement`, `HTMLVideoElement`, `HTMLCanvasElement`
+* `ReadableStream`, `Response`
+
+**Options:**
 
 ```ts
-const controller = new AbortController();
-pixelift(url, {signal: controller.signal});
-// …
-controller.abort();
+interface PixeliftOptions {
+    headers?: Record<string, string>;
+    signal?: AbortSignal;
+    decoder?: 'offscreen-canvas' | 'sharp';
+    onProgress?: (bytesProcessed: number) => void;
+    maxBytes?: number;
+    chunkSize?: number;
+}
 ```
 
----
+**Returns:**
 
-## API Reference
-
-### `pixelift(input, options?) → Promise<PixelData>`
-
-* **input**: `string | URL | File | Blob | Buffer | ArrayBuffer | Uint8Array`
-* **options**: `{ headers?: Record<string, string>; signal?: AbortSignal; decoder?: 'webcodecs' | 'offscreen-canvas' }`
-* **returns**:
-
-  ```ts
-  interface PixelData {
+```ts
+interface PixelData {
     data: Uint8ClampedArray;
     width: number;
     height: number;
-  }
-  ```
-
-### `argbFromRgbaBytes(buffer, options?) → number[] | Uint32Array`
-
-* Converts RGBA bytes to ARGB ints
-* **options**: `{ useTypedArray?: boolean }`
-
-### `rgbaBytesFromArgb(pixels) → Uint8ClampedArray`
-
-* Converts ARGB ints back to RGBA bytes
+}
+```
 
 ---
 
-## Conversion Examples
+## 🔁 Utility Conversions
 
-### Red Tint
+### `argbFromRgbaBytes(buffer, options?)`
 
-Apply a red tint by maxing out the red channel:
+Convert RGBA bytes → ARGB integers
+
+### `rgbaBytesFromArgb(pixels)`
+
+Convert ARGB integers → RGBA bytes
+
+---
+
+## 🎨 Examples
+
+### Tint Red
 
 ```ts
 import {argbFromRgbaBytes, rgbaBytesFromArgb} from 'pixelift';
 
-// Get pixel data as ARGB integers
 const pixels = argbFromRgbaBytes(source.data);
-
-// Set red channel to 255
-const tinted = pixels.map((color) => (color & 0x00ffffff) | (0xff << 16));
-
-// Convert back to RGBA bytes
-const resultData = rgbaBytesFromArgb(tinted);
+const tinted = pixels.map(c => (c & 0x00ffffff) | (0xff << 16));
+const result = rgbaBytesFromArgb(tinted);
 ```
 
 ### Invert Colors
 
-Invert RGB channels while preserving alpha:
-
 ```ts
-import {argbFromRgbaBytes, rgbaBytesFromArgb} from 'pixelift';
-
-const pixels = argbFromRgbaBytes(source.data);
-
 const inverted = pixels.map((c) => {
     const a = (c >>> 24) & 0xff;
     const r = (c >>> 16) & 0xff;
@@ -180,19 +147,76 @@ const inverted = pixels.map((c) => {
     const b = c & 0xff;
     return ((a << 24) | ((255 - r) << 16) | ((255 - g) << 8) | (255 - b)) >>> 0;
 });
-
-const resultData = rgbaBytesFromArgb(inverted);
 ```
 
 ---
 
-## License
+## 🌐 Real World Usage: Streams + Progress (Cross-Env)
 
-This project is licensed under the MIT License.
+Pixelift provides native support for streaming sources and `Response` objects in both browser and Node.js. The same
+interface works identically in either environment.
+
+### Supported Streaming Options
+
+```ts
+interface StreamControlOptions {
+    signal?: AbortSignal;
+    maxBytes?: number;              // Optional cap on total bytes to read
+    chunkSize?: number;             // Optional enforced chunking
+    onProgress?: (bytesProcessed: number) => void; // Progress callback
+}
+```
+
+### Decode from HTTP Response (browser or Node with fetch)
+
+```ts
+const response = await fetch('https://example.com/image.webp');
+const result = await pixelift(response, {
+    onProgress: (bytes) => console.log(`Fetched ${bytes} bytes`),
+});
+```
+
+### Stream from File Input (browser)
+
+```ts
+const file = document.querySelector('input[type=file]').files[0];
+const result = await pixelift(file.stream(), {
+    onProgress: (bytes) => console.log(`Read ${bytes} bytes from file`),
+    chunkSize: 65536,
+    maxBytes: 10 * 1024 * 1024,
+});
+```
+
+### Pipe from Node.js FileSystem
+
+```ts
+import {createReadStream} from 'node:fs';
+
+const stream = createReadStream('./image.png');
+
+const result = await pixelift(stream, {
+    onProgress: (bytes) => console.log(`Streaming ${bytes} bytes from disk`),
+    signal: AbortSignal.timeout(5000),
+});
+```
 
 ---
 
-## Contributing
+## 🧠 Philosophy
 
-Contributions welcome! Please check out the [issue tracker](https://github.com/maikeleckelboom/pixelift/issues) or open
-a pull request.
+> **Pixelift decodes. Period.**
+>
+> One job. One API. One output. Don't render, process, or export — decode.
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Please read the scope and philosophy first. PRs that add rendering, resizing, or encoding will
+not be accepted.
+
+---
+
+## 📄 License
+
+MIT © [Maike Leckelboom](https://github.com/maikeleckelboom)

@@ -1,5 +1,6 @@
 import type { BrowserInput, BrowserOptions } from '@/browser';
-import type { ServerInput, ServerOptions } from './server';
+import type { ServerInput, ServerOptions } from '@/server';
+import type { StreamToBlobOptions } from '@/shared/stream-to-blob.ts';
 
 export interface PixelData {
   data: Uint8ClampedArray;
@@ -7,25 +8,10 @@ export interface PixelData {
   height: number;
 }
 
-export interface CommonDecoderOptions {
+export interface CommonDecoderOptions extends StreamToBlobOptions {
   signal?: AbortSignal;
-  type?: string; // MIME type for the input
 }
 
 export type PixeliftInput = BrowserInput | ServerInput;
 
 export type PixeliftOptions = BrowserOptions | ServerOptions;
-
-export interface PixelDecoder<Input = unknown, Options = unknown> {
-  name: string;
-  priority?: number;
-  metadata?: {
-    runtimes?: ('browser' | 'node' | 'worker')[];
-    description?: string;
-    [key: string]: any; // For additional metadata
-  };
-
-  canHandle(input: unknown): Promise<boolean> | boolean;
-
-  decode(input: Input, options?: Options): Promise<PixelData>;
-}

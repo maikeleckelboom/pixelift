@@ -9,33 +9,70 @@ export interface StreamToBlobOptions extends StreamControlOptions {
  * Converts a ReadableStream of Uint8Array chunks into a Blob.
  * Allows specifying StreamControlOptions to manage the stream processing
  * and the MIME type for the resulting Blob. Includes robust AbortSignal handling.
+ * Also accepts a Promise that resolves to a ReadableStream, or a Response object.
  */
 export async function streamToBlob(
-  stream: ReadableStream<Uint8Array>,
+  stream:
+    | ReadableStream<Uint8Array>
+    | Promise<ReadableStream<Uint8Array> | null>
+    | Response
+    | null
+    | undefined,
   options: StreamToBlobOptions = {}
 ): Promise<Blob> {
-  const { type = 'application/octet-stream', ...controlOptions } = options;
+  const { type: optionsType = 'application/octet-stream', ...controlOptions } = options;
+
+  let resolvedType = optionsType;
 
   if (stream == null) {
     throw new TypeError('streamToBlob: stream is null or undefined.');
   }
 
-  if (typeof stream.getReader !== 'function') {
-    throw new TypeError('streamToBlob: Not a valid ReadableStream.');
+  throwIfAborted(controlOptions.signal);
+
+  let resolvedStream: ReadableStream<Uint8Array>;
+
+  if (stream instanceof Response) {
+    if (!stream.body) {
+      throw new TypeError('streamToBlob: Response has no body.');
+    }
+    resolvedStream = stream.body;
+    const contentType = stream.headers.get('content-type');
+    if (!options.type && contentType) {
+      resolvedType = contentType;
+    }
+  } else {
+    const awaitedStream = await stream;
+
+    if (awaitedStream == null) {
+      throw new TypeError('streamToBlob: resolved stream is null or undefined.');
+    }
+
+    if (typeof awaitedStream.getReader !== 'function') {
+      throw new TypeError('streamToBlob: Not a valid ReadableStream.');
+    }
+
+    resolvedStream = awaitedStream;
   }
 
   throwIfAborted(controlOptions.signal);
 
-  const transformPipe = streamWithControls(controlOptions);
-  const controlledStream: ReadableStream<Uint8Array> = stream.pipeThrough(transformPipe);
+  const controlledStream = resolvedStream.pipeThrough(streamWithControls(controlOptions));
 
   const chunks: Uint8Array[] = [];
 
-  for await (const chunk of controlledStream) {
-    chunks.push(chunk);
+  try {
+    for await (const chunk of controlledStream) {
+      chunks.push(chunk);
+      throwIfAborted(controlOptions.signal);
+    }
+  } finally {
+    if (controlOptions.signal?.aborted) {
+      await controlledStream.cancel();
+    }
   }
 
   throwIfAborted(controlOptions.signal);
 
-  return new Blob(chunks, { type });
+  return new Blob(chunks, { type: resolvedType });
 }

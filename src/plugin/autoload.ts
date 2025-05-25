@@ -6,8 +6,10 @@ export async function autoloadDecoders(): Promise<void> {
     const { workerDecoder } = await import('../browser/decoders/worker');
     registerDecoder(workerDecoder);
 
-    const { canvasDecoder } = await import('../browser/decoders/canvas');
-    registerDecoder(canvasDecoder);
+    const { offscreenCanvasDecoder } = await import(
+      '../browser/decoders/offscreen-canvas.ts'
+    );
+    registerDecoder(offscreenCanvasDecoder);
   } else {
     const { sharpDecoder } = await import('../server/decoders/sharp');
     registerDecoder(sharpDecoder);
