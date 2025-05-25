@@ -25,22 +25,8 @@ interface Decoder<I extends PixeliftInput, O extends CommonDecoderOptions> {
  * @template O - The option type for the decoder.
  */
 export interface EnvironmentConfig<I extends PixeliftInput, O extends PixeliftOptions> {
-  /**
-   * Validates whether the input is acceptable for the environment.
-   * @param input - The input to validate.
-   * @returns A promise is resolving to `true` if valid, `false` otherwise.
-   */
   validate: (input: unknown) => Promise<boolean>;
-
-  /**
-   * Loads the environment-specific decoder.
-   * @returns A promise resolving to the decoder instance.
-   */
   load: () => Promise<Decoder<I, O>>;
-
-  /**
-   * List of human-readable input type names for error messaging.
-   */
   expectedInputTypes: string[];
 }
 
@@ -106,47 +92,32 @@ export const serverConfig: EnvironmentConfig<ServerInput, ServerOptions> = {
   ]
 };
 
-// Cache decoder promises to optimize performance
 let browserDecoderPromise: Promise<Decoder<BrowserInput, BrowserOptions>> | null = null;
 let serverDecoderPromise: Promise<Decoder<ServerInput, ServerOptions>> | null = null;
 
-/**
- * Processes pixel data from an input source, adapting to the runtime environment (browser or server).
- *
- * @param input - The data to process, validated against environment-specific types.
- * @param options - Optional settings to customize decoding behavior.
- * @returns A promise resolving to the processed pixel data.
- * @throws {TypeError} If the input type is invalid for the current environment.
- *
- * @example
- * // Browser usage
- * const pixelData = await pixelift('https://example.com/image.png');
- *
- * @example
- * // Server usage
- * const pixelData = await pixelift('/path/to/image.png');
- */
 export async function pixelift(
   input: PixeliftInput,
   options?: PixeliftOptions
 ): Promise<PixelData> {
-  if (isBrowser()) {
-    if (!(await browserConfig.validate(input))) {
-      throw new TypeError(
-        `Invalid input type for browser environment. Expected one of: ${browserConfig.expectedInputTypes.join(', ')}. Received: ${typeof input}`
-      );
-    }
-    browserDecoderPromise ??= browserConfig.load();
-    const decoder = await browserDecoderPromise;
-    return decoder.decode(input as BrowserInput, options as BrowserOptions);
-  } else {
-    if (!(await serverConfig.validate(input))) {
-      throw new TypeError(
-        `Invalid input type for server environment. Expected one of: ${serverConfig.expectedInputTypes.join(', ')}. Received: ${typeof input}`
-      );
-    }
-    serverDecoderPromise ??= serverConfig.load();
-    const decoder = await serverDecoderPromise;
-    return decoder.decode(input as ServerInput, options as ServerOptions);
+  const isB = isBrowser();
+  const config = isB ? browserConfig : serverConfig;
+
+  // Validate
+  if (!(await config.validate(input))) {
+    throw new TypeError(
+      `Invalid input type for ${isB ? 'browser' : 'server'} environment. ` +
+        `Expected one of: ${config.expectedInputTypes.join(', ')}. ` +
+        `Received: ${typeof input}`
+    );
   }
+
+  // Load
+  const decoderPromise = isB
+    ? (browserDecoderPromise ??= browserConfig.load())
+    : (serverDecoderPromise ??= serverConfig.load());
+
+  const decoder = await decoderPromise;
+
+  // Decode
+  return decoder.decode(input as never, options as never);
 }
