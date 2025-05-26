@@ -16,7 +16,7 @@ export async function decode(
   if (decoders.length === 0) {
     throw new Error(`No decoders registered for current runtime "${environment}"`);
   }
-  
+
   return {
     data: new Uint8ClampedArray(),
     width: 0,

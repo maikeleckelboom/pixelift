@@ -17,11 +17,10 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleDetection": "force",
-    "allowSyntheticDefaultImports": true,
+    "allowSyntheticDefaultImports": false,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "react-jsx",
-    "allowJs": true,
+    "allowJs": false,
     // Bundler mode
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
@@ -39,9 +38,9 @@
     "noPropertyAccessFromIndexSignature": false,
     "types": [
       "@types/node",
-      "node",
       "@vitest/browser/matchers",
-      "vitest/globals"
+      "vitest/globals",
+      "@types/web"
     ]
   },
   "include": [

@@ -2,8 +2,9 @@ import type { PixelData, PixeliftInput, PixeliftOptions } from './types';
 import { resolveDecoder } from './plugin/registry';
 import { autoloadDecoders } from './plugin/autoload';
 
-autoloadDecoders().then(() => {
-  console.log('✅ Pixelift decoders are loaded successfully');
+// 💥 💥 💥 💥 💥 💥
+autoloadDecoders().catch((error) => {
+  console.warn('⚠️ Failed to autoload decoders to global registry.', { error });
 });
 
 export async function pixelift(
