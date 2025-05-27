@@ -35,7 +35,7 @@ export interface PixelDecoderMetadata {
 export interface PixelDecoder<
   TRawInput = PixeliftInput,
   TPreparedInput = TRawInput,
-  TOptions extends object = CommonDecoderOptions
+  TOptions = CommonDecoderOptions
 > {
   name: string;
   metadata: PixelDecoderMetadata;
@@ -46,6 +46,4 @@ export interface PixelDecoder<
   prepareForDecode?(input: TRawInput, options?: TOptions): Promise<TPreparedInput>;
 
   decode(input: TPreparedInput, options?: TOptions): Promise<PixelData>;
-
-  dispose?(): Promise<void> | void;
 }

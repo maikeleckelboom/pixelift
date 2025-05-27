@@ -3,12 +3,9 @@ import viteConfig from './vite.config';
 
 export default defineConfig({
   test: {
-    alias: viteConfig.resolve?.alias ?? {},
-    testTimeout: 30000,
     workspace: [
       {
         ...viteConfig,
-
         test: {
           globals: true,
           name: 'browser',
@@ -16,14 +13,10 @@ export default defineConfig({
           exclude: ['**/__screenshots__/**', '**/__snapshots__/**'],
           environment: 'browser',
           browser: {
+            provider: 'playwright',
             enabled: true,
             headless: true,
             screenshotFailures: false,
-            provider: 'playwright',
-            viewport: {
-              width: 1280,
-              height: 720
-            },
             instances: [
               { browser: 'chromium' }
               // { browser: 'firefox' },
@@ -34,7 +27,6 @@ export default defineConfig({
       },
       {
         ...viteConfig,
-
         test: {
           globals: true,
           name: 'server',

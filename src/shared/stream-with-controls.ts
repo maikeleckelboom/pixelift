@@ -1,69 +1,52 @@
 import { throwIfAborted } from './abort';
-import { isBrowser } from '@/shared/env.ts';
-import { AbortError, SecurityError } from '@/shared/errors.ts';
-
-const MAX_STREAM_DEPTH = 3;
-
-let nodeCrypto: typeof import('crypto') | null = null;
+import { AbortError } from '@/shared/errors.ts';
 
 /**
- * Fills the given Uint8Array buffer with secure random values.
- * Supports both browser and Node.js environments.
+ * Options for controlling stream processing behavior.
  */
-export async function getRandomValues(buffer: Uint8Array): Promise<void> {
-  if (isBrowser()) {
-    crypto.getRandomValues(buffer);
-    return;
-  }
-  nodeCrypto ??= await import('crypto');
-  nodeCrypto.randomFillSync(buffer);
-}
-
-const streamDepthMap = new WeakMap<ReadableStream<any>, number>();
-
-export function createInitialStream<T>(stream: ReadableStream<T>): ReadableStream<T> {
-  streamDepthMap.set(stream, 1);
-  return createValidatedStream(stream);
-}
-
-export function createValidatedStream<T>(stream: ReadableStream<T>): ReadableStream<T> {
-  const depth = streamDepthMap.get(stream) ?? 1;
-
-  if (depth > MAX_STREAM_DEPTH) {
-    throw new SecurityError(
-      `Stream depth ${depth} exceeds maximum allowed of ${MAX_STREAM_DEPTH}`
-    );
-  }
-
-  const proxy = new Proxy(stream, {
-    get(target, prop, receiver) {
-      if (prop === 'pipeThrough') {
-        return function <U>(transform: TransformStream<T, U>): ReadableStream<U> {
-          const newStream = target.pipeThrough(transform);
-          streamDepthMap.set(newStream, depth + 1);
-          return createValidatedStream(newStream);
-        };
-      }
-      return Reflect.get(target, prop, receiver);
-    }
-  });
-
-  streamDepthMap.set(proxy, depth);
-  return proxy;
-}
-
 export interface StreamControlOptions {
+  /**
+   * An AbortSignal object that allows canceling the stream operation.
+   */
   signal?: AbortSignal;
+
+  /**
+   * Maximum number of bytes to read from the stream.
+   * If undefined, the stream will be read to completion.
+   */
   maxBytes?: number;
-  chunkSize?: number; // default 16 KiB
+
+  /**
+   * Size (in bytes) of each chunk to be read from the stream.
+   * Defaults to 16 KiB if not specified.
+   */
+  chunkSize?: number;
+
+  /**
+   * The total number of bytes expected in the stream.
+   * Used for calculating the progress ratio. If undefined, the ratio will be null.
+   */
   totalBytes?: number;
-  onProgress?: (bytesProcessed: number, totalBytes?: number) => void;
+
+  /**
+   * Callback invoked during progress updates.
+   *
+   * @param bytesProcessed - Total bytes processed so far.
+   * @param ratio - Progress ratio (0 to 1), or null if `totalBytes` is undefined.
+   */
+  onProgress?: (bytesProcessed: number, ratio: number | null) => void;
 }
 
 export function streamWithControls(
-  options: StreamControlOptions = {}
+  options: StreamControlOptions
 ): TransformStream<Uint8Array, Uint8Array> {
-  const { signal, maxBytes, chunkSize = 16 * 1024, totalBytes, onProgress } = options;
+  const {
+    signal,
+    maxBytes = Infinity,
+    chunkSize = 16 * 1024,
+    totalBytes,
+    onProgress
+  } = options;
 
   if (maxBytes !== undefined && maxBytes < 0) {
     throw new RangeError('maxBytes must be non-negative if specified');
@@ -78,7 +61,7 @@ export function streamWithControls(
 
   const ensureWithinBounds = (bytes: number) => {
     const nextTotal = total + bytes;
-    if (maxBytes !== undefined && nextTotal > maxBytes) {
+    if (nextTotal > maxBytes) {
       throw new RangeError(
         `streamWithControls exceeded maxBytes: ${nextTotal} > ${maxBytes}`
       );
@@ -87,7 +70,7 @@ export function streamWithControls(
 
   const reportProgress = () => {
     if (onProgress) {
-      onProgress(total, totalBytes);
+      onProgress(total, totalBytes !== undefined ? total / totalBytes : null);
     }
   };
 

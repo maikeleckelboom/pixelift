@@ -2,7 +2,6 @@ import type { CommonDecoderOptions, PixeliftOptions } from '@/types';
 import type { PixelDecoder } from '@/plugin/types';
 import { validateDecoderConfig } from '@/plugin/validate';
 
-// Internal registry storage, generic erased here.
 const decoders: PixelDecoder<any, any, any>[] = [];
 
 /**
@@ -30,9 +29,9 @@ export function getDecoders(): PixelDecoder<any, any, any>[] {
 
 /**
  * Helper: cast a generic decoder to a strongly typed decoder.
- * Use carefully; avoid if possible by typing your code strictly upstream.
+ * Use carefully; ensure type compatibility via canHandle checks before using.
  */
-export function asDecoder<InputType, ProcessedType, DecoderOptions extends object>(
+export function asDecoder<InputType, ProcessedType, DecoderOptions>(
   decoder: PixelDecoder<any, any, any>
 ): PixelDecoder<InputType, ProcessedType, DecoderOptions> {
   return decoder as PixelDecoder<InputType, ProcessedType, DecoderOptions>;
@@ -41,11 +40,15 @@ export function asDecoder<InputType, ProcessedType, DecoderOptions extends objec
 /**
  * Validate and define a typed decoder.
  * Registers the decoder and returns it.
+ * @template InputType - The raw input type the decoder can receive
+ * @template HandledInputType - Specific input subtype this decoder handles
+ * @template ProcessedType - Result type after processing (extends HandledInputType)
+ * @template DecoderOptions - Configuration options for this decoder
  */
 export function defineDecoder<
   InputType = any,
   HandledInputType extends InputType = InputType,
-  ProcessedType extends HandledInputType = HandledInputType,
+  ProcessedType = HandledInputType,
   DecoderOptions extends PixeliftOptions = PixeliftOptions
 >(
   decoder: PixelDecoder<InputType, ProcessedType, DecoderOptions>
@@ -66,7 +69,7 @@ export function defineDecoder<
   return decoder;
 }
 
-async function tryResolveSpecificDecoder<TRaw, TPrep, TOpt extends object>(
+async function tryResolveSpecificDecoder<TRaw, TPrep, TOpt>(
   name: string,
   input: TRaw,
   options?: TOpt
@@ -85,21 +88,40 @@ async function tryResolveSpecificDecoder<TRaw, TPrep, TOpt extends object>(
   return null;
 }
 
-function sortByPriority<T extends PixelDecoder<any, any, any>>(decoders: T[]): T[] {
-  return [...decoders].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+export async function listCompatibleDecoders<TRaw, TPrep, TOpt>(
+  input: TRaw,
+  options?: TOpt
+): Promise<PixelDecoder<TRaw, TPrep, TOpt>[]> {
+  const results: PixelDecoder<TRaw, TPrep, TOpt>[] = [];
+
+  for (const decoder of decoders) {
+    try {
+      if (await decoder.canHandle(input, options)) {
+        results.push(asDecoder<TRaw, TPrep, TOpt>(decoder));
+      }
+    } catch (err) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(`Decoder "${decoder.name}" canHandle() error:`, err);
+      }
+    }
+  }
+
+  return results;
 }
 
 async function autoResolveDecoder<TRaw, TPrep, TOpt extends object>(
   input: TRaw,
   options?: TOpt
 ): Promise<PixelDecoder<TRaw, TPrep, TOpt> | null> {
-  for (const decoder of sortByPriority(decoders)) {
+  for (const decoder of getDecoders()) {
     try {
       if (await decoder.canHandle(input, options)) {
         return asDecoder<TRaw, TPrep, TOpt>(decoder);
       }
     } catch (err) {
-      console.warn(`Decoder "${decoder.name}" failed in canHandle():`, err);
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(`Decoder "${decoder.name}" canHandle() error:`, err);
+      }
     }
   }
 
@@ -133,7 +155,13 @@ export async function resolveDecoder<
     options
   );
   if (!resolved) {
-    throw new Error(`No suitable decoder found for input type: ${typeof input}`);
+    const typeInfo =
+      input === null
+        ? 'null'
+        : typeof input === 'object'
+          ? input?.constructor?.name || 'object'
+          : typeof input;
+    throw new Error(`No suitable decoder found for input type: ${typeInfo}`);
   }
 
   return resolved;
